@@ -1,0 +1,23 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hf="HexFall.UI">
+    <ui:VisualElement class="hf-fill" picking-mode="Ignore">
+        <ui:VisualElement class="hf-panel verify__panel">
+            <ui:VisualElement class="verify__emblem" picking-mode="Ignore">
+                <hf:HexagonElement class="hf-hex hf-fill" />
+                <hf:IconElement kind="Envelope" class="verify__envelope" />
+            </ui:VisualElement>
+            <ui:Label text="Check your email" class="hf-text--title" />
+            <ui:Label name="verify-subtitle" class="hf-text--sub" />
+            <ui:VisualElement name="digits-row" class="verify__digits">
+                <ui:TextField name="digit-0" class="hf-input hf-digit" />
+                <ui:TextField name="digit-1" class="hf-input hf-digit" />
+                <ui:TextField name="digit-2" class="hf-input hf-digit" />
+                <ui:TextField name="digit-3" class="hf-input hf-digit" />
+                <ui:TextField name="digit-4" class="hf-input hf-digit" />
+                <ui:TextField name="digit-5" class="hf-input hf-digit" />
+            </ui:VisualElement>
+            <ui:Label name="error-label" class="hf-error" style="display: none;" />
+            <ui:Button name="verify-submit" text="VERIFY AND ENTER" class="hf-btn hf-btn--primary verify__submit" />
+            <ui:Button name="resend-button" class="hf-link" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
