@@ -31,12 +31,13 @@ The rationale for each choice is recorded in [docs/DESIGN_DECISIONS.md](docs/DES
 | Path | Contents |
 |---|---|
 | `game/` | Unity project (client and headless server build) |
+| `art/` | Source art (`.blend` files, generator scripts); exports land in `game/Assets` |
 | `server/` | Game server container (Dockerfile, runtime config) |
 | `services/` | Lambda functions for the REST API |
 | `infra/bootstrap/` | One-time Terraform state backend |
 | `infra/modules/` | Reusable Terraform modules |
 | `infra/envs/dev/` | Development environment composition |
-| `docs/` | [Design decisions](docs/DESIGN_DECISIONS.md), [AWS environment](docs/AWS_ENVIRONMENT.md), diagrams, runbooks |
+| `docs/` | [Design decisions](docs/DESIGN_DECISIONS.md), [AWS environment](docs/AWS_ENVIRONMENT.md), [asset credits](docs/ASSET_CREDITS.md), diagrams, runbooks |
 | `.github/workflows/` | CI/CD pipelines |
 
 ## Branching
