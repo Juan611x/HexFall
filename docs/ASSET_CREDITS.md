@@ -14,6 +14,7 @@ Every third-party asset used by HexFall (in the game, mockups, or docs) is liste
 | Cinzel | Screen titles in the HTML mockups only (not shipped in Unity) | The Cinzel Project Authors | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Cinzel) · [License](https://github.com/google/fonts/blob/main/ofl/cinzel/OFL.txt) |
 | Interface Sounds 1.0: `tick_001.ogg`, `select_002.ogg`, `back_001.ogg` | Menu button hover, click and back sounds (`game/Assets/ThirdParty/Kenney/InterfaceSounds/`) | Kenney | CC0 1.0 | [kenney.nl: Interface Sounds](https://kenney.nl/assets/interface-sounds) · [OpenGameArt mirror (zip)](https://opengameart.org/sites/default/files/kenney_interfaceSounds.zip) |
 | Basic Spell Impacts: `Ice Spell Impact 1–3` (renamed `IceSpellImpact1–3.wav`) | Wizard spell cast sound in the menu, one picked at random per cast (`game/Assets/ThirdParty/CC0Combat150/MagicSpells/`) | lentikula (source `s06`), via the "150 Combat Sound Effects" compilation by untamedpixels | CC0 1.0 | [itch.io: Basic Spell Impacts](https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx) · [OpenGameArt: 150 Combat Sound Effects](https://opengameart.org/node/195932) · per-source licenses in `LICENSES.txt` next to the files |
+| Cathedral in the forest (ambient loop), `forest_2.ogg` (stored as `cathedral_forest.ogg`) | Ambient layer under the menu theme (`game/Assets/ThirdParty/OpenGameArt/CathedralInTheForest/`) | congusbongus | CC0 1.0 | [OpenGameArt: Cathedral in the forest](https://opengameart.org/node/143245) · [File](https://opengameart.org/sites/default/files/forest_2.ogg) |
 | Pixelify Sans (Regular, Bold) | UI text, buttons, inputs (mockups and Unity UI; static TTFs in `game/Assets/_Project/UI/Fonts/`) | The Pixelify Sans Project Authors | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Pixelify+Sans) · [Static TTFs: eifetx/Pixelify-Sans](https://github.com/eifetx/Pixelify-Sans/tree/main/fonts/ttf) · [License](https://github.com/google/fonts/blob/main/ofl/pixelifysans/OFL.txt) |
 
 ## Derived assets
@@ -35,6 +36,7 @@ Created for HexFall with no third-party source; listed so every binary in the re
 | Asset | Location | How |
 |---|---|---|
 | `T_LightShaft.png` (64×256), `T_Moon.png` (64×64) | `game/Assets/_Project/Art/Environment/Textures/` | Generated procedurally in the Unity Editor (tapered alpha gradient for the moonbeam, crescent mask for the moon) |
+| `MenuTheme.wav` (91.4 s seamless loop, 22.05 kHz mono) | `game/Assets/_Project/Audio/Music/` | Composed and synthesized by `art/audio/compose_menu_theme.py` (pure Python, chip-style voices, D Phrygian dominant, 84 BPM); key chosen to match the Cathedral ambient layer (D/A drone) |
 | `Scanlines.png` (1×3) | `game/Assets/_Project/UI/Textures/` | Generated for HexFall: tiling pattern for the UI scanline overlay |
 | Hexagon emblem and UI icons (eye, dice, envelope, gear) | `HexagonElement.cs`, `IconElement.cs` | Drawn at runtime with UI Toolkit `Painter2D`; no image files |
 
