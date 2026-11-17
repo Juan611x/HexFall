@@ -330,6 +330,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HexFall.UI::HexFall.UI.PsxUiTarget
   panelSettings: {fileID: 11400000, guid: 9d7eadf3fc5c2dd44b228059ca055bea, type: 2}
+  psxUiEnabled: 0
 --- !u!1 &127523430
 GameObject:
   m_ObjectHideFlags: 0
@@ -1301,7 +1302,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4945664799506250099, guid: c68a67806ae2c9e4db6dea29df0bc82e, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.13917309
+      value: 0.16504757
       objectReference: {fileID: 0}
     - target: {fileID: 4945664799506250099, guid: c68a67806ae2c9e4db6dea29df0bc82e, type: 3}
       propertyPath: m_LocalRotation.x
@@ -1309,7 +1310,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4945664799506250099, guid: c68a67806ae2c9e4db6dea29df0bc82e, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.9902681
+      value: 0.9862856
       objectReference: {fileID: 0}
     - target: {fileID: 4945664799506250099, guid: c68a67806ae2c9e4db6dea29df0bc82e, type: 3}
       propertyPath: m_LocalRotation.z
