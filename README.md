@@ -36,7 +36,7 @@ The rationale for each choice is recorded in [docs/DESIGN_DECISIONS.md](docs/DES
 | `infra/bootstrap/` | One-time Terraform state backend |
 | `infra/modules/` | Reusable Terraform modules |
 | `infra/envs/dev/` | Development environment composition |
-| `docs/` | Design decisions, diagrams, runbooks |
+| `docs/` | [Design decisions](docs/DESIGN_DECISIONS.md), [AWS environment](docs/AWS_ENVIRONMENT.md), diagrams, runbooks |
 | `.github/workflows/` | CI/CD pipelines |
 
 ## Branching
@@ -63,6 +63,10 @@ cd HexFall
 git lfs pull
 ```
 
+### Unity project
+
+The Unity project lives in `game/`. To create it the first time, use Unity Hub → **New project** → **Universal 3D** template (URP), **Project name** `game`, **Location** the repository root. Unity Hub refuses to create a project in an existing non-empty folder, so `game/` is not pre-created.
+
 Deployment instructions will be added together with the infrastructure.
 
 ## AWS environment constraints
@@ -72,3 +76,5 @@ The project targets a restricted lab account. These constraints shape the infras
 - All regional resources live in **`eu-west-1`**.
 - IAM roles must be named `student-*` and carry the `StudentBoundary` permissions boundary.
 - Amazon GameLift is not available, so game servers run on ECS Fargate.
+
+Full verified permission matrix and access setup: [docs/AWS_ENVIRONMENT.md](docs/AWS_ENVIRONMENT.md).
