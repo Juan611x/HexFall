@@ -18,5 +18,8 @@ namespace HexFall.UI
         public Sound back = new Sound { volume = 0.6f };
         public AudioClip[] spellClips = new AudioClip[0];
         [Range(0f, 1f)] public float spellVolume = 0.8f;
+        [Range(0f, 1f)] public float themeVolume = 0.55f;
+        [Range(0f, 1f)] public float ambientVolume = 0.45f;
+        [Min(0f)] public float musicFadeInSeconds = 2.5f;
     }
 }

@@ -18,6 +18,8 @@ namespace HexFall.UI
         [SerializeField] private MenuAudioLibrary audioLibrary;
         [SerializeField] private AudioSource uiAudioSource;
         [SerializeField] private AudioSource spellAudioSource;
+        [SerializeField] private AudioSource themeAudioSource;
+        [SerializeField] private AudioSource ambientAudioSource;
 
         private ScreenRouter _router;
         private ScreenHost _host;
@@ -25,6 +27,7 @@ namespace HexFall.UI
         private VisualElement _root;
         private MenuClickCastReaction _castReaction;
         private MenuSoundReaction _soundReaction;
+        private MenuMusicPlayer _music;
         private IAuthService _auth;
         private SessionState _session;
         private GuestNameGenerator _guestNames;
@@ -40,11 +43,14 @@ namespace HexFall.UI
                 : new SilentSfx();
             _soundReaction = new MenuSoundReaction(menuSfx);
             _castReaction = new MenuClickCastReaction(new SpellSoundWizardAnimator(new AnimatorWizardAnimator(wizardAnimator), spellSfx));
+            _music = CreateMusic();
+            _music?.Begin();
             // Pointer-down, not ClickEvent: a navigating button removes itself on pointer-up, so no click is raised for it.
             root.RegisterCallback<PointerDownEvent>(OnPanelPointerDown, TrickleDown.TrickleDown);
             // Keyboard/gamepad activation of a focused Button raises no ClickEvent.
             root.RegisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
             root.RegisterCallback<PointerEnterEvent>(OnPanelPointerEnter, TrickleDown.TrickleDown);
+            root.RegisterCallback<KeyDownEvent>(OnPanelKeyDown, TrickleDown.TrickleDown);
             _auth = new FakeAuthService();
             _session = new SessionState();
             _guestNames = new GuestNameGenerator(new System.Random());
@@ -68,6 +74,7 @@ namespace HexFall.UI
             _root?.UnregisterCallback<PointerDownEvent>(OnPanelPointerDown, TrickleDown.TrickleDown);
             _root?.UnregisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
             _root?.UnregisterCallback<PointerEnterEvent>(OnPanelPointerEnter, TrickleDown.TrickleDown);
+            _root?.UnregisterCallback<KeyDownEvent>(OnPanelKeyDown, TrickleDown.TrickleDown);
             _root = null;
             _presenter?.Dispose();
             _presenter = null;
@@ -75,7 +82,30 @@ namespace HexFall.UI
             _host = null;
         }
 
-        private void Update() => (_presenter as ITickable)?.Tick(Time.unscaledDeltaTime);
+        private void Update()
+        {
+            var delta = Time.unscaledDeltaTime;
+            (_presenter as ITickable)?.Tick(delta);
+            _music?.Tick(delta);
+        }
+
+        private MenuMusicPlayer CreateMusic()
+        {
+            if (audioLibrary == null || themeAudioSource == null || ambientAudioSource == null)
+            {
+                return null;
+            }
+
+            // Browsers keep audio locked until the first user gesture.
+            var requireGesture = Application.platform == RuntimePlatform.WebGLPlayer;
+            return new MenuMusicPlayer(
+                new UnityMusicLayers(themeAudioSource, ambientAudioSource),
+                new[] { audioLibrary.themeVolume, audioLibrary.ambientVolume },
+                audioLibrary.musicFadeInSeconds,
+                requireGesture);
+        }
+
+        private void OnPanelKeyDown(KeyDownEvent evt) => _music?.OnUserGesture();
 
         private void OnPanelPointerDown(PointerDownEvent evt) => OnPress(evt.target as VisualElement);
 
@@ -86,6 +116,7 @@ namespace HexFall.UI
 
         private void OnPress(VisualElement target)
         {
+            _music?.OnUserGesture();
             _soundReaction.OnPress(target);
             _castReaction.OnClick(target);
         }

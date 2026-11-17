@@ -26,3 +26,6 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 23d6a5d77ed323b46946bc7bf565e794, type: 3}
   - {fileID: 8300000, guid: a37f6242c6993c34a83470872116b7e9, type: 3}
   spellVolume: 0.8
+  themeVolume: 0.55
+  ambientVolume: 0.45
+  musicFadeInSeconds: 2.5
