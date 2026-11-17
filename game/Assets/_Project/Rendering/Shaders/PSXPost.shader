@@ -28,6 +28,10 @@ Shader "HexFall/PSX Post"
             float _DitherStrength;
             float _Saturation;
 
+            // Set globally by PsxUiTarget; 0 means no UI texture is bound.
+            TEXTURE2D(_PSXUITex);
+            float _PSXUIEnabled;
+
             static const float kBayer4[16] =
             {
                  0.0,  8.0,  2.0, 10.0,
@@ -40,6 +44,13 @@ Shader "HexFall/PSX Post"
             {
                 float2 uv = input.texcoord;
                 half3 color = SAMPLE_TEXTURE2D_X_LOD(_BlitTexture, sampler_PointClamp, uv, 0).rgb;
+
+                if (_PSXUIEnabled > 0.5)
+                {
+                    // The panel is rendered at the same size as this target, so one UI pixel is one scene pixel.
+                    half4 ui = SAMPLE_TEXTURE2D_LOD(_PSXUITex, sampler_PointClamp, uv, 0);
+                    color = color * (1.0 - ui.a) + ui.rgb;
+                }
 
                 half luma = dot(color, half3(0.299, 0.587, 0.114));
                 color = lerp(luma.xxx, color, _Saturation);

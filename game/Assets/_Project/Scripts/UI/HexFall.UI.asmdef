@@ -1,7 +1,9 @@
 {
     "name": "HexFall.UI",
     "rootNamespace": "HexFall.UI",
-    "references": [],
+    "references": [
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

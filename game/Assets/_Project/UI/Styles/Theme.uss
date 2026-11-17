@@ -50,7 +50,7 @@
 .hf-text--label {
     -unity-font-definition: var(--hf-font-ui-bold);
     color: var(--hf-color-label);
-    font-size: 16px;
+    font-size: 18px;
     letter-spacing: 4px;
 }
 
@@ -62,7 +62,7 @@
 
 .hf-text--muted {
     color: var(--hf-color-text-muted);
-    font-size: 15px;
+    font-size: 18px;
     white-space: normal;
 }
 
@@ -114,7 +114,7 @@
     border-width: 0;
     border-radius: 0;
     color: var(--hf-color-accent);
-    font-size: 15px;
+    font-size: 18px;
     -unity-font-definition: var(--hf-font-ui);
 }
 .hf-link:hover { color: var(--hf-color-text); }
@@ -135,18 +135,9 @@
 
 .hf-divider { flex-direction: row; align-items: center; }
 .hf-divider__line { flex-grow: 1; height: 2px; background-color: var(--hf-color-border); }
-.hf-divider__text { margin: 0 14px; color: var(--hf-color-text-muted); font-size: 16px; }
+.hf-divider__text { margin: 0 14px; color: var(--hf-color-text-muted); font-size: 18px; }
 
 /* Layout */
-.hf-scanlines {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url("project://database/Assets/_Project/UI/Textures/Scanlines.png");
-    background-repeat: repeat repeat;
-}
 
 .hf-back {
     position: absolute;
