@@ -10,9 +10,9 @@ Every third-party asset used by HexFall (in the game, mockups, or docs) is liste
 | Darkness_Castle_Temple, image `111_3.png` | Menu background (moonlit stone temple) | dreamsearchrepeat | CC0 1.0 | [OpenGameArt: Darkness_Castle_Temple](https://opengameart.org/node/175643) · [Image](https://opengameart.org/sites/default/files/111_3.png) |
 | Stone Tiles 02 (diffuse, 1k) | Menu arena floor | Charlotte Baglioni | CC0 1.0 | [Poly Haven: Stone Tiles 02](https://polyhaven.com/a/stone_tiles_02) · [License](https://polyhaven.com/license) |
 | Castle Brick Broken 06 (diffuse, 1k) | Menu arena pillars, step and rubble | Rob Tuytel | CC0 1.0 | [Poly Haven: Castle Brick Broken 06](https://polyhaven.com/a/castle_brick_broken_06) · [License](https://polyhaven.com/license) |
-| Cinzel Decorative | Game logo | Natanael Gama | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Cinzel+Decorative) · [License](https://github.com/google/fonts/blob/main/ofl/cinzeldecorative/OFL.txt) |
+| Cinzel Decorative (Black, Bold) | Game logo and screen titles (mockups and Unity UI, `game/Assets/_Project/UI/Fonts/`) | Natanael Gama | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Cinzel+Decorative) · [License](https://github.com/google/fonts/blob/main/ofl/cinzeldecorative/OFL.txt) |
 | Cinzel | Screen titles | The Cinzel Project Authors | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Cinzel) · [License](https://github.com/google/fonts/blob/main/ofl/cinzel/OFL.txt) |
-| Pixelify Sans | UI text, buttons, inputs | The Pixelify Sans Project Authors | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Pixelify+Sans) · [License](https://github.com/google/fonts/blob/main/ofl/pixelifysans/OFL.txt) |
+| Pixelify Sans (Regular, Bold) | UI text, buttons, inputs (mockups and Unity UI; static TTFs in `game/Assets/_Project/UI/Fonts/`) | The Pixelify Sans Project Authors | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Pixelify+Sans) · [Static TTFs: eifetx/Pixelify-Sans](https://github.com/eifetx/Pixelify-Sans/tree/main/fonts/ttf) · [License](https://github.com/google/fonts/blob/main/ofl/pixelifysans/OFL.txt) |
 
 ## Derived assets
 
