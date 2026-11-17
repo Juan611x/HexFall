@@ -9,14 +9,22 @@ namespace HexFall.UI
     public sealed class MenuBootstrap : MonoBehaviour
     {
         [SerializeField] private VisualTreeAsset titleScreen;
+        [SerializeField] private Animator wizardAnimator;
 
         private ScreenRouter _router;
         private ScreenHost _host;
         private IDisposable _presenter;
+        private VisualElement _root;
+        private MenuClickCastReaction _castReaction;
 
         private void OnEnable()
         {
-            var root = GetComponent<UIDocument>().rootVisualElement;
+            _root = GetComponent<UIDocument>().rootVisualElement;
+            var root = _root;
+            _castReaction = new MenuClickCastReaction(new AnimatorWizardAnimator(wizardAnimator));
+            root.RegisterCallback<ClickEvent>(OnPanelClick, TrickleDown.TrickleDown);
+            // Keyboard/gamepad activation of a focused Button raises no ClickEvent.
+            root.RegisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
             _router = new ScreenRouter(ScreenId.Title);
             _host = new ScreenHost(root, _router, new Dictionary<ScreenId, VisualTreeAsset>
             {
@@ -29,11 +37,18 @@ namespace HexFall.UI
 
         private void OnDisable()
         {
+            _root?.UnregisterCallback<ClickEvent>(OnPanelClick, TrickleDown.TrickleDown);
+            _root?.UnregisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
+            _root = null;
             _presenter?.Dispose();
             _presenter = null;
             _host?.Dispose();
             _host = null;
         }
+
+        private void OnPanelClick(ClickEvent evt) => _castReaction.OnClick(evt.target as VisualElement);
+
+        private void OnPanelSubmit(NavigationSubmitEvent evt) => _castReaction.OnClick(evt.target as VisualElement);
 
         private void OnScreenShown(ScreenId id, VisualElement screen)
         {
