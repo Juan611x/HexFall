@@ -1,0 +1,24 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hf="HexFall.UI">
+    <ui:VisualElement class="hf-fill" picking-mode="Ignore">
+        <ui:VisualElement class="hf-panel guest__panel">
+            <ui:Label text="Name your wizard" class="hf-text--title" />
+            <ui:Label text="Pick a name for this session, or roll a new one." class="hf-text--sub" />
+            <ui:VisualElement class="hf-field">
+                <ui:Label text="WIZARD NAME" class="hf-field__label" />
+                <ui:VisualElement class="hf-input-wrap">
+                    <ui:TextField name="name-field" class="hf-input" max-length="24" />
+                    <ui:Button name="reroll-button" tooltip="Roll a new name" class="hf-icon-btn hf-icon-btn--square">
+                        <hf:IconElement kind="Dice" class="hf-icon" />
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="error-label" class="hf-error" style="display: none; margin-top: -10px;" />
+            <ui:Label text="Guest matches count while you play, but stats and rank are not saved after you leave." class="hf-info-box" />
+            <ui:Button name="enter-button" text="ENTER THE ARENA" class="hf-btn hf-btn--primary" />
+            <ui:VisualElement class="hf-link-row">
+                <ui:Label text="Want to keep your progress?" class="hf-text--muted" />
+                <ui:Button name="create-account-link" text="Create an account" class="hf-link" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
