@@ -20,6 +20,13 @@ namespace HexFall.UI
             Change(screen);
         }
 
+        // Makes `screen` a new root: the back stack is cleared.
+        public void ResetTo(ScreenId screen)
+        {
+            _history.Clear();
+            if (screen != Current) Change(screen);
+        }
+
         public bool Back()
         {
             if (!CanGoBack) return false;

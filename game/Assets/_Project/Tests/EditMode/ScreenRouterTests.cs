@@ -6,6 +6,35 @@ namespace HexFall.UI.Tests
     public class ScreenRouterTests
     {
         [Test]
+        public void ResetToClearsBackStackAndChangesScreen()
+        {
+            var router = new ScreenRouter(ScreenId.Title);
+            router.Navigate(ScreenId.Login);
+            var events = new List<(ScreenId, ScreenId)>();
+            router.ScreenChanged += (p, c) => events.Add((p, c));
+
+            router.ResetTo(ScreenId.Lobby);
+
+            Assert.AreEqual(ScreenId.Lobby, router.Current);
+            Assert.IsFalse(router.CanGoBack);
+            CollectionAssert.AreEqual(new[] { (ScreenId.Login, ScreenId.Lobby) }, events);
+        }
+
+        [Test]
+        public void ResetToCurrentScreenClearsBackStackWithoutEvent()
+        {
+            var router = new ScreenRouter(ScreenId.Title);
+            router.Navigate(ScreenId.Login);
+            var raised = 0;
+            router.ScreenChanged += (_, __) => raised++;
+
+            router.ResetTo(ScreenId.Login);
+
+            Assert.IsFalse(router.CanGoBack);
+            Assert.AreEqual(0, raised);
+        }
+
+        [Test]
         public void StartsAtInitialScreen()
         {
             var router = new ScreenRouter(ScreenId.Title);
