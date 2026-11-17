@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a663c2bfc5328a248bcc9366d1a10a81, type: 3}
+  m_Name: MenuAudioLibrary
+  m_EditorClassIdentifier: HexFall.UI::HexFall.UI.MenuAudioLibrary
+  hover:
+    clip: {fileID: 8300000, guid: 520e9ea11bdc7d04984068f4dc454fd5, type: 3}
+    volume: 0.35
+  click:
+    clip: {fileID: 8300000, guid: a217d98c175a4b84a9f89edd115376e1, type: 3}
+    volume: 0.6
+  back:
+    clip: {fileID: 8300000, guid: ae27462fbaa493147aed3e423fd98da2, type: 3}
+    volume: 0.6
+  spellClips:
+  - {fileID: 8300000, guid: cd37b5553e3d9734fbb3b7c1f1c8b4cb, type: 3}
+  - {fileID: 8300000, guid: 23d6a5d77ed323b46946bc7bf565e794, type: 3}
+  - {fileID: 8300000, guid: a37f6242c6993c34a83470872116b7e9, type: 3}
+  spellVolume: 0.8

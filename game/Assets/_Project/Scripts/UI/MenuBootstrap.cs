@@ -15,12 +15,16 @@ namespace HexFall.UI
         [SerializeField] private VisualTreeAsset guestScreen;
         [SerializeField] private VisualTreeAsset lobbyScreen;
         [SerializeField] private Animator wizardAnimator;
+        [SerializeField] private MenuAudioLibrary audioLibrary;
+        [SerializeField] private AudioSource uiAudioSource;
+        [SerializeField] private AudioSource spellAudioSource;
 
         private ScreenRouter _router;
         private ScreenHost _host;
         private IDisposable _presenter;
         private VisualElement _root;
         private MenuClickCastReaction _castReaction;
+        private MenuSoundReaction _soundReaction;
         private IAuthService _auth;
         private SessionState _session;
         private GuestNameGenerator _guestNames;
@@ -29,11 +33,18 @@ namespace HexFall.UI
         {
             _root = GetComponent<UIDocument>().rootVisualElement;
             var root = _root;
-            _castReaction = new MenuClickCastReaction(new AnimatorWizardAnimator(wizardAnimator));
+            var canPlay = audioLibrary != null;
+            IMenuSfx menuSfx = canPlay && uiAudioSource != null ? new UnityMenuSfx(uiAudioSource, audioLibrary) : new SilentSfx();
+            ISpellSfx spellSfx = canPlay && spellAudioSource != null
+                ? new UnitySpellSfx(spellAudioSource, audioLibrary, new SpellPicker(new System.Random().Next))
+                : new SilentSfx();
+            _soundReaction = new MenuSoundReaction(menuSfx);
+            _castReaction = new MenuClickCastReaction(new SpellSoundWizardAnimator(new AnimatorWizardAnimator(wizardAnimator), spellSfx));
             // Pointer-down, not ClickEvent: a navigating button removes itself on pointer-up, so no click is raised for it.
             root.RegisterCallback<PointerDownEvent>(OnPanelPointerDown, TrickleDown.TrickleDown);
             // Keyboard/gamepad activation of a focused Button raises no ClickEvent.
             root.RegisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
+            root.RegisterCallback<PointerEnterEvent>(OnPanelPointerEnter, TrickleDown.TrickleDown);
             _auth = new FakeAuthService();
             _session = new SessionState();
             _guestNames = new GuestNameGenerator(new System.Random());
@@ -56,6 +67,7 @@ namespace HexFall.UI
         {
             _root?.UnregisterCallback<PointerDownEvent>(OnPanelPointerDown, TrickleDown.TrickleDown);
             _root?.UnregisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
+            _root?.UnregisterCallback<PointerEnterEvent>(OnPanelPointerEnter, TrickleDown.TrickleDown);
             _root = null;
             _presenter?.Dispose();
             _presenter = null;
@@ -65,9 +77,26 @@ namespace HexFall.UI
 
         private void Update() => (_presenter as ITickable)?.Tick(Time.unscaledDeltaTime);
 
-        private void OnPanelPointerDown(PointerDownEvent evt) => _castReaction.OnClick(evt.target as VisualElement);
+        private void OnPanelPointerDown(PointerDownEvent evt) => OnPress(evt.target as VisualElement);
 
-        private void OnPanelSubmit(NavigationSubmitEvent evt) => _castReaction.OnClick(evt.target as VisualElement);
+        private void OnPanelSubmit(NavigationSubmitEvent evt) => OnPress(evt.target as VisualElement);
+
+        private void OnPanelPointerEnter(PointerEnterEvent evt) =>
+            _soundReaction.OnPointerEnter(evt.target as VisualElement);
+
+        private void OnPress(VisualElement target)
+        {
+            _soundReaction.OnPress(target);
+            _castReaction.OnClick(target);
+        }
+
+        private sealed class SilentSfx : IMenuSfx, ISpellSfx
+        {
+            public void PlayHover() { }
+            public void PlayClick() { }
+            public void PlayBack() { }
+            public void PlayCast() { }
+        }
 
         private void OnScreenShown(ScreenId id, VisualElement screen)
         {
