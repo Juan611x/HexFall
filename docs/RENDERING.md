@@ -28,18 +28,21 @@ Lighting is Gouraud: ambient (SH), main light and additional lights are evaluate
 | `_DitherStrength` | 0.75 | 4x4 Bayer dither amplitude in color steps (0 = hard banding). |
 | `_Saturation` | 1 | Saturation multiplier applied before quantization. |
 
-## UI composite
+## UI composite (optional, off by default)
 
-UI Toolkit normally draws as a screen overlay after the camera, outside the post pass. To give the menu the same pixel grid, color depth and dither:
+UI Toolkit normally draws as a screen overlay after the camera, outside the post pass, and that is the default: crisp text at native resolution, original 15/16 px small texts and the scanline overlay. The PSX look on the UI (pixel grid, color depth, dither) is a code toggle on `PsxUiTarget` (on the `MenuUI` object):
 
-- `PsxUiTarget` (on the `MenuUI` object) instantiates the panel settings at runtime and renders the panel into a `RenderTexture` (`targetTexture`) sized like the URP render target: `screen size x renderScale` (truncated, same as URP). It rebuilds when the screen size or render scale changes and clears the texture every frame.
-- The texture is published as global `_PSXUITex` plus `_PSXUIEnabled` (1 while bound). `HexFall/PSX Post` alpha-composites it (premultiplied) over the scene, point-sampled, before saturation, quantization and dither. With `_PSXUIEnabled` at 0 the shader output is unchanged.
-- Input: `PanelSettings.SetScreenToPanelSpaceFunction` uses `ScreenToPanelMapper` (pure, unit-tested): flips the bottom-left screen origin to the top-left panel origin, scales screen size to texture size, and returns NaN outside the screen.
-- Layout still scales from the 1280x720 reference, so the panel is minified when the texture is smaller. Texts that were 15-16 px (labels, hints, links, divider) are now 18 px to stay legible at half render scale. The old scanline overlay was removed: the dither already provides the grain and a per-pixel texture aliases at this resolution.
+- `SetPsxUiEnabled(bool)` / `PsxUiEnabled` switch it at runtime (serialized field `psxUiEnabled`, default `false`). The decision (render to texture, root USS class, shader flag) is a pure function, `PsxUiPresentation.Resolve`, unit-tested.
+- Off: no `targetTexture`, no custom screen-to-panel function, `_PSXUIEnabled` = 0, no render texture allocated.
+- On: the panel settings (instantiated at runtime) render the panel into a `RenderTexture` sized like the URP render target, `screen size x renderScale` (truncated, same as URP). It is rebuilt when the screen size or render scale changes and cleared every frame. The texture is published as global `_PSXUITex` plus `_PSXUIEnabled` (1). `HexFall/PSX Post` alpha-composites it (premultiplied), point-sampled, before saturation, quantization and dither. The root element gets the `hf-psx-ui` USS class: small texts (labels, hints, links, divider) grow to 18 px so they stay legible at half render scale, and the scanline overlay is hidden because the dither already provides the grain.
+- Input in On mode: `PanelSettings.SetScreenToPanelSpaceFunction` uses `ScreenToPanelMapper` (pure, unit-tested). UI Toolkit passes pointer positions already flipped to a top-left origin, so the mapper only scales screen size to texture size and returns NaN outside the screen. It must not flip Y again.
+- Layout still scales from the 1280x720 reference, so the panel is minified when the texture is smaller.
 
 ## Menu wizard cast
 
-Any `Button` click or keyboard/gamepad submit in the menu panel fires the wizard `Cast` trigger (`MenuClickCastReaction` -> `IWizardAnimator` -> `AnimatorWizardAnimator`, wired in `MenuBootstrap`). The AnyState -> `Spell1` transition allows self transition, so each click restarts the cast.
+Any pointer press on a `Button` or keyboard/gamepad submit in the menu panel fires the wizard `Cast` trigger (`MenuClickCastReaction` -> `IWizardAnimator` -> `AnimatorWizardAnimator`, wired in `MenuBootstrap`). The AnyState -> `Spell1` transition allows self transition, so each press restarts the cast.
+
+The cast listens to `PointerDownEvent` (trickle-down on the panel root), not `ClickEvent`: a button that navigates removes itself from the tree on pointer-up, and UI Toolkit then never raises the click for it, so the Log in button (and any other navigating button) would not cast.
 
 ## Material usage
 
