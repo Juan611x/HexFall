@@ -9,6 +9,11 @@ namespace HexFall.UI
     public sealed class MenuBootstrap : MonoBehaviour
     {
         [SerializeField] private VisualTreeAsset titleScreen;
+        [SerializeField] private VisualTreeAsset loginScreen;
+        [SerializeField] private VisualTreeAsset registerScreen;
+        [SerializeField] private VisualTreeAsset verifyScreen;
+        [SerializeField] private VisualTreeAsset guestScreen;
+        [SerializeField] private VisualTreeAsset lobbyScreen;
         [SerializeField] private Animator wizardAnimator;
 
         private ScreenRouter _router;
@@ -16,6 +21,9 @@ namespace HexFall.UI
         private IDisposable _presenter;
         private VisualElement _root;
         private MenuClickCastReaction _castReaction;
+        private IAuthService _auth;
+        private SessionState _session;
+        private GuestNameGenerator _guestNames;
 
         private void OnEnable()
         {
@@ -26,10 +34,18 @@ namespace HexFall.UI
             root.RegisterCallback<PointerDownEvent>(OnPanelPointerDown, TrickleDown.TrickleDown);
             // Keyboard/gamepad activation of a focused Button raises no ClickEvent.
             root.RegisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
+            _auth = new FakeAuthService();
+            _session = new SessionState();
+            _guestNames = new GuestNameGenerator(new System.Random());
             _router = new ScreenRouter(ScreenId.Title);
             _host = new ScreenHost(root, _router, new Dictionary<ScreenId, VisualTreeAsset>
             {
                 { ScreenId.Title, titleScreen },
+                { ScreenId.Login, loginScreen },
+                { ScreenId.Register, registerScreen },
+                { ScreenId.Verify, verifyScreen },
+                { ScreenId.Guest, guestScreen },
+                { ScreenId.Lobby, lobbyScreen },
             });
             _host.ScreenShown += OnScreenShown;
             _host.ScreenHidden += OnScreenHidden;
@@ -47,14 +63,24 @@ namespace HexFall.UI
             _host = null;
         }
 
+        private void Update() => (_presenter as ITickable)?.Tick(Time.unscaledDeltaTime);
+
         private void OnPanelPointerDown(PointerDownEvent evt) => _castReaction.OnClick(evt.target as VisualElement);
 
         private void OnPanelSubmit(NavigationSubmitEvent evt) => _castReaction.OnClick(evt.target as VisualElement);
 
         private void OnScreenShown(ScreenId id, VisualElement screen)
         {
-            if (id == ScreenId.Title)
-                _presenter = new TitlePresenter(new TitleView(screen), _router);
+            _presenter = id switch
+            {
+                ScreenId.Title => new TitlePresenter(new TitleView(screen), _router),
+                ScreenId.Login => new LoginPresenter(new LoginView(screen), _router, _auth, _session),
+                ScreenId.Register => new RegisterPresenter(new RegisterView(screen), _router, _auth, _session),
+                ScreenId.Verify => new VerifyPresenter(new VerifyView(screen), _router, _auth, _session),
+                ScreenId.Guest => new GuestPresenter(new GuestView(screen), _router, _auth, _session, _guestNames),
+                ScreenId.Lobby => new LobbyPresenter(new LobbyView(screen), _router, _session),
+                _ => null,
+            };
         }
 
         private void OnScreenHidden(ScreenId id)

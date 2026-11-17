@@ -278,6 +278,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HexFall.UI::HexFall.UI.MenuBootstrap
   titleScreen: {fileID: 9197481963319205126, guid: 94aa7e5339a183b43b2f2f26bb25fcc8, type: 3}
+  loginScreen: {fileID: 9197481963319205126, guid: 43f6869b0dc1103479d449a1828c133d, type: 3}
+  registerScreen: {fileID: 9197481963319205126, guid: 67ef13680a264cd4087498001fb6e004, type: 3}
+  verifyScreen: {fileID: 9197481963319205126, guid: effb58c563a8f8940b29500622a43c0b, type: 3}
+  guestScreen: {fileID: 9197481963319205126, guid: 9d50846f9b81a95428d15d7a2604a7bd, type: 3}
+  lobbyScreen: {fileID: 9197481963319205126, guid: 0e5f05758d673b143b9f2c93a55dc2be, type: 3}
   wizardAnimator: {fileID: 1780937202}
 --- !u!114 &65276231
 MonoBehaviour:
