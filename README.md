@@ -31,6 +31,7 @@ The rationale for each choice is recorded in [docs/DESIGN_DECISIONS.md](docs/DES
 | Path | Contents |
 |---|---|
 | `game/` | Unity project (client and headless server build) |
+| `art/` | Source art (`.blend` files, generator scripts); exports land in `game/Assets` |
 | `server/` | Game server container (Dockerfile, runtime config) |
 | `services/` | Lambda functions for the REST API |
 | `infra/bootstrap/` | One-time Terraform state backend |
