@@ -1,0 +1,30 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hf="HexFall.UI">
+    <ui:VisualElement class="hf-fill" picking-mode="Ignore">
+        <ui:VisualElement class="hf-panel login__panel">
+            <ui:Label text="Welcome back" class="hf-text--title" />
+            <ui:Label text="Log in to keep your stats and rank." class="hf-text--sub" />
+            <ui:VisualElement class="hf-field">
+                <ui:Label text="EMAIL" class="hf-field__label" />
+                <ui:TextField name="email-field" class="hf-input" placeholder-text="wizard@example.com" />
+            </ui:VisualElement>
+            <ui:VisualElement class="hf-field">
+                <ui:VisualElement class="hf-field__row">
+                    <ui:Label text="PASSWORD" class="hf-field__label" />
+                    <ui:Button name="forgot-link" text="Forgot password?" class="hf-link" style="margin-bottom: 8px;" />
+                </ui:VisualElement>
+                <ui:VisualElement class="hf-input-wrap">
+                    <ui:TextField name="password-field" password="true" class="hf-input hf-input--wrap-icon" />
+                    <ui:Button name="password-toggle" tooltip="Show password" class="hf-icon-btn hf-icon-btn--overlay">
+                        <hf:IconElement name="password-icon" kind="Eye" class="hf-icon" />
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="error-label" class="hf-error" style="display: none; margin-top: -8px;" />
+            <ui:Button name="login-submit" text="LOG IN" class="hf-btn hf-btn--primary" />
+            <ui:VisualElement class="hf-link-row">
+                <ui:Label text="New to the arena?" class="hf-text--muted" />
+                <ui:Button name="create-account-link" text="Create an account" class="hf-link" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
