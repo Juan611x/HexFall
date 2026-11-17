@@ -81,10 +81,9 @@
     border-color: var(--hf-color-shadow);
 }
 
+/* Pressed state only translates: changing height/margin/borders resizes buttons that set their own size. */
 .hf-btn:active {
-    border-bottom-width: 2px;
-    margin-top: 3px;
-    height: 53px;
+    translate: 0 2px;
 }
 
 .hf-btn:focus {
@@ -104,7 +103,6 @@
     color: var(--hf-color-text-soft);
 }
 .hf-btn--ghost:hover { background-color: var(--hf-color-ghost-hover); color: var(--hf-color-text); }
-.hf-btn--ghost:active { margin-top: 0; height: 56px; border-bottom-width: 2px; }
 .hf-btn--ghost:focus { border-color: var(--hf-color-accent); }
 
 .hf-link {
