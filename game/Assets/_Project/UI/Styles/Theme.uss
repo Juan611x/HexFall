@@ -41,6 +41,8 @@
     -unity-font-definition: var(--hf-font-display);
     color: var(--hf-color-text);
     font-size: 104px;
+    height: 96px;
+    -unity-text-align: middle-left;
     text-shadow: 5px 5px 0 var(--hf-color-shadow);
     white-space: nowrap;
 }
@@ -164,10 +166,10 @@
 }
 
 /* Title screen */
-.title__column { position: absolute; left: 96px; top: 84px; width: 520px; }
-.title__column > * { margin-bottom: 40px; }
+.title__column { position: absolute; left: 96px; top: 40px; width: 520px; }
+.title__column > * { margin-bottom: 20px; }
 .title__nav { width: 380px; margin-bottom: 0; }
-.title__nav > * { margin-bottom: 16px; }
+.title__nav > * { margin-bottom: 12px; }
 .title__footer {
     position: absolute;
     left: 96px;
