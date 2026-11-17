@@ -73,7 +73,6 @@
     color: var(--hf-color-text-muted);
 }
 .hf-icon-btn:hover { color: var(--hf-color-accent); }
-.hf-icon-btn:active { margin-top: 0; height: 52px; }
 .hf-icon-btn--overlay { position: absolute; right: 0; top: 0; }
 .hf-icon-btn--square {
     margin-left: 10px;
@@ -107,7 +106,6 @@
     color: var(--hf-color-danger);
 }
 .hf-btn--danger:hover { background-color: rgba(127, 29, 29, 0.25); }
-.hf-btn--danger:active { margin-top: 0; height: 56px; border-bottom-width: 2px; }
 
 .hf-info-box {
     padding: 14px 16px;
@@ -125,9 +123,14 @@
 .login__panel > .hf-text--title { margin-bottom: 8px; }
 
 /* Register */
-.register__panel { padding: 32px 36px 28px 36px; }
-.register__panel > * { margin-bottom: 10px; }
-.register__panel > .hf-text--title { margin-bottom: 6px; }
+/* Register is the tallest form; it must fit the 720 reference height (minus the Back bar) without scrolling. */
+.register__panel { padding: 22px 32px 20px 32px; }
+.register__panel > * { margin-bottom: 8px; }
+.register__panel > .hf-text--title { margin-bottom: 4px; font-size: 32px; }
+.register__panel .hf-field__label { margin-bottom: 4px; }
+.register__panel .hf-input .unity-base-text-field__input { height: 44px; }
+.register__panel .hf-help { margin-top: 4px; }
+.register__panel .hf-rule { margin-bottom: 4px; }
 .register__pair { flex-direction: row; }
 .register__pair > .hf-field { flex-grow: 1; flex-basis: 0; }
 .hf-gap-end { margin-right: 16px; }
@@ -197,7 +200,6 @@
 .lobby__main > * { margin-bottom: 18px; }
 .lobby__main > .hf-text--title { margin-bottom: 6px; }
 .hf-btn--big { height: 96px; font-size: 34px; }
-.hf-btn--big:active { height: 93px; }
 .lobby__searching { padding: 18px; align-items: flex-start; }
 .lobby__searching > * { margin-bottom: 12px; }
 .lobby__search-row { flex-direction: row; align-items: center; }
@@ -207,7 +209,6 @@
 .lobby__grid { flex-direction: row; }
 .lobby__grid > .hf-btn { flex-grow: 1; flex-basis: 0; font-size: 18px; }
 .lobby__logout { width: 160px; height: 48px; font-size: 18px; }
-.lobby__logout:active { height: 48px; }
 
 .hf-psx-ui .hf-help { font-size: 18px; }
 .hf-psx-ui .hf-rule__text { font-size: 18px; }
