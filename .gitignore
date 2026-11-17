@@ -107,3 +107,9 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# =========================================================
+# Local tooling indexes
+# =========================================================
+.codegraph/
+.atl/

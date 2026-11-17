@@ -1,0 +1,30 @@
+# Asset Credits
+
+Every third-party asset used by HexFall (in the game, mockups, or docs) is listed here with its source, author, and license. Add an entry **before** an asset enters the repository or a published mockup.
+
+**Rule:** only CC0, public domain, or permissive licenses (SIL OFL, MIT, CC-BY with attribution recorded here). No "free for personal use" assets.
+
+| Asset | Used for | Author | License | Source |
+|---|---|---|---|---|
+| RPG Characters pack (Nov 2020), `Wizard` model and textures | Wizard renders in the menu mockups; candidate player character | Quaternius | CC0 1.0 | [OpenGameArt: Lowpoly RPG Characters](https://opengameart.org/content/lowpoly-rpg-characters) · [Direct download (zip)](https://opengameart.org/sites/default/files/rpg_characters_-_nov_2020.zip) · [quaternius.com](https://quaternius.com) |
+| Darkness_Castle_Temple, image `111_3.png` | Menu background (moonlit stone temple) | dreamsearchrepeat | CC0 1.0 | [OpenGameArt: Darkness_Castle_Temple](https://opengameart.org/node/175643) · [Image](https://opengameart.org/sites/default/files/111_3.png) |
+| Cinzel Decorative | Game logo | Natanael Gama | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Cinzel+Decorative) · [License](https://github.com/google/fonts/blob/main/ofl/cinzeldecorative/OFL.txt) |
+| Cinzel | Screen titles | The Cinzel Project Authors | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Cinzel) · [License](https://github.com/google/fonts/blob/main/ofl/cinzel/OFL.txt) |
+| Pixelify Sans | UI text, buttons, inputs | The Pixelify Sans Project Authors | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Pixelify+Sans) · [License](https://github.com/google/fonts/blob/main/ofl/pixelifysans/OFL.txt) |
+
+## Derived assets
+
+Assets we produced from the sources above. CC0 allows modification without attribution, but the chain is recorded for traceability.
+
+| Derived asset | Made from | How |
+|---|---|---|
+| `wizard_cast.png` (240×300) | Quaternius `Wizard.blend`, action `Spell1`, frame 14 | Blender 4.5 headless render: EEVEE, nearest-neighbour texture sampling, warm key + violet rim light, transparent background |
+| `wizard_idle.png` (200×300) | Quaternius `Wizard.blend`, action `Idle_Weapon`, frame 20 | Same render setup as above |
+| `bg_temple_480.png` (480×270) | dreamsearchrepeat `111_3.png` (1920×1080) | Downscaled to 480×270; upscaled in the UI with `image-rendering: pixelated` and tinted violet for the PSX look |
+
+## Evaluated, not used
+
+| Asset | Author | License | Reason not used |
+|---|---|---|---|
+| [Background Nightsky](https://opengameart.org/node/126300) | tigitalart | CC0 1.0 | Soft cartoon style clashes with the PSX look |
+| [Fantasy Concept 3](https://opengameart.org/node/158980) | drummyfish | CC0 1.0 | Bright daytime palette; kept as a reference for a dithered 320×240 style |
