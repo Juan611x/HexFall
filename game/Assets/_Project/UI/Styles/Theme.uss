@@ -50,7 +50,7 @@
 .hf-text--label {
     -unity-font-definition: var(--hf-font-ui-bold);
     color: var(--hf-color-label);
-    font-size: 18px;
+    font-size: 16px;
     letter-spacing: 4px;
 }
 
@@ -62,7 +62,7 @@
 
 .hf-text--muted {
     color: var(--hf-color-text-muted);
-    font-size: 18px;
+    font-size: 15px;
     white-space: normal;
 }
 
@@ -114,7 +114,7 @@
     border-width: 0;
     border-radius: 0;
     color: var(--hf-color-accent);
-    font-size: 18px;
+    font-size: 15px;
     -unity-font-definition: var(--hf-font-ui);
 }
 .hf-link:hover { color: var(--hf-color-text); }
@@ -135,9 +135,18 @@
 
 .hf-divider { flex-direction: row; align-items: center; }
 .hf-divider__line { flex-grow: 1; height: 2px; background-color: var(--hf-color-border); }
-.hf-divider__text { margin: 0 14px; color: var(--hf-color-text-muted); font-size: 18px; }
+.hf-divider__text { margin: 0 14px; color: var(--hf-color-text-muted); font-size: 16px; }
 
 /* Layout */
+.hf-scanlines {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("project://database/Assets/_Project/UI/Textures/Scanlines.png");
+    background-repeat: repeat repeat;
+}
 
 .hf-back {
     position: absolute;
@@ -172,3 +181,11 @@
 }
 .title__footer-links { flex-direction: row; }
 .title__footer-links > * { margin-left: 24px; }
+
+/* PSX UI mode: the panel is rendered at the reduced PSX resolution, so small texts grow and the
+   scanline overlay is dropped (the post-pass dither provides the grain). */
+.hf-psx-ui .hf-text--label { font-size: 18px; }
+.hf-psx-ui .hf-text--muted { font-size: 18px; }
+.hf-psx-ui .hf-link { font-size: 18px; }
+.hf-psx-ui .hf-divider__text { font-size: 18px; }
+.hf-psx-ui .hf-scanlines { display: none; }

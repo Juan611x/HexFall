@@ -2,5 +2,6 @@
     <ui:VisualElement name="layout-root" class="hf-root">
         <ui:VisualElement name="screen-content" class="hf-fill" />
         <ui:Button name="back-button" text="BACK" class="hf-btn hf-btn--ghost hf-back" />
+        <ui:VisualElement name="scanlines" class="hf-scanlines" picking-mode="Ignore" />
     </ui:VisualElement>
 </ui:UXML>
