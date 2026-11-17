@@ -22,7 +22,8 @@ namespace HexFall.UI
             _root = GetComponent<UIDocument>().rootVisualElement;
             var root = _root;
             _castReaction = new MenuClickCastReaction(new AnimatorWizardAnimator(wizardAnimator));
-            root.RegisterCallback<ClickEvent>(OnPanelClick, TrickleDown.TrickleDown);
+            // Pointer-down, not ClickEvent: a navigating button removes itself on pointer-up, so no click is raised for it.
+            root.RegisterCallback<PointerDownEvent>(OnPanelPointerDown, TrickleDown.TrickleDown);
             // Keyboard/gamepad activation of a focused Button raises no ClickEvent.
             root.RegisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
             _router = new ScreenRouter(ScreenId.Title);
@@ -37,7 +38,7 @@ namespace HexFall.UI
 
         private void OnDisable()
         {
-            _root?.UnregisterCallback<ClickEvent>(OnPanelClick, TrickleDown.TrickleDown);
+            _root?.UnregisterCallback<PointerDownEvent>(OnPanelPointerDown, TrickleDown.TrickleDown);
             _root?.UnregisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
             _root = null;
             _presenter?.Dispose();
@@ -46,7 +47,7 @@ namespace HexFall.UI
             _host = null;
         }
 
-        private void OnPanelClick(ClickEvent evt) => _castReaction.OnClick(evt.target as VisualElement);
+        private void OnPanelPointerDown(PointerDownEvent evt) => _castReaction.OnClick(evt.target as VisualElement);
 
         private void OnPanelSubmit(NavigationSubmitEvent evt) => _castReaction.OnClick(evt.target as VisualElement);
 

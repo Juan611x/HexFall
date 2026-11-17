@@ -6,7 +6,7 @@ namespace HexFall.UI
     {
         public static readonly Vector2 Invalid = new Vector2(float.NaN, float.NaN);
 
-        // Screen origin is bottom-left, panel origin is top-left.
+        // UI Toolkit hands this function pointer positions already flipped to a top-left origin.
         public static Vector2 Map(Vector2 screenPosition, Vector2 screenSize, Vector2 targetSize)
         {
             if (screenSize.x <= 0f || screenSize.y <= 0f) return Invalid;
@@ -15,7 +15,7 @@ namespace HexFall.UI
 
             return new Vector2(
                 screenPosition.x / screenSize.x * targetSize.x,
-                (1f - screenPosition.y / screenSize.y) * targetSize.y);
+                screenPosition.y / screenSize.y * targetSize.y);
         }
     }
 }

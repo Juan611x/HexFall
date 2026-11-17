@@ -9,19 +9,19 @@ namespace HexFall.UI.Tests
         private static readonly Vector2 Target = new Vector2(640f, 360f);
 
         [Test]
-        public void ScreenBottomLeftMapsToPanelBottomLeft()
+        public void TopLeftMapsToTopLeft()
         {
             var p = ScreenToPanelMapper.Map(new Vector2(0f, 0f), Screen, Target);
             Assert.AreEqual(0f, p.x, 1e-4f);
-            Assert.AreEqual(360f, p.y, 1e-4f);
+            Assert.AreEqual(0f, p.y, 1e-4f);
         }
 
         [Test]
-        public void ScreenTopRightMapsToPanelTopRight()
+        public void BottomRightMapsToBottomRight()
         {
             var p = ScreenToPanelMapper.Map(new Vector2(1280f, 720f), Screen, Target);
             Assert.AreEqual(640f, p.x, 1e-4f);
-            Assert.AreEqual(0f, p.y, 1e-4f);
+            Assert.AreEqual(360f, p.y, 1e-4f);
         }
 
         [Test]
@@ -33,11 +33,11 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void YAxisIsFlippedAndScaled()
+        public void BothAxesAreScaledWithoutFlipping()
         {
             var p = ScreenToPanelMapper.Map(new Vector2(100f, 200f), Screen, Target);
             Assert.AreEqual(50f, p.x, 1e-4f);
-            Assert.AreEqual((720f - 200f) * 0.5f, p.y, 1e-4f);
+            Assert.AreEqual(100f, p.y, 1e-4f);
         }
 
         [TestCase(-1f, 100f)]
