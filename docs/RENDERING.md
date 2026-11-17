@@ -36,7 +36,7 @@ UI Toolkit normally draws as a screen overlay after the camera, outside the post
 - Off: no `targetTexture`, no custom screen-to-panel function, `_PSXUIEnabled` = 0, no render texture allocated.
 - On: the panel settings (instantiated at runtime) render the panel into a `RenderTexture` sized like the URP render target, `screen size x renderScale` (truncated, same as URP). It is rebuilt when the screen size or render scale changes and cleared every frame. The texture is published as global `_PSXUITex` plus `_PSXUIEnabled` (1). `HexFall/PSX Post` alpha-composites it (premultiplied), point-sampled, before saturation, quantization and dither. The root element gets the `hf-psx-ui` USS class: small texts (labels, hints, links, divider) grow to 18 px so they stay legible at half render scale, and the scanline overlay is hidden because the dither already provides the grain.
 - Input in On mode: `PanelSettings.SetScreenToPanelSpaceFunction` uses `ScreenToPanelMapper` (pure, unit-tested). UI Toolkit passes pointer positions already flipped to a top-left origin, so the mapper only scales screen size to texture size and returns NaN outside the screen. It must not flip Y again.
-- Layout still scales from the 1280x720 reference, so the panel is minified when the texture is smaller.
+- Layout scales from the 1280x720 reference with match = height (panel settings), so UI size follows screen height and width only changes the available room; screens are flex layouts (capped columns, vertical centering, scroll fallback), not absolute coordinates.
 
 ## Menu wizard cast
 

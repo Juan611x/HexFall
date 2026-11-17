@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hf="HexFall.UI">
-    <ui:VisualElement class="hf-fill" picking-mode="Ignore">
+    <ui:VisualElement class="hf-screen hf-screen--lobby" picking-mode="Ignore">
         <ui:VisualElement class="lobby__header" picking-mode="Ignore">
             <ui:VisualElement class="hf-panel lobby__card">
                 <ui:VisualElement class="lobby__avatar" picking-mode="Ignore">
@@ -21,23 +21,27 @@
                 </ui:Button>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement class="lobby__main" picking-mode="Ignore">
-            <ui:Label text="Ready for the arena?" class="hf-text--title" />
-            <ui:Label text="Free-for-all &#183; 2&#8211;8 wizards &#183; 3-minute rounds" class="hf-text--sub" />
-            <ui:Button name="find-match-button" text="FIND MATCH" class="hf-btn hf-btn--primary hf-btn--big" />
-            <ui:VisualElement name="searching-block" class="hf-panel lobby__searching" style="display: none;">
-                <ui:VisualElement class="lobby__search-row">
-                    <ui:VisualElement name="blink" class="lobby__blink" />
-                    <ui:Label name="search-label" text="SEARCHING 0:00" class="lobby__search-label" />
+        <ui:VisualElement class="hf-screen__main" picking-mode="Ignore">
+            <ui:ScrollView class="hf-col lobby__col" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden">
+                <ui:VisualElement class="lobby__main" picking-mode="Ignore">
+                    <ui:Label text="Ready for the arena?" class="hf-text--title" />
+                    <ui:Label text="Free-for-all &#183; 2&#8211;8 wizards &#183; 3-minute rounds" class="hf-text--sub" />
+                    <ui:Button name="find-match-button" text="FIND MATCH" class="hf-btn hf-btn--primary hf-btn--big" />
+                    <ui:VisualElement name="searching-block" class="hf-panel lobby__searching" style="display: none;">
+                        <ui:VisualElement class="lobby__search-row">
+                            <ui:VisualElement name="blink" class="lobby__blink" />
+                            <ui:Label name="search-label" text="SEARCHING 0:00" class="lobby__search-label" />
+                        </ui:VisualElement>
+                        <ui:Label text="Looking for wizards in your region&#8230;" class="hf-text--sub" />
+                        <ui:Button name="cancel-search-button" text="CANCEL" class="hf-btn hf-btn--danger lobby__cancel" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="lobby__grid">
+                        <ui:Button name="leaderboard-button" text="LEADERBOARD" class="hf-btn hf-btn--secondary hf-gap-end" />
+                        <ui:Button name="how-to-play-button" text="HOW TO PLAY" class="hf-btn hf-btn--secondary" />
+                    </ui:VisualElement>
+                    <ui:Button name="logout-button" text="LOG OUT" class="hf-btn hf-btn--ghost lobby__logout" />
                 </ui:VisualElement>
-                <ui:Label text="Looking for wizards in your region&#8230;" class="hf-text--sub" />
-                <ui:Button name="cancel-search-button" text="CANCEL" class="hf-btn hf-btn--danger lobby__cancel" />
-            </ui:VisualElement>
-            <ui:VisualElement class="lobby__grid">
-                <ui:Button name="leaderboard-button" text="LEADERBOARD" class="hf-btn hf-btn--secondary hf-gap-end" />
-                <ui:Button name="how-to-play-button" text="HOW TO PLAY" class="hf-btn hf-btn--secondary" />
-            </ui:VisualElement>
-            <ui:Button name="logout-button" text="LOG OUT" class="hf-btn hf-btn--ghost lobby__logout" />
+            </ui:ScrollView>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hf="HexFall.UI">
-    <ui:VisualElement class="hf-fill" picking-mode="Ignore">
+    <ui:VisualElement class="hf-screen" picking-mode="Ignore"><ui:VisualElement class="hf-screen__main hf-screen__main--center" picking-mode="Ignore"><ui:ScrollView class="hf-col verify__col" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden">
         <ui:VisualElement class="hf-panel verify__panel">
             <ui:VisualElement class="verify__emblem" picking-mode="Ignore">
                 <hf:HexagonElement class="hf-hex hf-fill" />
@@ -19,5 +19,5 @@
             <ui:Button name="verify-submit" text="VERIFY AND ENTER" class="hf-btn hf-btn--primary verify__submit" />
             <ui:Button name="resend-button" class="hf-link" />
         </ui:VisualElement>
-    </ui:VisualElement>
+    </ui:ScrollView></ui:VisualElement></ui:VisualElement>
 </ui:UXML>

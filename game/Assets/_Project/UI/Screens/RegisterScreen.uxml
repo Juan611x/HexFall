@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hf="HexFall.UI">
-    <ui:VisualElement class="hf-fill" picking-mode="Ignore">
+    <ui:VisualElement class="hf-screen" picking-mode="Ignore"><ui:VisualElement class="hf-screen__main" picking-mode="Ignore"><ui:ScrollView class="hf-col register__col" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden">
         <ui:VisualElement class="hf-panel register__panel">
             <ui:Label text="Forge your wizard" class="hf-text--title" />
             <ui:Label text="One account keeps your eliminations, wins and rank." class="hf-text--sub" />
@@ -37,5 +37,5 @@
                 <ui:Button name="login-link" text="Log in" class="hf-link" />
             </ui:VisualElement>
         </ui:VisualElement>
-    </ui:VisualElement>
+    </ui:ScrollView></ui:VisualElement></ui:VisualElement>
 </ui:UXML>

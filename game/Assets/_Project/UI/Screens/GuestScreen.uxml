@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hf="HexFall.UI">
-    <ui:VisualElement class="hf-fill" picking-mode="Ignore">
+    <ui:VisualElement class="hf-screen" picking-mode="Ignore"><ui:VisualElement class="hf-screen__main" picking-mode="Ignore"><ui:ScrollView class="hf-col guest__col" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden">
         <ui:VisualElement class="hf-panel guest__panel">
             <ui:Label text="Name your wizard" class="hf-text--title" />
             <ui:Label text="Pick a name for this session, or roll a new one." class="hf-text--sub" />
@@ -20,5 +20,5 @@
                 <ui:Button name="create-account-link" text="Create an account" class="hf-link" />
             </ui:VisualElement>
         </ui:VisualElement>
-    </ui:VisualElement>
+    </ui:ScrollView></ui:VisualElement></ui:VisualElement>
 </ui:UXML>

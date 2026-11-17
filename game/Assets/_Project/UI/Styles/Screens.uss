@@ -8,7 +8,8 @@
 }
 
 .hf-panel {
-    position: absolute;
+    position: relative;
+    align-self: stretch;
     background-color: var(--hf-color-panel);
     border-width: 2px 6px 6px 2px;
     border-color: var(--hf-color-border) var(--hf-color-shadow) var(--hf-color-shadow) var(--hf-color-border);
@@ -119,12 +120,12 @@
 }
 
 /* Login */
-.login__panel { left: 160px; top: 96px; width: 460px; padding: 40px 40px 20px 40px; }
+.login__panel { padding: 40px 40px 20px 40px; }
 .login__panel > * { margin-bottom: 24px; }
 .login__panel > .hf-text--title { margin-bottom: 8px; }
 
 /* Register */
-.register__panel { left: 160px; top: 68px; width: 580px; padding: 32px 36px 28px 36px; }
+.register__panel { padding: 32px 36px 28px 36px; }
 .register__panel > * { margin-bottom: 10px; }
 .register__panel > .hf-text--title { margin-bottom: 6px; }
 .register__pair { flex-direction: row; }
@@ -138,7 +139,7 @@
 .hf-rule--met .hf-rule__text { color: var(--hf-color-accent); }
 
 /* Verify */
-.verify__panel { left: 360px; top: 120px; width: 560px; padding: 40px; align-items: center; }
+.verify__panel { padding: 40px; align-items: center; }
 .verify__panel > * { margin-bottom: 20px; }
 .verify__emblem { width: 88px; height: 100px; margin-bottom: 8px; align-items: center; justify-content: center; }
 .verify__envelope { width: 44px; height: 44px; color: var(--hf-color-text); }
@@ -155,22 +156,20 @@
 .verify__submit { align-self: stretch; }
 
 /* Guest */
-.guest__panel { left: 160px; top: 130px; width: 480px; padding: 36px 36px 18px 36px; }
+.guest__panel { padding: 36px 36px 18px 36px; }
 .guest__panel .hf-text--title { font-size: 34px; }
 .guest__panel > * { margin-bottom: 22px; }
 .guest__panel > .hf-text--title { margin-bottom: 6px; }
 
 /* Lobby */
 .lobby__header {
-    position: absolute;
-    left: 48px;
-    right: 48px;
-    top: 32px;
+    flex-shrink: 0;
     flex-direction: row;
     justify-content: space-between;
     align-items: flex-start;
+    padding: 0 48px;
 }
-.lobby__card { position: relative; flex-direction: row; align-items: center; padding: 12px 18px; }
+.lobby__card { flex-direction: row; align-items: center; padding: 12px 18px; }
 .lobby__avatar { width: 44px; height: 50px; margin-right: 16px; }
 .lobby__name-row { flex-direction: row; align-items: center; }
 .lobby__name { -unity-font-definition: var(--hf-font-ui-bold); font-size: 24px; color: var(--hf-color-text); }
@@ -195,12 +194,11 @@
     font-size: 16px;
 }
 .lobby__settings { width: 44px; height: 44px; }
-.lobby__main { position: absolute; left: 96px; top: 200px; width: 460px; }
 .lobby__main > * { margin-bottom: 18px; }
 .lobby__main > .hf-text--title { margin-bottom: 6px; }
 .hf-btn--big { height: 96px; font-size: 34px; }
 .hf-btn--big:active { height: 93px; }
-.lobby__searching { position: relative; padding: 18px; align-items: flex-start; }
+.lobby__searching { padding: 18px; align-items: flex-start; }
 .lobby__searching > * { margin-bottom: 12px; }
 .lobby__search-row { flex-direction: row; align-items: center; }
 .lobby__blink { width: 14px; height: 14px; margin-right: 12px; background-color: var(--hf-color-accent); }
@@ -213,3 +211,30 @@
 
 .hf-psx-ui .hf-help { font-size: 18px; }
 .hf-psx-ui .hf-rule__text { font-size: 18px; }
+
+/* Responsive layout: every screen is a flex column (optional header, main row, optional footer).
+   Content columns scale with the panel scale mode (match height) and are capped by max-width,
+   centered vertically, and scroll when the viewport is too short. */
+.hf-screen {
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 88px 0 28px 0;
+}
+.hf-screen--title { padding-top: 24px; }
+.hf-screen--lobby { padding-top: 32px; }
+.hf-screen__main {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    flex-direction: row;
+    padding: 0 7.5%;
+}
+.hf-screen__main--center { justify-content: center; padding: 0 24px; }
+.hf-col { width: 100%; flex-shrink: 1; flex-grow: 0; }
+.hf-col .unity-scroll-view__content-container { flex-grow: 1; justify-content: center; }
+.login__col { max-width: 460px; }
+.register__col { max-width: 580px; }
+.verify__col { max-width: 560px; }
+.guest__col { max-width: 480px; }
+.lobby__col { max-width: 460px; }
+.title__col { max-width: 520px; }
