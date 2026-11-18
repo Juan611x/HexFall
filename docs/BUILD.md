@@ -60,7 +60,7 @@ It also disables caching and binds to `127.0.0.1` only.
 ## Build side effects
 
 A batch build re-serializes tracked files and creates a folder. **Do not commit them.**
-After a build (or a batch test run), restore:
+After a build, restore (a batch EditMode test run was observed not to touch them):
 
 ```bash
 git restore game/Assets/Settings game/ProjectSettings/ProjectSettings.asset
@@ -80,5 +80,5 @@ game does not load.
 ## Alternative: from the editor
 
 - Menu **HexFall > Build > WebGL** builds to `Builds/WebGL` using the same code path.
-- Or **File > Build Profiles > WebGL > Build And Run** (Unity's own server; Brotli
-  headers are handled for you).
+- Or **File > Build Profiles > WebGL > Build And Run**, which serves the build with Unity's
+  own local server (not yet tried on this project).
