@@ -119,9 +119,25 @@ namespace HexFall.UI
 
         private void OnPanelKeyDown(KeyDownEvent evt) => _music?.OnUserGesture();
 
-        private void OnPanelPointerDown(PointerDownEvent evt) => OnPress(evt.target as VisualElement);
+        private void OnPanelPointerDown(PointerDownEvent evt)
+        {
+            OnPress(evt.target as VisualElement);
+            ReleasePointerFocusNextFrame();
+        }
 
         private void OnPanelSubmit(NavigationSubmitEvent evt) => OnPress(evt.target as VisualElement);
+
+        // Pointer-up never reaches the root while a button or slider captures the pointer, so this runs
+        // from pointer-down on the next frame, after the press has focused its element. Capture, not
+        // focus, drives clicks and slider drags, so both keep working.
+        private void ReleasePointerFocusNextFrame() => _root?.schedule.Execute(() =>
+        {
+            var focused = _root?.focusController?.focusedElement;
+            if (PointerFocusRelease.ShouldRelease(focused))
+            {
+                focused.Blur();
+            }
+        });
 
         private void OnPanelPointerEnter(PointerEnterEvent evt) =>
             _soundReaction.OnPointerEnter(evt.target as VisualElement);
