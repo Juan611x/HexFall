@@ -1,8 +1,8 @@
-# Client Hosting: S3 + CloudFront
+# Journal: Client Hosting (S3 + CloudFront)
 
-This document tells the story of how we designed the minimum deployment of the HexFall WebGL client: a private S3 bucket, a CloudFront distribution in front of it, and a public HTTPS URL. It is a design, not a record of a deployment. Nothing described here has been provisioned or tested yet.
+This journal entry tells the story of how we designed the minimum deployment of the HexFall WebGL client: a private S3 bucket, a CloudFront distribution in front of it, and a public HTTPS URL. It is a design, not a record of a deployment. Nothing described here has been provisioned or tested yet.
 
-The picture lives in [diagrams/client-hosting.drawio](diagrams/client-hosting.drawio). Open it in [diagrams.net](https://app.diagrams.net) or with the VS Code Draw.io extension. Each decision is also summarized in [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) as DD-010, DD-011 and DD-012.
+The picture lives in [client-hosting.drawio](../diagrams/client-hosting.drawio). Open it in [diagrams.net](https://app.diagrams.net) or with the VS Code Draw.io extension.
 
 ## What we are actually shipping
 
@@ -22,7 +22,7 @@ The default VPC will matter later, for the game server. The ALB and the ECS Farg
 
 The alternative that comes to mind first is a small web server, on EC2 or in a container on ECS, serving the files. We ruled it out because it buys nothing. A server has to be patched, sized and paid for around the clock, in order to hand out files that never change between deploys.
 
-S3 has none of that. There are no servers to patch, and cost is per use (storage plus requests). It is available in `eu-west-1`, which satisfies the region lock described in [AWS_ENVIRONMENT.md](AWS_ENVIRONMENT.md).
+S3 has none of that. There are no servers to patch, and cost is per use (storage plus requests). It is available in `eu-west-1`, which satisfies the region lock described in [AWS_ENVIRONMENT.md](../AWS_ENVIRONMENT.md).
 
 We also looked at AWS Amplify Hosting. It would work, but it adds another service with its own build pipeline and its own concepts, and we already have a build process (`tools/build-webgl.ps1`) and a plan for CI. Amplify would solve a problem we do not have.
 
@@ -92,7 +92,7 @@ So the metadata has to be set on each object when it is uploaded:
 | `index.html` | `text/html` | none |
 | `*.loader.js` | `application/javascript` | none |
 
-This is exactly the rule that `tools/serve_webgl.py` already applies for local testing, documented in `docs/BUILD.md` (part of the WebGL build tooling work). Production simply has to match what we already verified locally.
+This is exactly the rule that `tools/serve_webgl.py` already applies for local testing, documented in [BUILD.md](../BUILD.md). Production simply has to match what we already verified locally.
 
 The trade-off is that clients without Brotli support cannot load the game. Every modern browser supports Brotli over HTTPS, and we are already HTTPS-only, so we accept it.
 
@@ -154,7 +154,7 @@ A word of honesty about the word "agnostic". Here it means agnostic to account, 
 
 ## Checking the account constraints
 
-[AWS_ENVIRONMENT.md](AWS_ENVIRONMENT.md) lists the rules this lab account enforces. We checked the design against each.
+[AWS_ENVIRONMENT.md](../AWS_ENVIRONMENT.md) lists the rules this lab account enforces. We checked the design against each.
 
 - **IAM naming and boundary:** this design creates no IAM roles. OAC uses a service principal in a bucket policy, not a role, so the `student-*` and `StudentBoundary` rule is not triggered.
 - **Region lock:** S3 is regional and lives in `eu-west-1`, which is allowed. CloudFront is global and works under the lock.

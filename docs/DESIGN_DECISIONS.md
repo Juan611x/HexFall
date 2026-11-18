@@ -15,9 +15,6 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 | [DD-007](#dd-007-static-client-on-s3--cloudfront) | Static client on S3 + CloudFront | Accepted |
 | [DD-008](#dd-008-monorepo-layout) | Monorepo layout | Accepted |
 | [DD-009](#dd-009-infrastructure-as-code-with-terraform) | Infrastructure as code with Terraform | Accepted |
-| [DD-010](#dd-010-private-bucket-behind-cloudfront-origin-access-control) | Private bucket behind CloudFront Origin Access Control | Accepted |
-| [DD-011](#dd-011-terraform-provisions-a-script-deploys-builds) | Terraform provisions, a script deploys builds | Accepted |
-| [DD-012](#dd-012-environment-agnostic-terraform-module-for-the-static-client) | Environment-agnostic Terraform module for the static client | Accepted |
 
 ---
 
@@ -92,27 +89,3 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 - **Decision:** All AWS resources are defined in Terraform, with remote state in S3 using native lock files (`use_lockfile`, Terraform ≥ 1.10).
 - **Rationale:** Reproducible, reviewable infrastructure changes; S3 native locking avoids a separate lock table.
 - **Trade-offs:** Account constraints must be encoded in code: region `eu-west-1`, IAM roles named `student-*` with the `StudentBoundary` permissions boundary.
-
-## DD-010: Private bucket behind CloudFront Origin Access Control
-
-- **Status:** Accepted
-- **Context:** DD-007 puts the client in S3 behind CloudFront. The bucket must be readable by CloudFront without being exposed to the internet.
-- **Decision:** The bucket is private: Block Public Access (all four settings), `BucketOwnerEnforced` object ownership, and SSE-S3 encryption. CloudFront reads it through Origin Access Control (SigV4). The bucket policy allows `s3:GetObject` to `cloudfront.amazonaws.com` only when `AWS:SourceArn` matches this distribution. There is no VPC involved: S3 and CloudFront are managed services.
-- **Rationale:** One public entry point, no ACLs, and a policy that cannot be reused by another distribution (confused-deputy guard). OAC is the mechanism AWS recommends over the legacy OAI, and unlike the S3 website endpoint it works with a private bucket and speaks HTTPS to the origin. SSE-KMS was rejected as extra cost and moving parts for public game files.
-- **Trade-offs:** No `s3:ListBucket`, so a missing file returns 403 instead of 404. No custom domain in the minimum deployment (default `*.cloudfront.net` certificate). Full story: [CLIENT_HOSTING.md](CLIENT_HOSTING.md).
-
-## DD-011: Terraform provisions, a script deploys builds
-
-- **Status:** Accepted
-- **Context:** The client needs infrastructure (rarely changed) and a new set of files on every build (frequently changed).
-- **Decision:** Terraform manages the infrastructure only. A deploy script (`tools/deploy-webgl`, to be written) uploads the build with `aws s3 sync`, sets `Content-Encoding` and `Content-Type` per file, and creates a CloudFront invalidation. Terraform outputs (bucket name, distribution id, URL) are the contract between them.
-- **Rationale:** Different lifecycles: infrastructure changes are reviewed through plans, releases should be one quick command that CI can also call. It keeps about 18 MB of build artifacts out of Terraform state and plans.
-- **Trade-offs:** Two tools to maintain and a manual contract through outputs. The rejected alternative, one `aws_s3_object` per file, bloats state and plans. Full story: [CLIENT_HOSTING.md](CLIENT_HOSTING.md).
-
-## DD-012: Environment-agnostic Terraform module for the static client
-
-- **Status:** Accepted
-- **Context:** The same hosting should be recreatable in other environments or accounts without editing code.
-- **Decision:** A reusable module `infra/modules/static-site` and a thin composition `infra/envs/dev`. The bucket name is built from `project`, `environment` and the caller account ID, because S3 names are global. The region is a variable defaulting to `eu-west-1`. The S3 backend is configured partially through a per-environment `backend.hcl` (state with `use_lockfile`, DD-009). The provider sets `default_tags`.
-- **Rationale:** Nothing is hard-coded to an account, and a new environment is a new thin composition. Per-environment parameters (`enable_versioning`, `force_destroy`, `price_class`) let dev stay disposable and production stay safe.
-- **Trade-offs:** Agnostic to account, environment and region, not to cloud provider: S3 and CloudFront are AWS-specific. Full story: [CLIENT_HOSTING.md](CLIENT_HOSTING.md).
