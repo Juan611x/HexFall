@@ -31,15 +31,21 @@ namespace HexFall.UI
         private IAuthService _auth;
         private SessionState _session;
         private GuestNameGenerator _guestNames;
+        private SoundSettings _sound;
+        private SoundSettingsSaver _soundSaver;
+        private SoundMixerPresenter _mixer;
 
         private void OnEnable()
         {
             _root = GetComponent<UIDocument>().rootVisualElement;
             var root = _root;
+            var soundStore = new PlayerPrefsSoundSettingsStore();
+            _sound = new SoundSettings(soundStore.Load());
+            _soundSaver = new SoundSettingsSaver(_sound, soundStore);
             var canPlay = audioLibrary != null;
-            IMenuSfx menuSfx = canPlay && uiAudioSource != null ? new UnityMenuSfx(uiAudioSource, audioLibrary) : new SilentSfx();
+            IMenuSfx menuSfx = canPlay && uiAudioSource != null ? new UnityMenuSfx(uiAudioSource, audioLibrary, () => _sound.EffectsMultiplier) : new SilentSfx();
             ISpellSfx spellSfx = canPlay && spellAudioSource != null
-                ? new UnitySpellSfx(spellAudioSource, audioLibrary, new SpellPicker(new System.Random().Next))
+                ? new UnitySpellSfx(spellAudioSource, audioLibrary, new SpellPicker(new System.Random().Next), () => _sound.EffectsMultiplier)
                 : new SilentSfx();
             _soundReaction = new MenuSoundReaction(menuSfx);
             _castReaction = new MenuClickCastReaction(new SpellSoundWizardAnimator(new AnimatorWizardAnimator(wizardAnimator), spellSfx));
@@ -67,6 +73,7 @@ namespace HexFall.UI
             _host.ScreenShown += OnScreenShown;
             _host.ScreenHidden += OnScreenHidden;
             _host.ShowCurrent();
+            _mixer = new SoundMixerPresenter(new SoundMixerView(root.Q<VisualElement>("sound-mixer")), _sound);
         }
 
         private void OnDisable()
@@ -76,6 +83,10 @@ namespace HexFall.UI
             _root?.UnregisterCallback<PointerEnterEvent>(OnPanelPointerEnter, TrickleDown.TrickleDown);
             _root?.UnregisterCallback<KeyDownEvent>(OnPanelKeyDown, TrickleDown.TrickleDown);
             _root = null;
+            _mixer?.Dispose();
+            _mixer = null;
+            _soundSaver?.Dispose();
+            _soundSaver = null;
             _presenter?.Dispose();
             _presenter = null;
             _host?.Dispose();
@@ -102,7 +113,8 @@ namespace HexFall.UI
                 new UnityMusicLayers(themeAudioSource, ambientAudioSource),
                 new[] { audioLibrary.themeVolume, audioLibrary.ambientVolume },
                 audioLibrary.musicFadeInSeconds,
-                requireGesture);
+                requireGesture,
+                () => _sound.MusicMultiplier);
         }
 
         private void OnPanelKeyDown(KeyDownEvent evt) => _music?.OnUserGesture();
