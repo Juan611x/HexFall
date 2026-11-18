@@ -118,6 +118,18 @@ python tools/deploy_webgl.py --build-dir game/Builds/WebGL \
     --bucket "$BUCKET" --distribution-id "$DIST"
 ```
 
+The same in Windows PowerShell:
+
+```powershell
+$env:AWS_PROFILE = "commit-lab"
+terraform -chdir=infra/envs/dev init -backend-config=backend.hcl
+$Bucket = terraform -chdir=infra/envs/dev output -raw bucket_name
+$Dist = terraform -chdir=infra/envs/dev output -raw distribution_id
+
+python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket $Bucket --distribution-id $Dist --dry-run
+python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket $Bucket --distribution-id $Dist
+```
+
 `HEXFALL_BUCKET` and `HEXFALL_DISTRIBUTION_ID` can replace the flags. `config.json` is generated from `HEXFALL_ENVIRONMENT`, `HEXFALL_REGION`, `HEXFALL_API_BASE_URL`, `HEXFALL_REALTIME_URL`, `HEXFALL_COGNITO_USER_POOL_ID` and `HEXFALL_COGNITO_CLIENT_ID`; unset values become empty strings. The script needs the AWS CLI and Python 3 only.
 
 Order of operations: assets, then `config.json` and `index.html` (never cached), then deletion of files no longer in the build, then a `/*` invalidation.
