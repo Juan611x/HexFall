@@ -1,0 +1,141 @@
+<mxfile host="app.diagrams.net" agent="hexfall-docs" version="24.0.0">
+  <diagram id="client-hosting" name="Client hosting">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Developer workstation -->
+        <mxCell id="dev" value="Developer workstation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;verticalAlign=top;align=left;spacingLeft=10;fontStyle=1;fontSize=13;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="20" y="40" width="300" height="620" as="geometry" />
+        </mxCell>
+        <mxCell id="unity" value="Unity editor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="90" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="build" value="tools/build-webgl.ps1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontFamily=Courier New;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="170" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="out" value="game/Builds/WebGL&lt;br&gt;Brotli .br files (~18 MB)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="250" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="tf" value="Terraform CLI&lt;br&gt;infra/envs/dev" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B42BC;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="380" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="deploy" value="tools/deploy-webgl (future)&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;sync + invalidate&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontFamily=Courier New;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="520" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- AWS Cloud -->
+        <mxCell id="cloud" value="AWS Cloud" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;container=0;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud_alt;strokeColor=#232F3E;fillColor=none;verticalAlign=top;align=left;spacingLeft=30;fontColor=#232F3E;dashed=0;" vertex="1" parent="1">
+          <mxGeometry x="380" y="40" width="1020" height="620" as="geometry" />
+        </mxCell>
+        <mxCell id="region" value="Region eu-west-1" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;container=0;pointerEvents=0;collapsible=0;recursiveResize=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_region;strokeColor=#147EBA;fillColor=none;verticalAlign=top;align=left;spacingLeft=30;fontColor=#147EBA;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="420" y="100" width="420" height="540" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s3" value="S3 bucket (private)&lt;br&gt;hexfall-&amp;lt;env&amp;gt;-client-&amp;lt;account-id&amp;gt;" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#7AA116;strokeColor=#ffffff;dashed=0;verticalLabelPosition=top;verticalAlign=bottom;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;" vertex="1" parent="1">
+          <mxGeometry x="700" y="170" width="60" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="s3note" value="Block Public Access x4 · BucketOwnerEnforced · SSE-S3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E9F3D0;strokeColor=#7AA116;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="590" y="250" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="policy" value="Bucket policy&lt;br&gt;Allow s3:GetObject to cloudfront.amazonaws.com only when AWS:SourceArn = this distribution" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=11;size=14;" vertex="1" parent="1">
+          <mxGeometry x="440" y="320" width="380" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="state" value="Terraform state bucket&lt;br&gt;(S3, use_lockfile)" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#7AA116;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;" vertex="1" parent="1">
+          <mxGeometry x="700" y="470" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cf" value="CloudFront distribution&lt;br&gt;https://dxxxx.cloudfront.net" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#8C4FFF;strokeColor=#ffffff;dashed=0;verticalLabelPosition=top;verticalAlign=bottom;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cloudfront;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="170" width="60" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cfnote" value="OAC (SigV4) · redirect-to-https · default certificate · PriceClass_100" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE3FF;strokeColor=#8C4FFF;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="990" y="250" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="global" value="Global service (outside the region lock)" style="text;html=1;align=center;verticalAlign=middle;fontSize=11;fontStyle=2;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="990" y="300" width="240" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="novpc" value="No VPC: S3 and CloudFront are managed services reached through AWS public endpoints. The default VPC comes into play later for the ALB + Fargate game server." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=11;size=14;align=left;spacingLeft=6;" vertex="1" parent="1">
+          <mxGeometry x="960" y="390" width="300" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="&lt;b&gt;Legend&lt;/b&gt;&lt;br&gt;solid line: runtime traffic&lt;br&gt;dashed line: provisioning / deploy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#999999;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="960" y="520" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Player -->
+        <mxCell id="player" value="Player browser" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#232F3D;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;" vertex="1" parent="1">
+          <mxGeometry x="1470" y="170" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Runtime edges (solid) -->
+        <mxCell id="e_player_cf" value="HTTPS GET" style="endArrow=classic;html=1;strokeWidth=2;labelBackgroundColor=#FFFFFF;fontSize=11;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="player" target="cf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cf_s3" value="signed origin request (OAC)" style="endArrow=classic;html=1;strokeWidth=2;labelBackgroundColor=#FFFFFF;fontSize=11;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="cf" target="s3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Provisioning / deploy edges (dashed) -->
+        <mxCell id="e_tf_s3" value="provisions (plan/apply)" style="endArrow=classic;html=1;dashed=1;labelBackgroundColor=#FFFFFF;fontSize=11;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="tf" target="s3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="330" y="405" />
+              <mxPoint x="330" y="200" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_tf_cf" value="provisions (plan/apply)" style="endArrow=classic;html=1;dashed=1;labelBackgroundColor=#FFFFFF;fontSize=11;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="tf" target="cf">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="315" y="405" />
+              <mxPoint x="315" y="82" />
+              <mxPoint x="880" y="82" />
+              <mxPoint x="880" y="185" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_tf_policy" value="provisions" style="endArrow=classic;html=1;dashed=1;labelBackgroundColor=#FFFFFF;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="tf" target="policy">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tf_state" value="state" style="endArrow=classic;html=1;dashed=1;labelBackgroundColor=#FFFFFF;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="tf" target="state">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tf_deploy" value="outputs: bucket name,&lt;br&gt;distribution id, URL" style="endArrow=classic;html=1;dashed=1;labelBackgroundColor=#FFFFFF;fontSize=11;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="tf" target="deploy">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_unity_build" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="unity" target="build">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_build_out" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="build" target="out">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_out_deploy" value="build files" style="endArrow=classic;html=1;dashed=1;labelBackgroundColor=#FFFFFF;fontSize=11;edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="out" target="deploy">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="35" y="280" />
+              <mxPoint x="35" y="550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_deploy_s3" value="aws s3 sync&lt;br&gt;(Content-Encoding, Content-Type)" style="endArrow=classic;html=1;dashed=1;labelBackgroundColor=#FFFFFF;fontSize=11;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="deploy" target="s3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="370" y="550" />
+              <mxPoint x="370" y="218" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_deploy_cf" value="create-invalidation" style="endArrow=classic;html=1;dashed=1;labelBackgroundColor=#FFFFFF;fontSize=11;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="deploy" target="cf">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="170" y="690" />
+              <mxPoint x="900" y="690" />
+              <mxPoint x="900" y="215" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
