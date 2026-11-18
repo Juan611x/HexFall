@@ -43,7 +43,7 @@ One more parameter deserves a note: `force_destroy`. With it set to `true`, `ter
 
 With a private bucket, something has to sit in front of it. CloudFront is that something, and it brings three benefits we would want anyway.
 
-It gives us HTTPS for free on the default `*.cloudfront.net` domain, with no certificate to request. It caches files at the edge, so repeat visitors and visitors far from `eu-west-1` get the 18 MB build faster. And HTTPS is not optional for us: the game will later open a WSS connection to the ALB (DD-005), and browsers block a page served over plain HTTP from opening secure connections cleanly under mixed-content rules. Serving the page over HTTPS from the start avoids that class of problem.
+It gives us HTTPS for free on the default `*.cloudfront.net` domain, with no certificate to request. It caches files at the edge, so repeat visitors and visitors far from `eu-west-1` get the 18 MB build faster. And HTTPS is the right default for us anyway. Browsers increasingly restrict what a plain-HTTP page may do, and under mixed-content rules a page served over HTTPS may only open secure connections: when the game later talks to the ALB (DD-005), it will use `wss://`, never plain `ws://`. Serving the page over HTTPS from day one commits the whole path to encryption instead of discovering the constraint later.
 
 ## How CloudFront reads a private bucket
 
@@ -80,7 +80,7 @@ A custom domain is deliberately not part of this design. If we find a way to get
 
 This is the part that is easy to get wrong, and the part that breaks the game if it is wrong.
 
-Unity writes files like `HexFall.wasm.br`. The bytes are already Brotli-compressed. For the browser to use them, the response must say so with `Content-Encoding: br`, and it must carry the real type of the underlying file in `Content-Type`. CloudFront does not compress responses that already have a `Content-Encoding`, so it will not fix this for us. If the metadata is missing, the browser receives compressed bytes it does not know how to decode, and loading fails.
+Unity writes files like `Build/WebGL.wasm.br`. The bytes are already Brotli-compressed. For the browser to use them, the response must say so with `Content-Encoding: br`, and it must carry the real type of the underlying file in `Content-Type`. CloudFront does not compress responses that already have a `Content-Encoding`, so it will not fix this for us. If the metadata is missing, the browser receives compressed bytes it does not know how to decode, and loading fails.
 
 So the metadata has to be set on each object when it is uploaded:
 
@@ -162,7 +162,7 @@ A word of honesty about the word "agnostic". Here it means agnostic to account, 
 
 ## Cost at a glance
 
-We will not quote prices here. For a course project with a small audience, S3 storage of an 18 MB build, the CloudFront data transfer for a handful of players, and the invalidations all fit within the free usage AWS offers, and `PriceClass_100` keeps edge costs at the low end. We will verify this against the account's billing once the stack exists, rather than assume it.
+We will not quote prices here. For a course project with a small audience the bill should be negligible: an 18 MB build is a tiny amount of S3 storage, a handful of players generate little CloudFront transfer, one wildcard invalidation per deploy stays within the free invalidation paths, and `PriceClass_100` keeps edge costs at the low end. Whether the lab account qualifies for AWS free-tier offers is unknown (some of them apply only to new accounts), so we will check the account's billing once the stack exists rather than assume it is free.
 
 ## What comes next
 
