@@ -60,6 +60,26 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void ButtonInsideANoCastAreaDoesNotCast()
+        {
+            var area = new VisualElement();
+            area.AddToClassList(MenuClickCastReaction.NoCastClass);
+            var button = new Button();
+            area.Add(button);
+            _reaction.OnClick(button);
+            Assert.AreEqual(0, _wizard.Casts);
+        }
+
+        [Test]
+        public void NoCastButtonItselfDoesNotCast()
+        {
+            var button = new Button();
+            button.AddToClassList(MenuClickCastReaction.NoCastClass);
+            _reaction.OnClick(button);
+            Assert.AreEqual(0, _wizard.Casts);
+        }
+
+        [Test]
         public void NullTargetDoesNotCast()
         {
             _reaction.OnClick(null);

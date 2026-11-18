@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace HexFall.UI
 {
-    public enum IconKind { Eye, EyeOff, Dice, Envelope, Gear }
+    public enum IconKind { Eye, EyeOff, Dice, Envelope, Gear, Speaker, SpeakerOff }
 
     // Line icons painted with the element's `color`; avoids glyphs the pixel fonts do not ship.
     [UxmlElement]
@@ -44,6 +44,8 @@ namespace HexFall.UI
                 case IconKind.Dice: DrawDice(p, r); break;
                 case IconKind.Envelope: DrawEnvelope(p, r); break;
                 case IconKind.Gear: DrawGear(p, r); break;
+                case IconKind.Speaker: DrawSpeaker(p, r, false); break;
+                case IconKind.SpeakerOff: DrawSpeaker(p, r, true); break;
             }
         }
 
@@ -104,6 +106,41 @@ namespace HexFall.UI
             p.LineTo(new Vector2(box.center.x, box.center.y + h * 0.1f));
             p.LineTo(new Vector2(box.xMax, box.yMin));
             p.Stroke();
+        }
+
+        private static void DrawSpeaker(Painter2D p, Rect r, bool crossed)
+        {
+            Vector2 At(float fx, float fy) => new Vector2(r.xMin + fx * r.width, r.yMin + fy * r.height);
+
+            p.BeginPath();
+            p.MoveTo(At(0.08f, 0.38f));
+            p.LineTo(At(0.28f, 0.38f));
+            p.LineTo(At(0.5f, 0.18f));
+            p.LineTo(At(0.5f, 0.82f));
+            p.LineTo(At(0.28f, 0.62f));
+            p.LineTo(At(0.08f, 0.62f));
+            p.ClosePath();
+            p.Fill();
+            if (crossed)
+            {
+                p.BeginPath();
+                p.MoveTo(At(0.64f, 0.36f));
+                p.LineTo(At(0.92f, 0.64f));
+                p.Stroke();
+                p.BeginPath();
+                p.MoveTo(At(0.92f, 0.36f));
+                p.LineTo(At(0.64f, 0.64f));
+                p.Stroke();
+                return;
+            }
+
+            var c = At(0.5f, 0.5f);
+            foreach (var radius in new[] { 0.22f * r.width, 0.4f * r.width })
+            {
+                p.BeginPath();
+                p.Arc(c, radius, Angle.Degrees(-45f), Angle.Degrees(45f));
+                p.Stroke();
+            }
         }
 
         private static void DrawGear(Painter2D p, Rect r)

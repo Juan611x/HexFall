@@ -117,6 +117,54 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void MusicScaleMultipliesEveryTarget()
+        {
+            var player = new MenuMusicPlayer(_layers, new[] { 0.5f, 0.4f }, 0f, false, () => 0.5f);
+            player.Begin();
+            player.Tick(0f);
+            Assert.AreEqual(0.25f, _layers.Volumes[0], 1e-5f);
+            Assert.AreEqual(0.2f, _layers.Volumes[1], 1e-5f);
+        }
+
+        [Test]
+        public void ScaleChangeLandsOnTheNextTickWhileFading()
+        {
+            var scale = 1f;
+            var player = new MenuMusicPlayer(_layers, new[] { 0.5f, 0.4f }, 2f, false, () => scale);
+            player.Begin();
+            player.Tick(1f);
+            scale = 0.5f;
+            player.Tick(0f);
+            Assert.AreEqual(0.125f, _layers.Volumes[0], 1e-5f);
+            Assert.AreEqual(0.1f, _layers.Volumes[1], 1e-5f);
+        }
+
+        [Test]
+        public void ZeroScaleSilencesTheLayersAndRestoringBringsThemBack()
+        {
+            var scale = 0f;
+            var player = new MenuMusicPlayer(_layers, new[] { 0.5f, 0.4f }, 0f, false, () => scale);
+            player.Begin();
+            player.Tick(1f);
+            Assert.AreEqual(0f, _layers.Volumes[0]);
+            scale = 1f;
+            player.Tick(0f);
+            Assert.AreEqual(0.5f, _layers.Volumes[0], 1e-5f);
+        }
+
+        [Test]
+        public void ScaleChangeBeforeTheGestureAppliesWhenTheMusicStarts()
+        {
+            var scale = 1f;
+            var player = new MenuMusicPlayer(_layers, new[] { 0.5f, 0.4f }, 0f, true, () => scale);
+            player.Begin();
+            scale = 0.2f;
+            player.OnUserGesture();
+            player.Tick(0f);
+            Assert.AreEqual(0.1f, _layers.Volumes[0], 1e-5f);
+        }
+
+        [Test]
         public void FadeRunsFromTheMomentOfTheGesture()
         {
             var player = Create(true, 2f);

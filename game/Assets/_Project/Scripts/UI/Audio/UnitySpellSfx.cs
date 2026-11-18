@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace HexFall.UI
@@ -7,9 +8,11 @@ namespace HexFall.UI
         private readonly AudioSource _source;
         private readonly MenuAudioLibrary _library;
         private readonly SpellPicker _picker;
+        private readonly Func<float> _scale;
 
-        public UnitySpellSfx(AudioSource source, MenuAudioLibrary library, SpellPicker picker)
+        public UnitySpellSfx(AudioSource source, MenuAudioLibrary library, SpellPicker picker, Func<float> scale = null)
         {
+            _scale = scale ?? (() => 1f);
             _source = source;
             _library = library;
             _picker = picker;
@@ -24,7 +27,7 @@ namespace HexFall.UI
                 return;
             }
 
-            _source.PlayOneShot(clips[index], _library.spellVolume);
+            _source.PlayOneShot(clips[index], _library.spellVolume * _scale());
         }
     }
 }
