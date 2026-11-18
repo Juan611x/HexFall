@@ -35,7 +35,27 @@ Both clips are imported as Streaming, Vorbis quality 0.6 (the theme is mono, the
 
 Regenerate the theme with `python art/audio/compose_menu_theme.py <out.wav>` and replace `MenuTheme.wav`.
 
-## Mixer
+## Menu sound mixer
+
+A `SOUND` button at the top right of every menu screen opens a popover with `MUTE ALL` and two channels. The overlay lives in `ScreenLayout.uxml` (above the screen content), so it is mounted once and shown on Title, Login, Register, Verify, Guest and Lobby. Pattern: `SoundSettings` (pure model) + `SoundMixerPresenter` + `ISoundMixerView`/`SoundMixerView`, composed in `MenuBootstrap`.
+
+| Channel | Covers | Applied by |
+| --- | --- | --- |
+| Music | Theme and ambient layers | `MenuMusicPlayer` multiplies each layer target by the music multiplier on every tick, so changes are live and land correctly mid fade-in |
+| Effects | UI hover/click/back and spell one-shots | `UnityMenuSfx` and `UnitySpellSfx` multiply the one-shot volume by the effects multiplier |
+
+Rules:
+
+- Levels are 0-100 in steps of 5 and act as multipliers on the existing mix; the default (100%, nothing muted) sounds exactly as before.
+- Moving a channel slider sets its level and unmutes that channel.
+- A channel shows `Off` (and its slider is dimmed) when it or the master is muted. Master mute never changes channel levels or mute flags.
+- The trigger shows the crossed speaker when the master is muted or both channels are muted.
+- Pressing the trigger again, Escape or a navigation cancel closes the panel.
+- Everything under the overlay carries the `hf-no-cast` class: its controls keep click/hover sounds but never make the wizard cast.
+
+Persistence: `PlayerPrefsSoundSettingsStore` (`ISoundSettingsStore`) saves on every change under `hexfall.sound.master_muted`, `music_level`, `music_muted`, `effects_level` and `effects_muted`. On WebGL PlayerPrefs is backed by IndexedDB. Loaded values are clamped and snapped to the step by `SoundSettings`.
+
+## Unity AudioMixer (pending)
 
 Not created yet: `AudioMixerController` is internal and cannot be built from scripts. Create `Audio/HexFallMixer.mixer` in the editor (Assets > Create > Audio > Audio Mixer), add `Music` and `SFX` groups under `Master`, expose `MusicVolume` and `SfxVolume`, and set each `AudioSource`'s Output (UI and spell sources to `SFX`, music sources to `Music`).
 
