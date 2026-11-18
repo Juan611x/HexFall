@@ -101,16 +101,20 @@ data "aws_iam_policy_document" "trust" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # Only this repository, and only the deploy branches or a GitHub Environment.
+    # Only this repository, and only the deploy branches or the named GitHub
+    # Environments. Jobs that declare `environment:` get the environment subject,
+    # so a wildcard would trust any environment someone creates in the repository.
     # Pull requests from forks produce a different subject and cannot match.
     condition {
       test     = "StringLike"
       variable = "${local.github_oidc_host}:sub"
-      values = [
-        "repo:${var.github_repository}:ref:refs/heads/develop",
-        "repo:${var.github_repository}:ref:refs/heads/main",
-        "repo:${var.github_repository}:environment:*",
-      ]
+      values = concat(
+        [
+          "repo:${var.github_repository}:ref:refs/heads/develop",
+          "repo:${var.github_repository}:ref:refs/heads/main",
+        ],
+        [for env in var.deploy_environments : "repo:${var.github_repository}:environment:${env}"],
+      )
     }
   }
 }

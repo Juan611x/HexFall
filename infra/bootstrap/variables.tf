@@ -16,6 +16,12 @@ variable "github_repository" {
   default     = "Juan611x/HexFall"
 }
 
+variable "deploy_environments" {
+  description = "GitHub Environments whose jobs may assume the CI role (matches `environment:` in the workflows)."
+  type        = list(string)
+  default     = ["dev", "prod"]
+}
+
 variable "permissions_boundary_name" {
   description = "Name of the permissions boundary policy the lab requires on every role."
   type        = string

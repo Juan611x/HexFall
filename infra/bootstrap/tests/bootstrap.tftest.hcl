@@ -95,10 +95,11 @@ run "trust_policy_is_limited_to_the_repository_branches" {
       c.test == "StringLike" && c.variable == "token.actions.githubusercontent.com:sub" && toset(c.values) == toset([
         "repo:Juan611x/HexFall:ref:refs/heads/develop",
         "repo:Juan611x/HexFall:ref:refs/heads/main",
-        "repo:Juan611x/HexFall:environment:*",
+        "repo:Juan611x/HexFall:environment:dev",
+        "repo:Juan611x/HexFall:environment:prod",
       ])
     ])
-    error_message = "The subject must be limited to develop, main and environments of the repository."
+    error_message = "The subject must be limited to develop, main and the dev and prod environments, never any environment."
   }
 }
 
