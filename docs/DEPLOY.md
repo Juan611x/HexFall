@@ -12,10 +12,25 @@ You need AWS access to the lab account ([AWS_ENVIRONMENT.md](AWS_ENVIRONMENT.md)
 
 Creates the Terraform state bucket, the GitHub OIDC provider and the CI role. It uses local state, which is why it is applied by hand and only once.
 
+The Terraform providers do not name a profile, so the shell must select it. Without it Terraform falls back to the default credential chain and fails with `InvalidClientTokenId` if those credentials are stale.
+
+```powershell
+# Windows PowerShell
+aws sso login --profile commit-lab
+$env:AWS_PROFILE = "commit-lab"
+aws sts get-caller-identity   # must show the lab account
+```
+
 ```bash
+# bash / zsh
 aws sso login --profile commit-lab
 export AWS_PROFILE=commit-lab
+aws sts get-caller-identity
+```
 
+Then, from the repository root:
+
+```bash
 terraform -chdir=infra/bootstrap init
 terraform -chdir=infra/bootstrap plan
 terraform -chdir=infra/bootstrap apply
