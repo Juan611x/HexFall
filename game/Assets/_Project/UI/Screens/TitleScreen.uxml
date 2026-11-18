@@ -4,10 +4,7 @@
             <ui:ScrollView class="hf-col title__col" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden">
                 <ui:VisualElement class="title__column" picking-mode="Ignore">
                     <ui:VisualElement class="hf-brand" picking-mode="Ignore">
-                        <ui:VisualElement class="hf-brand__emblem" picking-mode="Ignore">
-                            <hf:HexagonElement class="hf-hex hf-fill" />
-                            <hf:HexagonElement class="hf-hex hf-hex--inner" />
-                        </ui:VisualElement>
+                        <ui:VisualElement class="hf-brand__emblem" picking-mode="Ignore" />
                         <ui:Label text="WIZARD ARENA" class="hf-text--label" />
                     </ui:VisualElement>
                     <ui:Label text="HexFall" class="hf-text--display" />
