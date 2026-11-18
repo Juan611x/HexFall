@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace HexFall.UI
@@ -6,11 +7,13 @@ namespace HexFall.UI
     {
         private readonly AudioSource _source;
         private readonly MenuAudioLibrary _library;
+        private readonly Func<float> _scale;
 
-        public UnityMenuSfx(AudioSource source, MenuAudioLibrary library)
+        public UnityMenuSfx(AudioSource source, MenuAudioLibrary library, Func<float> scale = null)
         {
             _source = source;
             _library = library;
+            _scale = scale ?? (() => 1f);
         }
 
         public void PlayHover() => Play(_library.hover);
@@ -26,7 +29,7 @@ namespace HexFall.UI
                 return;
             }
 
-            _source.PlayOneShot(sound.clip, sound.volume);
+            _source.PlayOneShot(sound.clip, sound.volume * _scale());
         }
     }
 }

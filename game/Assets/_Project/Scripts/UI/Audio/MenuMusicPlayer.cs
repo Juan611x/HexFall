@@ -9,11 +9,14 @@ namespace HexFall.UI
         private readonly float[] _targets;
         private readonly float _fadeSeconds;
         private readonly bool _requireGesture;
+        private readonly Func<float> _scale;
         private bool _begun;
         private float _elapsed;
 
-        public MenuMusicPlayer(IMusicLayers layers, float[] targetVolumes, float fadeSeconds, bool requireGesture)
+        // The scale is read on every tick, so a mixer change lands live, mid-fade included.
+        public MenuMusicPlayer(IMusicLayers layers, float[] targetVolumes, float fadeSeconds, bool requireGesture, Func<float> scale = null)
         {
+            _scale = scale ?? (() => 1f);
             _layers = layers;
             _targets = (float[])targetVolumes.Clone();
             _fadeSeconds = fadeSeconds;
@@ -66,10 +69,11 @@ namespace HexFall.UI
         private void Apply()
         {
             var progress = _fadeSeconds <= 0f ? 1f : Math.Min(1f, _elapsed / _fadeSeconds);
+            var scale = _scale();
             var count = Math.Min(_layers.LayerCount, _targets.Length);
             for (var i = 0; i < count; i++)
             {
-                _layers.SetVolume(i, _targets[i] * progress);
+                _layers.SetVolume(i, _targets[i] * progress * scale);
             }
         }
     }
