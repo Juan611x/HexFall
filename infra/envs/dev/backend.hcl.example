@@ -1,0 +1,7 @@
+# Copy to backend.hcl and replace <account-id>. The bucket is created by
+# infra/bootstrap. The file holds no secret.
+bucket       = "hexfall-tfstate-<account-id>"
+key          = "hexfall/dev/client.tfstate"
+region       = "eu-west-1"
+encrypt      = true
+use_lockfile = true # native S3 locking (Terraform >= 1.10), see DD-009
