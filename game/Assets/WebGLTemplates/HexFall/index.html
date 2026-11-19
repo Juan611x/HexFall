@@ -61,6 +61,31 @@
         updateBannerVisibility();
       }
 
+      // Browser extensions (e.g. MetaMask) inject scripts whose uncaught errors reach the page.
+      // The Unity loader treats every page error as fatal and shows an alert, so errors that
+      // come only from extension code are logged and stopped before the loader's listeners,
+      // which must therefore be registered after these.
+      var extensionUrlPattern = /(chrome|moz|safari-web|ms-browser)-extension:\/\//;
+      function isBrowserExtensionError(event) {
+        var error = event.reason || event.error;
+        var origin = [
+          event.filename,
+          error && error.fileName,
+          error && error.sourceURL,
+          error && error.stack,
+          typeof event.reason == "string" ? event.reason : "",
+        ].join("\n");
+        return extensionUrlPattern.test(origin);
+      }
+      function ignoreBrowserExtensionError(event) {
+        if (!isBrowserExtensionError(event)) return;
+        console.warn("Ignored an error raised by a browser extension:", event.reason || event.error || event.message);
+        event.stopImmediatePropagation();
+        event.preventDefault();
+      }
+      window.addEventListener("error", ignoreBrowserExtensionError);
+      window.addEventListener("unhandledrejection", ignoreBrowserExtensionError);
+
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
       var config = {
