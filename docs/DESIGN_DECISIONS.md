@@ -15,6 +15,10 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 | [DD-007](#dd-007-static-client-on-s3--cloudfront) | Static client on S3 + CloudFront | Accepted |
 | [DD-008](#dd-008-monorepo-layout) | Monorepo layout | Accepted |
 | [DD-009](#dd-009-infrastructure-as-code-with-terraform) | Infrastructure as code with Terraform | Accepted |
+| [DD-010](#dd-010-private-client-bucket-behind-cloudfront-origin-access-control) | Private client bucket behind CloudFront Origin Access Control | Accepted |
+| [DD-011](#dd-011-terraform-provisions-a-script-publishes-builds) | Terraform provisions, a script publishes builds | Accepted |
+| [DD-012](#dd-012-reusable-static-site-module-and-thin-environments) | Reusable static-site module and thin environments | Accepted |
+| [DD-013](#dd-013-manual-deploys-until-ci-can-reach-aws) | Manual deploys until CI can reach AWS | Accepted |
 
 ---
 
@@ -89,3 +93,35 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 - **Decision:** All AWS resources are defined in Terraform, with remote state in S3 using native lock files (`use_lockfile`, Terraform ≥ 1.10).
 - **Rationale:** Reproducible, reviewable infrastructure changes; S3 native locking avoids a separate lock table.
 - **Trade-offs:** Account constraints must be encoded in code: region `eu-west-1`, IAM roles named `student-*` with the `StudentBoundary` permissions boundary.
+
+## DD-010: Private client bucket behind CloudFront Origin Access Control
+
+- **Status:** Accepted
+- **Context:** The WebGL client (DD-004, DD-007) is a folder of static, Brotli-compressed files that must be served over HTTPS from the lab account.
+- **Decision:** The files live in a private S3 bucket (`<project>-<env>-client-<account-id>`) with all Block Public Access settings on, ACLs disabled (`BucketOwnerEnforced`) and SSE-S3 encryption. A CloudFront distribution serves them through Origin Access Control (SigV4) on the default `*.cloudfront.net` certificate, redirecting HTTP to HTTPS, with `index.html` as root object, the managed `CachingOptimized` policy and compression off. The bucket policy allows `s3:GetObject` only to CloudFront and only for this distribution (`AWS:SourceArn`). No VPC is involved.
+- **Rationale:** One public entry point and no way to expose the bucket by mistake; the `SourceArn` condition stops any other distribution from reading it. The default certificate gives HTTPS without ACM in `us-east-1`, which the region lock blocks. Compression is off because Unity already ships Brotli files.
+- **Trade-offs:** Missing files answer 403 instead of 404 (no `s3:ListBucket`). No custom domain. The default certificate fixes the minimum TLS version at TLSv1 (browsers still negotiate TLS 1.2+).
+
+## DD-011: Terraform provisions, a script publishes builds
+
+- **Status:** Accepted
+- **Context:** The infrastructure changes rarely; the game build changes on every release.
+- **Decision:** Terraform owns the bucket, policy, OAC and distribution. `tools/deploy_webgl.py` publishes a build: it uploads every file with its real `Content-Type` and `Content-Encoding: br` for Brotli files (the same table as the local server), uploads `config.json` and `index.html` last with `no-cache`, deletes files no longer in the build, skips Unity `_DoNotShip` debug folders, and invalidates `/*`. Terraform outputs (bucket name, distribution id, URL) are the only contract between them. The client's runtime settings go in a generated `config.json`, not in the build.
+- **Rationale:** Releases stay one quick command and build artifacts stay out of Terraform state. Upload order keeps a new `index.html` from pointing at missing files. `config.json` lets the same build serve any environment and receive backend URLs later.
+- **Trade-offs:** Two tools to keep aligned. Unity file names are not content-hashed, so every release invalidates the whole distribution.
+
+## DD-012: Reusable static-site module and thin environments
+
+- **Status:** Accepted
+- **Context:** The same hosting must be recreatable for other environments or accounts without editing code.
+- **Decision:** `infra/modules/static-site` holds the hosting; `infra/envs/dev` is a thin composition with dev values (`force_destroy` on, versioning off). `infra/bootstrap` creates the state bucket (`<project>-tfstate-<account-id>`, versioned, private, protected from destroy) with local state. Environments use a partial S3 backend through a git-ignored `backend.hcl`, native locking and provider `default_tags`. Names derive from the project, environment and caller account id; the region is a variable defaulting to `eu-west-1`. The module and bootstrap are covered by `terraform test` with a mocked provider.
+- **Rationale:** Nothing is tied to one account, and a new environment is a new thin folder. The state bucket has to exist before any configuration can store state in it, so it is created separately.
+- **Trade-offs:** Agnostic to account, environment and region, not to cloud provider. The bootstrap state lives on one machine and must be kept safe.
+
+## DD-013: Manual deploys until CI can reach AWS
+
+- **Status:** Accepted
+- **Context:** The lab account denies creating the GitHub OIDC provider and IAM users, and has no provider to reuse, so GitHub Actions cannot authenticate to AWS.
+- **Decision:** Deploys run by hand from a developer machine with the lab SSO profile, following the runbook in `docs/DEPLOY.md`. CI access in the bootstrap is behind `enable_ci_access` (off). The deploy workflow only runs on manual trigger; pull request checks, which need no AWS access, stay on.
+- **Rationale:** A working public URL now, using the same three steps a pipeline would run, without long-lived credentials.
+- **Trade-offs:** Releases depend on a person with lab access. Automation needs either the GitHub OIDC provider created by the lab admins or a CodeBuild-based deploy with a `student-*` role.
