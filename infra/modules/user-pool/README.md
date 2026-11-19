@@ -10,6 +10,10 @@ A Cognito Pre Sign-up trigger (Lambda, Python 3.12, source in `services/wizard_n
 
 The module also creates the Lambda, its log group, an IAM role `student-<project>-<environment>-names-trigger` (with the `StudentBoundary` permissions boundary and a policy scoped to the table and the pool) and the invoke permission for Cognito.
 
+## Guest name check
+
+A second Lambda (`services/name_check/`) answers `GET /names/<name>` with `{"name", "available"}` so guests cannot take a registered name. It is exposed through a public Lambda Function URL (`authorization_type = NONE`) with CORS limited to `GET` and to `name_check_origins`. Its role `student-<project>-<environment>-name-check` can only `dynamodb:GetItem` on the names table and write its own logs. A public URL needs both `lambda:InvokeFunctionUrl` and `lambda:InvokeFunction` permissions for principal `*`; the module creates both. The reasoning is in [DD-021](../../../docs/DESIGN_DECISIONS.md).
+
 ## Inputs
 
 | Name | Type | Default | Description |
@@ -18,6 +22,8 @@ The module also creates the Lambda, its log group, an IAM role `student-<project
 | `environment` | string | required | Feeds the names (`<project>-<environment>-players` and `-game`). |
 | `deletion_protection` | string | `ACTIVE` | `ACTIVE` or `INACTIVE`. Dev sets `INACTIVE` so it can be destroyed. |
 | `pre_sign_up_source_dir` | string | required | Directory with the trigger source (`handler.py`); zipped with `hashicorp/archive`, tests excluded. |
+| `name_check_source_dir` | string | required | Directory with the name check source (`handler.py`); tests excluded. |
+| `name_check_origins` | list(string) | required | Browser origins allowed by CORS (the client CloudFront URL). |
 | `permissions_boundary_name` | string | `StudentBoundary` | Lab permissions boundary attached to the trigger role. |
 | `log_retention_days` | number | `14` | Trigger log retention. |
 | `tags` | map(string) | `{}` | Extra tags. |
@@ -29,6 +35,7 @@ The module also creates the Lambda, its log group, an IAM role `student-<project
 | `user_pool_id` | Becomes `HEXFALL_COGNITO_USER_POOL_ID` in `config.json`. |
 | `user_pool_arn` | Pool ARN. |
 | `client_id` | Becomes `HEXFALL_COGNITO_CLIENT_ID` in `config.json`. |
+| `name_check_url` | Function URL of the name check; becomes `HEXFALL_API_BASE_URL` in `config.json`. |
 
 ## Tests
 

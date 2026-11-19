@@ -42,3 +42,13 @@ variable "log_retention_days" {
   type        = number
   default     = 14
 }
+
+variable "name_check_source_dir" {
+  description = "Directory with the name check Lambda source (handler.py). Tests are excluded from the zip."
+  type        = string
+}
+
+variable "name_check_origins" {
+  description = "Browser origins allowed to call the name check URL (CORS), for example the client CloudFront URL."
+  type        = list(string)
+}

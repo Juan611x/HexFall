@@ -26,4 +26,6 @@ module "auth" {
   deletion_protection = "INACTIVE"
 
   pre_sign_up_source_dir = "${path.root}/../../../services/wizard_names"
+  name_check_source_dir  = "${path.root}/../../../services/name_check"
+  name_check_origins     = [module.client.url]
 }

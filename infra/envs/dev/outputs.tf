@@ -32,6 +32,10 @@ output "cognito_client_id" {
   value = module.auth.client_id
 }
 
+output "name_check_url" {
+  value = module.auth.name_check_url
+}
+
 output "aws_region" {
   value = var.aws_region
 }
