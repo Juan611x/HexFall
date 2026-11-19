@@ -32,6 +32,7 @@ namespace HexFall.UI
         private MenuSoundReaction _soundReaction;
         private MenuMusicPlayer _music;
         private IAuthService _auth;
+        private INameAvailability _names;
         private SessionState _session;
         private GuestNameGenerator _guestNames;
         private SoundSettings _sound;
@@ -100,6 +101,12 @@ namespace HexFall.UI
             _auth = config.HasCognito
                 ? new CognitoAuthService(new UnityWebRequestCognitoTransport(config.Region), config.CognitoClientId, new PlayerPrefsSessionStore())
                 : new FakeAuthService();
+
+            // Guests are checked against registered names: over HTTP when the config names the endpoint,
+            // against the in-memory fake offline. A real pool without the endpoint (old config) skips the check.
+            if (config.ApiBaseUrl.Length > 0) _names = new UnityWebRequestNameAvailability(config.ApiBaseUrl);
+            else if (_auth is FakeAuthService fake) _names = new FakeNameAvailability(fake);
+            else _names = null;
 
             // A saved session skips the title screen; the first screen stays hidden until Restore answers.
             AuthResult restore = default;
@@ -217,7 +224,7 @@ namespace HexFall.UI
                 ScreenId.Register => new RegisterPresenter(new RegisterView(screen), _router, _auth, _session),
                 ScreenId.Verify => new VerifyPresenter(new VerifyView(screen), _router, _auth, _session),
                 ScreenId.ForgotPassword => new ForgotPasswordPresenter(new ForgotPasswordView(screen), _router, _auth, _session),
-                ScreenId.Guest => new GuestPresenter(new GuestView(screen), _router, _auth, _session, _guestNames),
+                ScreenId.Guest => new GuestPresenter(new GuestView(screen), _router, _auth, _session, _guestNames, _names),
                 ScreenId.Lobby => new LobbyPresenter(new LobbyView(screen), _router, _auth, _session),
                 _ => null,
             };
