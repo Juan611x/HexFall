@@ -118,3 +118,6 @@ desktop.ini
 
 # Reusable modules do not commit a lock file; root modules do.
 infra/modules/**/.terraform.lock.hcl
+
+# draw.io backup files
+*.drawio.bkp
