@@ -225,6 +225,22 @@ aws cognito-idp admin-delete-user --region eu-west-1 --user-pool-id "$POOL_ID" -
 
 The sign-in name is the email address. Deleting a user is permanent.
 
+### Unique wizard names
+
+The apply also creates the Pre Sign-up trigger ([DD-018](DESIGN_DECISIONS.md#dd-018-unique-wizard-names-reserved-by-a-pre-sign-up-trigger)): the DynamoDB table `hexfall-dev-wizard-names`, the Lambda `hexfall-dev-names-trigger`, its log group and the IAM role `student-hexfall-dev-names-trigger` (with the `StudentBoundary` boundary). If the apply fails creating the role or the table with an access-denied error, the boundary denies that action: stop and see the risk in the [authentication journal](journal/authentication.md).
+
+Accounts created before this change are not in the table, so their names are not reserved. Delete the old test users (previous section) before testing, or a new player could take their names.
+
+Check it by signing up twice with the same wizard name (any capitalisation) and different emails: the second shows `That wizard name is already taken.`
+
+See the reservations:
+
+```bash
+aws dynamodb scan --region eu-west-1 --table-name hexfall-dev-wizard-names --query "Items[].{name:name.S,owner:owner_email.S,created:created_at.S}" --output table
+```
+
+Trigger logs are in CloudWatch under `/aws/lambda/hexfall-dev-names-trigger`.
+
 ## Tearing down an environment
 
 ```bash

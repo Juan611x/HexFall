@@ -23,6 +23,7 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 | [DD-015](#dd-015-auth-port-with-a-cognito-adapter-and-an-in-memory-fake) | Auth port with a Cognito adapter and an in-memory fake | Accepted |
 | [DD-016](#dd-016-unverified-sign-in-resumes-verification) | Unverified sign-in resumes verification | Accepted |
 | [DD-017](#dd-017-ignore-browser-extension-errors-before-the-unity-loader) | Ignore browser-extension errors before the Unity loader | Accepted |
+| [DD-018](#dd-018-unique-wizard-names-reserved-by-a-pre-sign-up-trigger) | Unique wizard names reserved by a Pre Sign-up trigger | Accepted |
 
 ---
 
@@ -171,3 +172,11 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 - **Decision:** `game/Assets/WebGLTemplates/HexFall/index.html` registers `error` and `unhandledrejection` listeners before the Unity loader and stops errors whose origin is a browser extension (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`, `ms-browser-extension://`).
 - **Rationale:** Extension errors are not ours and the player cannot act on them; the listeners run first, so the loader never sees them.
 - **Trade-offs:** Errors from extensions are hidden, which could mask an extension that really breaks the page. Errors from our own files still reach the loader.
+
+## DD-018: Unique wizard names reserved by a Pre Sign-up trigger
+
+- **Status:** Accepted
+- **Context:** Two players could register with the same wizard name, which Cognito does not prevent (`preferred_username` is not unique). Names must be unique, case-insensitive, and two simultaneous sign-ups for one name must not both succeed.
+- **Decision:** A Cognito Pre Sign-up trigger (Lambda, Python 3.12, `services/wizard_names/`) validates the name (3-16 of `[A-Za-z0-9_]`) and reserves it with a conditional DynamoDB write keyed by the lowercase name (`attribute_not_exists(name_key) OR owner_email = :email`). A taken name raises `WizardNameTaken` and a bad format `InvalidWizardName`; the client maps both to player-facing copy. A name whose owner no longer exists, or is UNCONFIRMED for more than 24 hours, is reclaimed: the stale user is deleted and the name is handed over with a conditional write on the old owner. The same email signing up again with its name is allowed. The pool id comes from the trigger event, not an environment variable. Guests are not reserved.
+- **Rationale:** The conditional write is atomic, so concurrent sign-ups cannot both win. Reserving at sign-up gives the error on the register screen. Deleting the stale unconfirmed user stops its owner from confirming later with a duplicate name.
+- **Trade-offs:** A name is held for up to 24 hours by an account that never verifies. The reservation lives outside Cognito, so deleting a confirmed user by hand leaves its name taken until it is cleaned from the table (a missing owner is reclaimed on the next attempt, so it self-heals). Adds a Lambda, a table and a `student-*` role. Renaming is out of scope. Alternatives rejected: a `ListUsers` check before sign-up (not atomic, and it needs a pre-flight call from the client) and reserving at verification (the player learns the name is taken only after typing the code).
