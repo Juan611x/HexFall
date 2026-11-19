@@ -8,6 +8,7 @@ namespace HexFall.UI
         private readonly TextField _email;
         private readonly TextField _password;
         private readonly Label _error;
+        private readonly Label _notice;
         private readonly Button _toggle;
         private readonly IconElement _icon;
 
@@ -20,6 +21,7 @@ namespace HexFall.UI
             _email = root.Q<TextField>("email-field");
             _password = root.Q<TextField>("password-field");
             _error = root.Q<Label>("error-label");
+            _notice = root.Q<Label>("notice-label");
             _toggle = root.Q<Button>("password-toggle");
             _icon = root.Q<IconElement>("password-icon");
 
@@ -34,8 +36,13 @@ namespace HexFall.UI
         public string Email => _email.value;
         public string Password => _password.value;
 
+        public void ShowNotice(string message) => _notice.ShowText(message);
         public void ShowError(string message) => _error.ShowText(message);
-        public void ClearError() => _error.HideText();
+        public void ClearError()
+        {
+            _error.HideText();
+            _notice.HideText();
+        }
 
         private void TogglePasswordVisibility()
         {

@@ -20,6 +20,10 @@ namespace HexFall.UI
     {
         public PlayerSession Current { get; set; }
         public string PendingEmail { get; set; }
-        public void Clear() { Current = null; PendingEmail = null; }
+        // The e-mail typed on Login when the player asked to reset the password.
+        public string ResetEmail { get; set; }
+        // One-shot message the next Login screen shows, then forgets.
+        public string Notice { get; set; }
+        public void Clear() { Current = null; PendingEmail = null; ResetEmail = null; Notice = null; }
     }
 }

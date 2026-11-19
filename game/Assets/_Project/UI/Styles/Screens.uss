@@ -158,6 +158,17 @@
 }
 .verify__submit { align-self: stretch; }
 
+/* Forgot password */
+.forgot__panel { padding: 28px 32px 22px 32px; }
+.forgot__panel > * { margin-bottom: 14px; }
+.forgot__panel > .hf-text--title { margin-bottom: 4px; font-size: 32px; }
+.forgot__step > * { margin-bottom: 14px; }
+.forgot__panel .hf-field__label { margin-bottom: 4px; }
+.forgot__panel .hf-input .unity-base-text-field__input { height: 44px; }
+.forgot__panel .hf-digit .unity-base-text-field__input { height: 64px; }
+.forgot__panel .hf-rule { margin-bottom: 4px; }
+.forgot__panel .hf-link-row { justify-content: space-between; }
+
 /* Guest */
 .guest__panel { padding: 36px 36px 18px 36px; }
 .guest__panel .hf-text--title { font-size: 34px; }
@@ -245,6 +256,7 @@
 .login__col { max-width: 460px; }
 .register__col { max-width: 580px; }
 .verify__col { max-width: 560px; }
+.forgot__col { max-width: 580px; }
 .guest__col { max-width: 480px; }
 .lobby__col { max-width: 460px; }
 .title__col { max-width: 520px; }

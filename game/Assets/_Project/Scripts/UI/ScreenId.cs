@@ -6,6 +6,7 @@ namespace HexFall.UI
         Login,
         Register,
         Verify,
+        ForgotPassword,
         Guest,
         Lobby,
     }

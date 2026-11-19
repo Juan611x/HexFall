@@ -19,6 +19,7 @@
                     </ui:Button>
                 </ui:VisualElement>
             </ui:VisualElement>
+            <ui:Label name="notice-label" class="hf-help hf-help--valid" style="display: none; margin-top: -8px;" />
             <ui:Label name="error-label" class="hf-error" style="display: none; margin-top: -8px;" />
             <ui:Button name="login-submit" text="LOG IN" class="hf-btn hf-btn--primary" />
             <ui:VisualElement class="hf-link-row">
