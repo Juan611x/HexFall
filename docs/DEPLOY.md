@@ -4,6 +4,26 @@ The client is hosted on S3 + CloudFront (design: [client-hosting journal](journa
 
 > **Status:** deploys run **by hand** from a developer machine. Automated deployment (CI/CD) is parked: the lab account gives GitHub Actions no way to authenticate to AWS (see [CI/CD status](#cicd-status)). Pull request checks (`ci.yml`) still run, because they never touch AWS.
 
+## The flow at a glance
+
+```
+Once per AWS account     1. Bootstrap ............ state bucket            (infra/bootstrap, local state)
+Once per environment     2. Infrastructure ....... bucket + CloudFront     (infra/envs/<env>, state in S3)
+Every new game build     3. Build ................ tools/build-webgl.ps1   (Unity closed)
+                         4. Publish .............. tools/deploy_webgl.py   (upload + invalidate)
+                         5. Check ................ open the URL
+```
+
+Infrastructure changes (Terraform code under `infra/`) mean re-running step 2. A new game build is only steps 3 to 5.
+
+| What | Where |
+|---|---|
+| Bootstrap state | `infra/bootstrap/terraform.tfstate` on the machine that applied it (git-ignored) |
+| Environment state | S3 bucket `<project>-tfstate-<account-id>`, key `hexfall/<env>/client.tfstate` |
+| Backend settings | `infra/envs/<env>/backend.hcl` (git-ignored; copy of `backend.hcl.example`) |
+| Bucket name, distribution id, URL | `terraform -chdir=infra/envs/<env> output` |
+| Build output | `game/Builds/WebGL` (git-ignored) |
+
 ## Before you start
 
 You need AWS access to the lab account ([AWS_ENVIRONMENT.md](AWS_ENVIRONMENT.md)), Terraform 1.10 or later, the AWS CLI and Python 3.
@@ -42,10 +62,21 @@ CI access (OIDC provider, CI role and policy) is behind `enable_ci_access`, off 
 
 ## 2. Infrastructure for an environment
 
-Copy the backend example and put the state bucket name in it. `backend.hcl` is git-ignored because it names the account.
+Copy the backend example and replace `<account-id>` with the account id (the end of `state_bucket_name`). `backend.hcl` is git-ignored because it names the account.
+
+```powershell
+# Windows PowerShell
+Copy-Item infra/envs/dev/backend.hcl.example infra/envs/dev/backend.hcl
+```
 
 ```bash
-cp infra/envs/dev/backend.hcl.example infra/envs/dev/backend.hcl   # then edit the bucket name
+# bash / zsh
+cp infra/envs/dev/backend.hcl.example infra/envs/dev/backend.hcl
+```
+
+Then, in either shell:
+
+```bash
 terraform -chdir=infra/envs/dev init "-backend-config=backend.hcl"   # quotes: PowerShell splits -flag=a.b otherwise
 terraform -chdir=infra/envs/dev plan
 terraform -chdir=infra/envs/dev apply
@@ -99,10 +130,42 @@ Order of operations: assets, then `config.json` and `index.html` (never cached),
 
 Open the `url` output. CloudFront can take a few minutes to serve a brand-new distribution and to apply an invalidation. Audio starts after the first click.
 
-```bash
-curl -sI "$(terraform -chdir=infra/envs/dev output -raw url)/" | head -1                 # HTTP/2 200
-curl -sI "$(terraform -chdir=infra/envs/dev output -raw url)/Build/WebGL.wasm.br" | grep -i content-encoding   # br
+```powershell
+# Windows PowerShell (curl.exe, not the curl alias of Invoke-WebRequest)
+$Url = terraform -chdir=infra/envs/dev output -raw url
+curl.exe -sI "$Url/"                     # first line: HTTP/1.1 200 or HTTP/2 200
+curl.exe -sI "$Url/Build/WebGL.wasm.br"  # must include content-encoding: br
+curl.exe -s "$Url/config.json"           # environment "dev", region "eu-west-1"
 ```
+
+```bash
+# bash / zsh
+URL=$(terraform -chdir=infra/envs/dev output -raw url)
+curl -sI "$URL/" | head -1
+curl -sI "$URL/Build/WebGL.wasm.br" | grep -i content-encoding
+curl -s "$URL/config.json"
+```
+
+## Tearing down an environment
+
+```bash
+terraform -chdir=infra/envs/dev destroy
+```
+
+`force_destroy` is on in dev, so the bucket is emptied and removed with its files. CloudFront takes a few minutes to disable and delete the distribution. The state bucket is protected (`prevent_destroy`) and is not touched; removing it means editing the bootstrap on purpose.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `InvalidClientTokenId` on `plan` | No profile selected; Terraform used stale default credentials | `$env:AWS_PROFILE = "commit-lab"` (or `export`) |
+| `ExpiredToken` / `Token has expired` | The SSO session ended (it lasts hours) | `aws sso login --profile commit-lab` |
+| `No positional arguments are expected` | PowerShell split `-backend-config=backend.hcl` at the dot | Quote it: `"-backend-config=backend.hcl"` |
+| `AccessDenied` creating IAM resources | The lab only allows roles/policies `student-*`; no OIDC providers or users | Expected; see [CI/CD status](#cicd-status) |
+| The page shows the previous build | CloudFront or the browser cache | Wait 1–2 minutes for the invalidation; hard refresh (Ctrl+F5) |
+| `403 AccessDenied` (XML) for a file | The file is not in the bucket (no `s3:ListBucket`, so missing files answer 403, not 404) | Check the path in the build and re-run publish |
+| The game fails to load, `.wasm` errors in the console | Wrong `Content-Encoding`/`Content-Type` on an object, or a half-written build was published | Re-run publish after a finished build; check headers with `curl.exe -sI` |
+| Settings files show as modified after a build | Batch builds re-serialize them | `git restore game/Assets/Settings game/ProjectSettings/ProjectSettings.asset` and delete `game/Data` (BUILD.md) |
 
 ## CI/CD status
 
