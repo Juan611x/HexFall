@@ -34,6 +34,8 @@ namespace HexFall.UI.Tests
             public void Verify(string email, string code, Action<AuthResult> done) => _inner.Verify(email, code, done);
             public void LogIn(string email, string password, Action<AuthResult> done) => _inner.LogIn(email, password, done);
             public void Guest(string name, Action<AuthResult> done) => _inner.Guest(name, done);
+            public void Restore(Action<AuthResult> done) => _inner.Restore(done);
+            public void LogOut(Action done) => _inner.LogOut(done);
             public void ResendCode(string email, Action<AuthResult> done)
             {
                 Resent.Add(email);

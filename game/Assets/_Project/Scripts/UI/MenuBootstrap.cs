@@ -96,10 +96,26 @@ namespace HexFall.UI
             }
 
             _auth = config.HasCognito
-                ? new CognitoAuthService(new UnityWebRequestCognitoTransport(config.Region), config.CognitoClientId)
+                ? new CognitoAuthService(new UnityWebRequestCognitoTransport(config.Region), config.CognitoClientId, new PlayerPrefsSessionStore())
                 : new FakeAuthService();
+
+            // A saved session skips the title screen; the first screen stays hidden until Restore answers.
+            AuthResult restore = default;
+            var restored = false;
+            _auth.Restore(result => { restore = result; restored = true; });
+            while (!restored) yield return null;
+
             _starting = null;
-            _host.ShowCurrent();
+            if (StartupDecision.InitialScreen(restore) == ScreenId.Lobby)
+            {
+                _session.Current = restore.Session;
+                _router.ResetTo(ScreenId.Lobby);
+            }
+            else
+            {
+                _host.ShowCurrent();
+            }
+
             _mixer = new SoundMixerPresenter(new SoundMixerView(_root.Q<VisualElement>("sound-mixer")), _sound);
         }
 
@@ -199,7 +215,7 @@ namespace HexFall.UI
                 ScreenId.Register => new RegisterPresenter(new RegisterView(screen), _router, _auth, _session),
                 ScreenId.Verify => new VerifyPresenter(new VerifyView(screen), _router, _auth, _session),
                 ScreenId.Guest => new GuestPresenter(new GuestView(screen), _router, _auth, _session, _guestNames),
-                ScreenId.Lobby => new LobbyPresenter(new LobbyView(screen), _router, _session),
+                ScreenId.Lobby => new LobbyPresenter(new LobbyView(screen), _router, _auth, _session),
                 _ => null,
             };
         }

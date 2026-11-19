@@ -27,13 +27,15 @@ namespace HexFall.UI.Tests
         private const string ClientId = "client123";
 
         private FakeTransport _transport;
+        private InMemorySessionStore _store;
         private CognitoAuthService _auth;
 
         [SetUp]
         public void SetUp()
         {
             _transport = new FakeTransport();
-            _auth = new CognitoAuthService(_transport, ClientId);
+            _store = new InMemorySessionStore();
+            _auth = new CognitoAuthService(_transport, ClientId, _store);
         }
 
         private static string Segment(string json) =>
@@ -304,6 +306,157 @@ namespace HexFall.UI.Tests
         {
             _transport.EnqueueOk("");
             Assert.AreEqual(CognitoErrorMapper.Generic, LogIn().Error);
+        }
+
+        [Test]
+        public void LogInSavesRefreshTokenAndEmail()
+        {
+            _transport.EnqueueOk(AuthBody("Ash_Mage"));
+            LogIn();
+            Assert.IsTrue(_store.TryLoad(out var email, out var refresh));
+            Assert.AreEqual("ash@example.com", email);
+            Assert.AreEqual("refresh-1", refresh);
+        }
+
+        [Test]
+        public void FailedLogInSavesNothing()
+        {
+            _transport.EnqueueError("NotAuthorizedException");
+            LogIn();
+            Assert.IsFalse(_store.TryLoad(out _, out _));
+        }
+
+        [Test]
+        public void VerifyAutoSignInSavesRefreshToken()
+        {
+            _transport.EnqueueOk();
+            SignUp();
+            _transport.EnqueueOk();
+            _transport.EnqueueOk(AuthBody("Ash_Mage"));
+            Verify();
+            Assert.IsTrue(_store.TryLoad(out var email, out var refresh));
+            Assert.AreEqual("ash@example.com", email);
+            Assert.AreEqual("refresh-1", refresh);
+        }
+
+        [Test]
+        public void GuestIsNeverPersisted()
+        {
+            _auth.Guest("Wizard_1", _ => { });
+            Assert.IsFalse(_store.TryLoad(out _, out _));
+        }
+
+        private static string RefreshOnlyBody(string name) =>
+            AuthBody(name).Replace(",\"RefreshToken\":\"refresh-1\"", "");
+
+        private AuthResult Restore()
+        {
+            AuthResult result = default;
+            _auth.Restore(r => result = r);
+            return result;
+        }
+
+        [Test]
+        public void RestoreRefreshesAndKeepsStoredRefreshToken()
+        {
+            _store.Save("ash@example.com", "stored-refresh");
+            _transport.EnqueueOk(RefreshOnlyBody("Ash_Mage"));
+
+            var result = Restore();
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("Ash_Mage", result.Session.Nickname);
+            Assert.IsFalse(result.Session.IsGuest);
+            Assert.AreEqual(1, _transport.Calls.Count);
+            Assert.AreEqual("InitiateAuth", _transport.Calls[0].Key);
+            Assert.AreEqual(
+                "{\"AuthFlow\":\"REFRESH_TOKEN_AUTH\",\"ClientId\":\"client123\",\"AuthParameters\":{\"REFRESH_TOKEN\":\"stored-refresh\"}}",
+                _transport.Calls[0].Value);
+            Assert.AreEqual("stored-refresh", _auth.Tokens.RefreshToken);
+            Assert.AreEqual("access-1", _auth.Tokens.AccessToken);
+            Assert.IsTrue(_store.TryLoad(out _, out var kept));
+            Assert.AreEqual("stored-refresh", kept);
+        }
+
+        [Test]
+        public void RestoreWithEmptyStoreFailsWithoutNetworkCall()
+        {
+            var result = Restore();
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(0, _transport.Calls.Count);
+            Assert.IsNull(_auth.Tokens);
+        }
+
+        [Test]
+        public void RestoreRejectedByServerClearsTheStore()
+        {
+            _store.Save("ash@example.com", "stale");
+            _transport.EnqueueError("NotAuthorizedException");
+            var result = Restore();
+            Assert.IsFalse(result.Success);
+            Assert.IsFalse(_store.TryLoad(out _, out _));
+            Assert.IsNull(_auth.Tokens);
+        }
+
+        [Test]
+        public void RestoreWithUnreadableResponseClearsTheStore()
+        {
+            _store.Save("ash@example.com", "stored-refresh");
+            _transport.EnqueueOk("{}");
+            Assert.IsFalse(Restore().Success);
+            Assert.IsFalse(_store.TryLoad(out _, out _));
+        }
+
+        [Test]
+        public void RestoreNetworkFailureKeepsTheStoreForTheNextVisit()
+        {
+            _store.Save("ash@example.com", "stored-refresh");
+            _transport.Enqueue(new CognitoResponse(0, "", true));
+            var result = Restore();
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(CognitoErrorMapper.Network, result.Error);
+            Assert.IsTrue(_store.TryLoad(out _, out _));
+        }
+
+        [Test]
+        public void LogOutRevokesStoredTokenAndClearsEverything()
+        {
+            _transport.EnqueueOk(AuthBody("Ash_Mage"));
+            LogIn();
+            _transport.EnqueueOk();
+            var done = false;
+
+            _auth.LogOut(() => done = true);
+
+            Assert.IsTrue(done);
+            Assert.AreEqual("RevokeToken", _transport.Calls[1].Key);
+            Assert.AreEqual("{\"Token\":\"refresh-1\",\"ClientId\":\"client123\"}", _transport.Calls[1].Value);
+            Assert.IsFalse(_store.TryLoad(out _, out _));
+            Assert.IsNull(_auth.Tokens);
+        }
+
+        [Test]
+        public void LogOutClearsEverythingEvenWhenRevokeFails()
+        {
+            _transport.EnqueueOk(AuthBody("Ash_Mage"));
+            LogIn();
+            _transport.Enqueue(new CognitoResponse(0, "", true));
+            var done = false;
+
+            _auth.LogOut(() => done = true);
+
+            Assert.IsTrue(done);
+            Assert.IsFalse(_store.TryLoad(out _, out _));
+            Assert.IsNull(_auth.Tokens);
+        }
+
+        [Test]
+        public void LogOutWithoutASessionSendsNothing()
+        {
+            var done = false;
+            _auth.LogOut(() => done = true);
+            Assert.IsTrue(done);
+            Assert.AreEqual(0, _transport.Calls.Count);
         }
 
         [Test]

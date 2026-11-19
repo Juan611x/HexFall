@@ -74,5 +74,10 @@ namespace HexFall.UI
             if (WizardNameRule.IsValid(name)) done(AuthResult.Ok(new PlayerSession(name, true)));
             else done(AuthResult.Fail("Use 3–16 letters, numbers or _ only."));
         }
+
+        // Nothing is persisted, so there is never a session to restore.
+        public void Restore(Action<AuthResult> done) => done(AuthResult.Fail("No saved session."));
+
+        public void LogOut(Action done) => done();
     }
 }

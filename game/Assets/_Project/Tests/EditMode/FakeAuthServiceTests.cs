@@ -128,5 +128,19 @@ namespace HexFall.UI.Tests
         {
             Assert.IsFalse(Run(d => _auth.Guest("x", d)).Success);
         }
+
+        [Test]
+        public void RestoreAlwaysFailsBecauseNothingIsPersisted()
+        {
+            Assert.IsFalse(Run(d => _auth.Restore(d)).Success);
+        }
+
+        [Test]
+        public void LogOutCompletes()
+        {
+            var done = false;
+            _auth.LogOut(() => done = true);
+            Assert.IsTrue(done);
+        }
     }
 }

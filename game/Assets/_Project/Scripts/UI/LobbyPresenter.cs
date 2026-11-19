@@ -6,14 +6,16 @@ namespace HexFall.UI
     {
         private readonly ILobbyView _view;
         private readonly ScreenRouter _router;
+        private readonly IAuthService _auth;
         private readonly SessionState _session;
         private readonly MatchSearchTimer _timer = new MatchSearchTimer();
         private string _shownTime;
 
-        public LobbyPresenter(ILobbyView view, ScreenRouter router, SessionState session)
+        public LobbyPresenter(ILobbyView view, ScreenRouter router, IAuthService auth, SessionState session)
         {
             _view = view;
             _router = router;
+            _auth = auth;
             _session = session;
             _view.FindMatchRequested += OnFindMatch;
             _view.CancelSearchRequested += OnCancel;
@@ -61,6 +63,8 @@ namespace HexFall.UI
         private void OnLogOut()
         {
             _timer.Cancel();
+            // The local session is forgotten at once; revoking it on the server is best effort.
+            _auth.LogOut(() => { });
             _session.Clear();
             _router.ResetTo(ScreenId.Title);
         }
