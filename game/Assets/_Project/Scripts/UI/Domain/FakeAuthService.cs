@@ -78,6 +78,17 @@ namespace HexFall.UI
                 done(AuthResult.Fail("Incorrect email or password."));
         }
 
+        // True when a registered account already uses this wizard name (case-insensitive).
+        public bool HasName(string name)
+        {
+            foreach (var account in _accounts.Values)
+            {
+                if (string.Equals(account.Name, name, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+
+            return false;
+        }
+
         public void Guest(string name, Action<AuthResult> done)
         {
             if (WizardNameRule.IsValid(name)) done(AuthResult.Ok(new PlayerSession(name, true)));
