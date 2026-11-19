@@ -1,0 +1,21 @@
+using System;
+
+namespace HexFall.UI
+{
+    public interface IGuestView
+    {
+        event Action NameChanged;
+        event Action RerollRequested;
+        event Action EnterRequested;
+        event Action CreateAccountRequested;
+
+        string Name { get; }
+
+        void SetName(string name);
+        void SetEnterEnabled(bool enabled);
+        // Shows the name check in progress and locks the screen's controls until it ends.
+        void SetBusy(bool busy);
+        void ShowError(string message);
+        void ClearError();
+    }
+}

@@ -1,0 +1,280 @@
+/* Menu views (login, register, verify, guest, lobby): shared atoms first, then per-screen layout. */
+:root {
+    --hf-color-input: rgb(11, 9, 21);
+    --hf-color-placeholder: rgb(138, 133, 166);
+    --hf-color-danger: rgb(252, 165, 165);
+    --hf-color-danger-border: rgb(127, 29, 29);
+    --hf-font-display-bold: url("project://database/Assets/_Project/UI/Fonts/CinzelDecorative-Bold.ttf");
+}
+
+.hf-panel {
+    position: relative;
+    align-self: stretch;
+    background-color: var(--hf-color-panel);
+    border-width: 2px 6px 6px 2px;
+    border-color: var(--hf-color-border) var(--hf-color-shadow) var(--hf-color-shadow) var(--hf-color-border);
+    border-radius: 0;
+}
+
+.hf-text--title {
+    -unity-font-definition: var(--hf-font-display-bold);
+    color: var(--hf-color-text);
+    font-size: 36px;
+    margin: 0;
+    padding: 0;
+    white-space: normal;
+    text-shadow: 3px 3px 0 var(--hf-color-shadow);
+}
+
+.hf-text--sub { margin: 0; padding: 0; color: var(--hf-color-text-muted); font-size: 18px; white-space: normal; }
+
+.hf-field__label {
+    -unity-font-definition: var(--hf-font-ui-bold);
+    color: var(--hf-color-label);
+    font-size: 16px;
+    letter-spacing: 1px;
+    margin: 0 0 8px 0;
+    padding: 0;
+}
+
+.hf-field__row { flex-direction: row; justify-content: space-between; align-items: flex-end; }
+
+.hf-input { margin: 0; flex-grow: 1; }
+.hf-input .unity-base-text-field__input {
+    height: 52px;
+    margin: 0;
+    padding: 0 14px;
+    background-color: var(--hf-color-input);
+    border-width: 2px;
+    border-radius: 0;
+    border-color: var(--hf-color-border);
+    color: var(--hf-color-text);
+    font-size: 20px;
+    -unity-font-definition: var(--hf-font-ui);
+    -unity-text-align: middle-left;
+    --unity-cursor-color: var(--hf-color-accent);
+    --unity-selection-color: var(--hf-color-selection);
+}
+.hf-input .unity-base-text-field__input:focus { border-color: var(--hf-color-accent); }
+.hf-input .unity-base-text-field__input--placeholder { color: var(--hf-color-placeholder); }
+.hf-input .unity-base-text-field__input--placeholder:focus { color: var(--hf-color-placeholder); }
+.hf-input--wrap-icon .unity-base-text-field__input { padding-right: 58px; }
+
+.hf-input-wrap { flex-direction: row; }
+
+.hf-icon-btn {
+    width: 52px;
+    height: 52px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+    align-items: center;
+    justify-content: center;
+    color: var(--hf-color-text-muted);
+}
+.hf-icon-btn:hover { color: var(--hf-color-accent); }
+.hf-icon-btn--overlay { position: absolute; right: 0; top: 0; }
+.hf-icon-btn--square {
+    margin-left: 10px;
+    background-color: var(--hf-color-secondary);
+    border-width: 2px;
+    border-color: var(--hf-color-border);
+    color: var(--hf-color-text);
+}
+.hf-icon-btn--square:hover { background-color: var(--hf-color-secondary-hover); color: var(--hf-color-accent); }
+.hf-icon-btn--square:focus { border-color: var(--hf-color-accent); }
+
+.hf-icon { width: 26px; height: 26px; }
+
+.hf-error { margin: 0; padding: 0; color: var(--hf-color-danger); font-size: 16px; white-space: normal; }
+
+.hf-help { font-size: 15px; margin: 6px 0 0 0; padding: 0; white-space: normal; color: var(--hf-color-text-muted); }
+.hf-help--neutral { color: var(--hf-color-text-muted); }
+.hf-help--invalid { color: var(--hf-color-danger); }
+.hf-help--valid { color: var(--hf-color-accent); }
+
+.hf-btn:disabled { opacity: 0.4; }
+
+.hf-link-row { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.hf-link-row > .hf-text--muted { margin-right: 8px; }
+.hf-link:disabled { background-color: rgba(0, 0, 0, 0); color: var(--hf-color-text-muted); opacity: 1; }
+
+.hf-btn--danger {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 2px;
+    border-color: var(--hf-color-danger-border);
+    color: var(--hf-color-danger);
+}
+.hf-btn--danger:hover { background-color: rgba(127, 29, 29, 0.25); }
+
+.hf-info-box {
+    padding: 14px 16px;
+    background-color: rgba(94, 234, 212, 0.08);
+    border-width: 2px;
+    border-color: var(--hf-color-accent);
+    color: var(--hf-color-accent);
+    font-size: 16px;
+    white-space: normal;
+}
+
+/* Login */
+.login__panel { padding: 40px 40px 20px 40px; }
+.login__panel > * { margin-bottom: 24px; }
+.login__panel > .hf-text--title { margin-bottom: 8px; }
+
+/* Register */
+/* Register is the tallest form; it must fit the 720 reference height (minus the Back bar) without scrolling. */
+.register__panel { padding: 22px 32px 20px 32px; }
+.register__panel > * { margin-bottom: 8px; }
+.register__panel > .hf-text--title { margin-bottom: 4px; font-size: 32px; }
+.register__panel .hf-field__label { margin-bottom: 4px; }
+.register__panel .hf-input .unity-base-text-field__input { height: 44px; }
+.register__panel .hf-help { margin-top: 4px; }
+.register__panel .hf-rule { margin-bottom: 4px; }
+.register__pair { flex-direction: row; }
+.register__pair > .hf-field { flex-grow: 1; flex-basis: 0; }
+.hf-gap-end { margin-right: 16px; }
+.register__rules { flex-direction: row; flex-wrap: wrap; }
+.hf-rule { flex-direction: row; align-items: center; width: 33%; margin-bottom: 6px; }
+.hf-rule__box { width: 12px; height: 12px; margin-right: 8px; border-width: 2px; border-color: var(--hf-color-ghost-border); }
+.hf-rule__text { color: var(--hf-color-text-muted); font-size: 15px; }
+.hf-rule--met .hf-rule__box { background-color: var(--hf-color-accent); border-color: var(--hf-color-accent); }
+.hf-rule--met .hf-rule__text { color: var(--hf-color-accent); }
+
+/* Verify */
+.verify__panel { padding: 40px; align-items: center; }
+.verify__panel > * { margin-bottom: 20px; }
+.verify__emblem { width: 88px; height: 100px; margin-bottom: 8px; align-items: center; justify-content: center; }
+.verify__envelope { width: 44px; height: 44px; color: var(--hf-color-text); }
+.verify__panel .hf-text--title, .verify__panel .hf-text--sub { -unity-text-align: upper-center; }
+.verify__digits { flex-direction: row; justify-content: center; }
+.hf-digit { margin: 0 6px; flex-grow: 0; }
+.hf-digit .unity-base-text-field__input {
+    width: 60px;
+    height: 72px;
+    padding: 0;
+    font-size: 34px;
+    -unity-text-align: middle-center;
+}
+.verify__submit { align-self: stretch; }
+
+/* Forgot password */
+.forgot__panel { padding: 28px 32px 22px 32px; }
+.forgot__panel > * { margin-bottom: 14px; }
+.forgot__panel > .hf-text--title { margin-bottom: 4px; font-size: 32px; }
+.forgot__step > * { margin-bottom: 14px; }
+.forgot__panel .hf-field__label { margin-bottom: 4px; }
+.forgot__panel .hf-input .unity-base-text-field__input { height: 44px; }
+.forgot__panel .hf-digit .unity-base-text-field__input { height: 64px; }
+.forgot__panel .hf-rule { margin-bottom: 4px; }
+.forgot__panel .hf-link-row { justify-content: space-between; }
+
+/* Guest */
+.guest__panel { padding: 36px 36px 18px 36px; }
+.guest__panel .hf-text--title { font-size: 34px; }
+.guest__panel > * { margin-bottom: 22px; }
+.guest__panel > .hf-text--title { margin-bottom: 6px; }
+
+/* Lobby */
+.lobby__header {
+    flex-shrink: 0;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0 48px;
+}
+.lobby__card { flex-direction: row; align-items: center; padding: 12px 18px; }
+.lobby__avatar { width: 44px; height: 50px; margin-right: 16px; }
+.lobby__name-row { flex-direction: row; align-items: center; }
+.lobby__name { -unity-font-definition: var(--hf-font-ui-bold); font-size: 24px; color: var(--hf-color-text); }
+.lobby__tag {
+    margin-left: 10px;
+    padding: 1px 8px 3px 8px;
+    border-width: 2px;
+    border-color: var(--hf-color-accent);
+    color: var(--hf-color-accent);
+    font-size: 13px;
+    letter-spacing: 1px;
+    -unity-font-definition: var(--hf-font-ui-bold);
+}
+.lobby__stats { color: var(--hf-color-text-muted); font-size: 15px; }
+.lobby__card { flex-shrink: 0; }
+/* The shared SOUND trigger floats over the header (right: 96px, ~150px wide), so the region label
+   reserves that space in flow and shrinks with an ellipsis instead of sliding under it. */
+.lobby__right { flex-direction: row; align-items: center; flex-shrink: 1; min-width: 0; margin-left: 16px; }
+.lobby__region {
+    flex-shrink: 1;
+    min-width: 0;
+    margin-right: 168px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding: 8px 14px;
+    background-color: var(--hf-color-panel);
+    border-width: 2px;
+    border-color: var(--hf-color-border);
+    color: var(--hf-color-text-soft);
+    font-size: 16px;
+}
+.lobby__settings { width: 44px; height: 44px; }
+.lobby__main > * { margin-bottom: 18px; }
+.lobby__main > .hf-text--title { margin-bottom: 6px; }
+.hf-btn--big { height: 96px; font-size: 34px; }
+.lobby__searching { padding: 18px; align-items: flex-start; }
+.lobby__searching > * { margin-bottom: 12px; }
+.lobby__search-row { flex-direction: row; align-items: center; }
+.lobby__blink { width: 14px; height: 14px; margin-right: 12px; background-color: var(--hf-color-accent); }
+.lobby__search-label { -unity-font-definition: var(--hf-font-ui-bold); font-size: 26px; color: var(--hf-color-text); }
+.lobby__cancel { width: 200px; }
+.lobby__grid { flex-direction: row; }
+.lobby__grid > .hf-btn { flex-grow: 1; flex-basis: 0; font-size: 18px; }
+.lobby__logout { width: 160px; height: 48px; font-size: 18px; }
+
+.hf-psx-ui .hf-help { font-size: 18px; }
+.hf-psx-ui .hf-rule__text { font-size: 18px; }
+
+/* Responsive layout: every screen is a flex column (optional header, main row, optional footer).
+   Content columns scale with the panel scale mode (match height) and are capped by max-width,
+   centered vertically, and scroll when the viewport is too short. */
+.hf-screen {
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 88px 0 28px 0;
+}
+.hf-screen--title { padding-top: 24px; }
+.hf-screen--lobby { padding-top: 32px; }
+.hf-screen__main {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    flex-direction: row;
+    padding: 0 7.5%;
+}
+.hf-screen__main--center { justify-content: center; padding: 0 24px; }
+.hf-col { width: 100%; flex-shrink: 1; flex-grow: 0; }
+.hf-col .unity-scroll-view__content-container { flex-grow: 1; justify-content: center; }
+.login__col { max-width: 460px; }
+.register__col { max-width: 580px; }
+.verify__col { max-width: 560px; }
+.forgot__col { max-width: 580px; }
+.guest__col { max-width: 480px; }
+.lobby__col { max-width: 460px; }
+.title__col { max-width: 520px; }
+
+/* Busy state: the primary button keeps its look (not the dimmed disabled one) and shows a spinner. */
+.hf-btn:disabled.hf-btn--busy { opacity: 1; }
+.hf-btn--primary:disabled.hf-btn--busy {
+    background-color: var(--hf-color-primary);
+    color: var(--hf-color-text);
+    border-color: var(--hf-color-shadow);
+}
+.hf-spinner {
+    position: absolute;
+    left: 18px;
+    top: 13px;
+    width: 20px;
+    height: 20px;
+    color: var(--hf-color-text);
+}

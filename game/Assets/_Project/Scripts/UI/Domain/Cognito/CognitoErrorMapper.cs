@@ -1,0 +1,92 @@
+using System;
+using UnityEngine;
+
+namespace HexFall.UI
+{
+    // Turns a failed Cognito response into player-facing copy. Raw server text is never surfaced.
+    public static class CognitoErrorMapper
+    {
+        public const string ResetNeedsVerification = "Sign in first to finish verifying your email.";
+        public const string Generic = "Something went wrong. Try again.";
+        public const string Network = "Can't reach the server. Check your connection.";
+        public const string WizardNameTaken = "That wizard name is already taken.";
+        public const string InvalidWizardName = "Use 3–16 letters, numbers or _ only.";
+        private const string TooMany = "Too many attempts. Try again later.";
+
+        [Serializable]
+        private sealed class ErrorBody
+        {
+            public string __type;
+            public string message;
+        }
+
+        public static bool IsUnverified(CognitoResponse response) =>
+            !response.NetworkError && ErrorType(response.Body) == "UserNotConfirmedException";
+
+        // ForgotPassword on an unconfirmed account is rejected as InvalidParameterException.
+        public static string MapForgotPassword(CognitoResponse response) =>
+            !response.NetworkError && ErrorType(response.Body) == "InvalidParameterException"
+                ? ResetNeedsVerification
+                : Map(response);
+
+        public static string Map(CognitoResponse response)
+        {
+            if (response.NetworkError) return Network;
+
+            switch (ErrorType(response.Body))
+            {
+                case "UsernameExistsException": return "An account with this email already exists.";
+                case "CodeMismatchException": return "That code is not valid. Try again.";
+                case "ExpiredCodeException": return "That code has expired. Request a new one.";
+                case "NotAuthorizedException": return "Incorrect email or password.";
+                case "UserNotConfirmedException": return "Verify your email before logging in.";
+                case "InvalidPasswordException": return "That password does not meet the requirements.";
+                case "UserLambdaValidationException": return MapTriggerRejection(response.Body);
+                case "LimitExceededException":
+                case "TooManyRequestsException":
+                case "TooManyFailedAttemptsException":
+                    return TooMany;
+                default: return Generic;
+            }
+        }
+
+        // The Pre Sign-up trigger rejects with "PreSignUp failed with error <Reason>."; only known reasons are shown.
+        private static string MapTriggerRejection(string body)
+        {
+            var message = ErrorMessage(body) ?? "";
+            if (message.Contains("WizardNameTaken")) return WizardNameTaken;
+            if (message.Contains("InvalidWizardName")) return InvalidWizardName;
+            return Generic;
+        }
+
+        private static string ErrorMessage(string body)
+        {
+            if (string.IsNullOrEmpty(body)) return null;
+            try
+            {
+                return JsonUtility.FromJson<ErrorBody>(body)?.message;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        }
+
+        // __type may be prefixed ("com.amazonaws...#NotAuthorizedException"); only the suffix matters.
+        private static string ErrorType(string body)
+        {
+            if (string.IsNullOrEmpty(body)) return null;
+            try
+            {
+                var type = JsonUtility.FromJson<ErrorBody>(body)?.__type;
+                if (string.IsNullOrEmpty(type)) return null;
+                var hash = type.LastIndexOf('#');
+                return hash >= 0 ? type.Substring(hash + 1) : type;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        }
+    }
+}

@@ -71,6 +71,8 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
+# Backend settings name the account; keep only the .example in git.
+infra/**/backend.hcl
 *.tfplan
 
 # =========================================================
@@ -107,3 +109,15 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# =========================================================
+# Local tooling indexes
+# =========================================================
+.codegraph/
+.atl/
+
+# Reusable modules do not commit a lock file; root modules do.
+infra/modules/**/.terraform.lock.hcl
+
+# draw.io backup files
+*.drawio.bkp

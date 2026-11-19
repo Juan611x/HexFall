@@ -1,0 +1,34 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hf="HexFall.UI">
+    <ui:VisualElement class="hf-screen hf-screen--title" picking-mode="Ignore">
+        <ui:VisualElement class="hf-screen__main" picking-mode="Ignore">
+            <ui:ScrollView class="hf-col title__col" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden">
+                <ui:VisualElement class="title__column" picking-mode="Ignore">
+                    <ui:VisualElement class="hf-brand" picking-mode="Ignore">
+                        <ui:VisualElement class="hf-brand__emblem" picking-mode="Ignore" />
+                        <ui:Label text="WIZARD ARENA" class="hf-text--label" />
+                    </ui:VisualElement>
+                    <ui:Label text="HexFall" class="hf-text--display" />
+                    <ui:Label text="Every wizard for themselves. Grab spells, hold the arena, outlast the rest." class="hf-text--body" />
+                    <ui:VisualElement class="title__nav">
+                        <ui:Button name="login-button" text="LOG IN" class="hf-btn hf-btn--primary" />
+                        <ui:Button name="create-account-button" text="CREATE ACCOUNT" class="hf-btn hf-btn--secondary" />
+                        <ui:VisualElement class="hf-divider" picking-mode="Ignore">
+                            <ui:VisualElement class="hf-divider__line" />
+                            <ui:Label text="or" class="hf-divider__text" />
+                            <ui:VisualElement class="hf-divider__line" />
+                        </ui:VisualElement>
+                        <ui:Button name="guest-button" text="PLAY AS GUEST" class="hf-btn hf-btn--ghost" />
+                        <ui:Label text="Guests jump straight in. Stats and leaderboard rank need an account." class="hf-text--muted" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:ScrollView>
+        </ui:VisualElement>
+        <ui:VisualElement class="title__footer" picking-mode="Ignore">
+            <ui:Label text="2&#8211;8 players &#183; Free-for-all &#183; 3-minute rounds" class="hf-text--muted" />
+            <ui:VisualElement class="title__footer-links" picking-mode="Ignore">
+                <ui:Button name="settings-link" text="Settings" class="hf-link" />
+                <ui:Button name="credits-link" text="Credits" class="hf-link" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

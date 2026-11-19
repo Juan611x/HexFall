@@ -1,0 +1,19 @@
+terraform {
+  required_version = ">= 1.10"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.0"
+    }
+  }
+
+  # Partial configuration: supply the rest with
+  #   terraform init -backend-config=backend.hcl
+  # See backend.hcl.example.
+  backend "s3" {}
+}

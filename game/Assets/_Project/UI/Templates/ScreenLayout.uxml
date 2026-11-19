@@ -1,0 +1,44 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:hf="HexFall.UI">
+    <ui:VisualElement name="layout-root" class="hf-root">
+        <ui:VisualElement name="screen-content" class="hf-fill" />
+        <ui:Button name="back-button" text="BACK" class="hf-btn hf-btn--ghost hf-back" />
+        <ui:VisualElement name="sound-mixer" class="hf-fill hf-no-cast" picking-mode="Ignore">
+            <ui:Button name="sound-trigger" class="hf-btn sound__trigger">
+                <hf:IconElement name="sound-trigger-icon" kind="Speaker" class="sound__trigger-icon" />
+                <ui:Label text="SOUND" picking-mode="Ignore" class="sound__trigger-label" />
+            </ui:Button>
+            <ui:VisualElement name="sound-panel" class="sound__panel" style="display: none;">
+                <ui:VisualElement class="sound__header">
+                    <ui:Label text="SOUND" class="sound__title" />
+                    <ui:Button name="sound-master" text="MUTE ALL" class="hf-btn sound__master" />
+                </ui:VisualElement>
+                <ui:VisualElement name="sound-music" class="sound__channel">
+                    <ui:VisualElement class="sound__channel-head">
+                        <ui:Label text="Music" class="sound__label" />
+                        <ui:Label name="sound-music-value" text="100%" class="sound__value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="sound__channel-controls">
+                        <ui:Button name="sound-music-mute" class="hf-btn sound__mute">
+                            <hf:IconElement kind="SpeakerOff" class="sound__mute-icon" />
+                        </ui:Button>
+                        <ui:Slider name="sound-music-slider" low-value="0" high-value="100" value="100" class="sound__slider" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="sound-effects" class="sound__channel">
+                    <ui:VisualElement class="sound__channel-head">
+                        <ui:Label text="Effects" class="sound__label" />
+                        <ui:Label name="sound-effects-value" text="100%" class="sound__value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="sound__channel-controls">
+                        <ui:Button name="sound-effects-mute" class="hf-btn sound__mute">
+                            <hf:IconElement kind="SpeakerOff" class="sound__mute-icon" />
+                        </ui:Button>
+                        <ui:Slider name="sound-effects-slider" low-value="0" high-value="100" value="100" class="sound__slider" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Label text="Music is the menu theme and ambience; effects are clicks, hovers and spells." class="sound__hint" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="scanlines" class="hf-scanlines" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

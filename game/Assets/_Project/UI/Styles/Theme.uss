@@ -1,0 +1,293 @@
+:root {
+    --hf-color-panel: rgba(17, 14, 30, 0.94);
+    --hf-color-border: rgb(58, 51, 84);
+    --hf-color-primary: rgb(109, 40, 217);
+    --hf-color-primary-hover: rgb(134, 72, 240);
+    --hf-color-secondary: rgb(42, 36, 66);
+    --hf-color-secondary-hover: rgb(60, 52, 94);
+    --hf-color-ghost-bg: rgba(10, 8, 20, 0.6);
+    --hf-color-ghost-hover: rgba(30, 24, 54, 0.85);
+    --hf-color-ghost-border: rgb(75, 67, 112);
+    --hf-color-accent: rgb(94, 234, 212);
+    --hf-color-selection: rgba(94, 234, 212, 0.35);
+    --hf-color-text: rgb(245, 243, 255);
+    --hf-color-text-soft: rgb(217, 212, 242);
+    --hf-color-text-muted: rgb(163, 159, 192);
+    --hf-color-label: rgb(196, 181, 253);
+    --hf-color-shadow: rgb(0, 0, 0);
+
+    --hf-font-ui: url("project://database/Assets/_Project/UI/Fonts/PixelifySans-Regular.ttf");
+    --hf-font-ui-bold: url("project://database/Assets/_Project/UI/Fonts/PixelifySans-Bold.ttf");
+    --hf-font-display: url("project://database/Assets/_Project/UI/Fonts/CinzelDecorative-Black.ttf");
+}
+
+.hf-root {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: var(--hf-font-ui);
+    color: var(--hf-color-text-soft);
+    font-size: 16px;
+}
+
+.hf-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* Atoms: text */
+.hf-text--display {
+    -unity-font-definition: var(--hf-font-display);
+    color: var(--hf-color-text);
+    font-size: 104px;
+    height: 96px;
+    -unity-text-align: middle-left;
+    text-shadow: 5px 5px 0 var(--hf-color-shadow);
+    white-space: nowrap;
+}
+
+.hf-text--label {
+    -unity-font-definition: var(--hf-font-ui-bold);
+    color: var(--hf-color-label);
+    font-size: 16px;
+    letter-spacing: 4px;
+}
+
+.hf-text--body {
+    color: var(--hf-color-text-soft);
+    font-size: 22px;
+    white-space: normal;
+}
+
+.hf-text--muted {
+    color: var(--hf-color-text-muted);
+    font-size: 15px;
+    white-space: normal;
+}
+
+/* Atoms: buttons. The thick bottom border fakes the hard drop shadow. */
+.hf-btn {
+    height: 56px;
+    margin: 0;
+    padding: 0 20px 3px 20px;
+    -unity-font-definition: var(--hf-font-ui-bold);
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--hf-color-text);
+    -unity-text-align: middle-center;
+    border-radius: 0;
+    border-width: 2px 2px 5px 2px;
+    border-color: var(--hf-color-shadow);
+}
+
+/* Pressed state only translates: changing height/margin/borders resizes buttons that set their own size. */
+.hf-btn:active {
+    translate: 0 2px;
+}
+
+.hf-btn:focus {
+    border-color: var(--hf-color-accent) var(--hf-color-accent) var(--hf-color-shadow) var(--hf-color-accent);
+}
+
+.hf-btn--primary { background-color: var(--hf-color-primary); }
+.hf-btn--primary:hover { background-color: var(--hf-color-primary-hover); }
+
+.hf-btn--secondary { background-color: var(--hf-color-secondary); }
+.hf-btn--secondary:hover { background-color: var(--hf-color-secondary-hover); }
+
+.hf-btn--ghost {
+    background-color: var(--hf-color-ghost-bg);
+    border-width: 2px;
+    border-color: var(--hf-color-ghost-border);
+    color: var(--hf-color-text-soft);
+}
+.hf-btn--ghost:hover { background-color: var(--hf-color-ghost-hover); color: var(--hf-color-text); }
+.hf-btn--ghost:focus { border-color: var(--hf-color-accent); }
+
+.hf-link {
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+    color: var(--hf-color-accent);
+    font-size: 15px;
+    -unity-font-definition: var(--hf-font-ui);
+}
+.hf-link:hover { color: var(--hf-color-text); }
+
+/* Molecules */
+.hf-brand { flex-direction: row; align-items: center; }
+.hf-brand__emblem {
+    width: 72px;
+    height: 72px;
+    margin-right: 12px;
+    background-image: url("project://database/Assets/_Project/UI/Textures/T_LogoEmblem.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+.hf-hex { color: var(--hf-color-primary); }
+.hf-hex--inner {
+    left: 12px;
+    top: 14px;
+    right: auto;
+    bottom: auto;
+    width: 30px;
+    height: 34px;
+    color: var(--hf-color-accent);
+}
+
+.hf-divider { flex-direction: row; align-items: center; }
+.hf-divider__line { flex-grow: 1; height: 2px; background-color: var(--hf-color-border); }
+.hf-divider__text { margin: 0 14px; color: var(--hf-color-text-muted); font-size: 16px; }
+
+/* Layout */
+.hf-scanlines {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("project://database/Assets/_Project/UI/Textures/Scanlines.png");
+    background-repeat: repeat repeat;
+}
+
+.hf-back {
+    position: absolute;
+    left: 96px;
+    top: 32px;
+    width: 140px;
+    height: 44px;
+    font-size: 18px;
+}
+
+.hf-placeholder {
+    position: absolute;
+    left: 96px;
+    top: 140px;
+    font-size: 36px;
+    color: var(--hf-color-text);
+}
+
+/* Title screen */
+.title__column > * { margin-bottom: 16px; }
+.title__nav { width: 100%; max-width: 380px; margin-bottom: 0; }
+.title__nav > * { margin-bottom: 12px; }
+.title__footer {
+    flex-shrink: 0;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 7.5%;
+}
+.title__footer-links { flex-direction: row; }
+.title__footer-links > * { margin-left: 24px; }
+
+/* PSX UI mode: the panel is rendered at the reduced PSX resolution, so small texts grow and the
+   scanline overlay is dropped (the post-pass dither provides the grain). */
+.hf-psx-ui .hf-text--label { font-size: 18px; }
+.hf-psx-ui .hf-text--muted { font-size: 18px; }
+.hf-psx-ui .hf-link { font-size: 18px; }
+.hf-psx-ui .hf-divider__text { font-size: 18px; }
+.hf-psx-ui .hf-scanlines { display: none; }
+
+/* Sound mixer overlay: mounted once on the layout root, above the screen content. */
+.sound__trigger {
+    position: absolute;
+    right: 96px;
+    top: 32px;
+    height: 48px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px 3px 12px;
+    background-color: rgb(42, 36, 66);
+    font-size: 16px;
+}
+.sound__trigger:hover { background-color: var(--hf-color-secondary-hover); }
+.sound__trigger--open, .sound__trigger--open:hover { background-color: var(--hf-color-primary); }
+.sound__trigger-icon { width: 26px; height: 26px; margin-right: 10px; color: var(--hf-color-text); }
+.sound__trigger-label {
+    -unity-font-definition: var(--hf-font-ui-bold);
+    color: var(--hf-color-text);
+    font-size: 16px;
+    letter-spacing: 1px;
+}
+
+.sound__panel {
+    position: absolute;
+    right: 96px;
+    top: 92px;
+    width: 360px;
+    padding: 16px 18px;
+    background-color: rgba(10, 8, 20, 0.92);
+    border-width: 2px;
+    border-color: rgb(75, 67, 112);
+}
+.sound__panel > * { margin-bottom: 16px; }
+
+.sound__header { flex-direction: row; align-items: center; justify-content: space-between; }
+.sound__title {
+    -unity-font-definition: var(--hf-font-ui-bold);
+    color: var(--hf-color-label);
+    font-size: 15px;
+    letter-spacing: 3px;
+}
+.sound__master {
+    height: 34px;
+    padding: 0 12px 2px 12px;
+    font-size: 14px;
+    background-color: var(--hf-color-secondary);
+}
+.sound__master:hover { background-color: var(--hf-color-secondary-hover); }
+.sound__master.sound__mute--on { background-color: var(--hf-color-primary); }
+
+.sound__channel > * { margin-bottom: 8px; }
+.sound__channel-head { flex-direction: row; justify-content: space-between; align-items: center; }
+.sound__label { color: rgb(236, 232, 255); font-size: 16px; }
+.sound__value { -unity-font-definition: var(--hf-font-ui-bold); color: var(--hf-color-text); font-size: 16px; }
+.sound__channel--off .sound__value { color: var(--hf-color-text-muted); }
+
+.sound__channel-controls { flex-direction: row; align-items: center; margin-bottom: 0; }
+.sound__mute {
+    width: 44px;
+    height: 44px;
+    padding: 0 0 3px 0;
+    margin-right: 12px;
+    background-color: var(--hf-color-secondary);
+    color: var(--hf-color-text-muted);
+    align-items: center;
+    justify-content: center;
+}
+.sound__mute:hover { background-color: var(--hf-color-secondary-hover); }
+.sound__mute.sound__mute--on { background-color: var(--hf-color-primary); color: var(--hf-color-text); }
+.sound__mute-icon { width: 24px; height: 24px; }
+
+.sound__slider { flex-grow: 1; margin: 0; height: 26px; }
+.sound__slider .unity-base-slider__drag-container { height: 26px; }
+.sound__slider .unity-base-slider__tracker {
+    top: 7px;
+    margin-top: 0;
+    height: 12px;
+    background-color: rgb(30, 24, 54);
+    border-width: 2px;
+    border-color: var(--hf-color-shadow);
+    border-radius: 0;
+}
+.sound__fill { position: absolute; left: 0; top: 0; bottom: 0; background-color: var(--hf-color-primary); }
+.sound__slider .unity-base-slider__dragger {
+    width: 16px;
+    height: 26px;
+    top: 0;
+    margin: 0;
+    background-color: var(--hf-color-accent);
+    border-width: 2px;
+    border-color: var(--hf-color-shadow);
+    border-radius: 0;
+}
+.sound__channel--off .sound__fill { background-color: rgb(75, 67, 112); }
+.sound__channel--off .unity-base-slider__dragger { background-color: rgb(75, 67, 112); }
+
+.sound__hint { margin-bottom: 0; color: var(--hf-color-text-muted); font-size: 13px; white-space: normal; }
+.hf-psx-ui .sound__hint { font-size: 16px; }

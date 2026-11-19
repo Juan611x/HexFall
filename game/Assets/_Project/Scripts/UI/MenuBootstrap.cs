@@ -1,0 +1,239 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Networking;
+using UnityEngine.UIElements;
+
+namespace HexFall.UI
+{
+    [RequireComponent(typeof(UIDocument))]
+    public sealed class MenuBootstrap : MonoBehaviour
+    {
+        [SerializeField] private VisualTreeAsset titleScreen;
+        [SerializeField] private VisualTreeAsset loginScreen;
+        [SerializeField] private VisualTreeAsset registerScreen;
+        [SerializeField] private VisualTreeAsset verifyScreen;
+        [SerializeField] private VisualTreeAsset forgotPasswordScreen;
+        [SerializeField] private VisualTreeAsset guestScreen;
+        [SerializeField] private VisualTreeAsset lobbyScreen;
+        [SerializeField] private Animator wizardAnimator;
+        [SerializeField] private MenuAudioLibrary audioLibrary;
+        [SerializeField] private AudioSource uiAudioSource;
+        [SerializeField] private AudioSource spellAudioSource;
+        [SerializeField] private AudioSource themeAudioSource;
+        [SerializeField] private AudioSource ambientAudioSource;
+
+        private ScreenRouter _router;
+        private ScreenHost _host;
+        private IDisposable _presenter;
+        private VisualElement _root;
+        private MenuClickCastReaction _castReaction;
+        private MenuSoundReaction _soundReaction;
+        private MenuMusicPlayer _music;
+        private IAuthService _auth;
+        private INameAvailability _names;
+        private SessionState _session;
+        private GuestNameGenerator _guestNames;
+        private SoundSettings _sound;
+        private SoundSettingsSaver _soundSaver;
+        private SoundMixerPresenter _mixer;
+        private Coroutine _starting;
+
+        private void OnEnable()
+        {
+            _root = GetComponent<UIDocument>().rootVisualElement;
+            var root = _root;
+            var soundStore = new PlayerPrefsSoundSettingsStore();
+            _sound = new SoundSettings(soundStore.Load());
+            _soundSaver = new SoundSettingsSaver(_sound, soundStore);
+            var canPlay = audioLibrary != null;
+            IMenuSfx menuSfx = canPlay && uiAudioSource != null ? new UnityMenuSfx(uiAudioSource, audioLibrary, () => _sound.EffectsMultiplier) : new SilentSfx();
+            ISpellSfx spellSfx = canPlay && spellAudioSource != null
+                ? new UnitySpellSfx(spellAudioSource, audioLibrary, new SpellPicker(new System.Random().Next), () => _sound.EffectsMultiplier)
+                : new SilentSfx();
+            _soundReaction = new MenuSoundReaction(menuSfx);
+            _castReaction = new MenuClickCastReaction(new SpellSoundWizardAnimator(new AnimatorWizardAnimator(wizardAnimator), spellSfx));
+            _music = CreateMusic();
+            _music?.Begin();
+            // Pointer-down, not ClickEvent: a navigating button removes itself on pointer-up, so no click is raised for it.
+            root.RegisterCallback<PointerDownEvent>(OnPanelPointerDown, TrickleDown.TrickleDown);
+            // Keyboard/gamepad activation of a focused Button raises no ClickEvent.
+            root.RegisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
+            root.RegisterCallback<PointerEnterEvent>(OnPanelPointerEnter, TrickleDown.TrickleDown);
+            root.RegisterCallback<KeyDownEvent>(OnPanelKeyDown, TrickleDown.TrickleDown);
+            _session = new SessionState();
+            _guestNames = new GuestNameGenerator(new System.Random());
+            _router = new ScreenRouter(ScreenId.Title);
+            _host = new ScreenHost(root, _router, new Dictionary<ScreenId, VisualTreeAsset>
+            {
+                { ScreenId.Title, titleScreen },
+                { ScreenId.Login, loginScreen },
+                { ScreenId.Register, registerScreen },
+                { ScreenId.Verify, verifyScreen },
+                { ScreenId.ForgotPassword, forgotPasswordScreen },
+                { ScreenId.Guest, guestScreen },
+                { ScreenId.Lobby, lobbyScreen },
+            });
+            _host.ScreenShown += OnScreenShown;
+            _host.ScreenHidden += OnScreenHidden;
+            // Screens need the auth service, which depends on config.json, so the first screen waits for it.
+            _starting = StartCoroutine(LoadConfigThenShow());
+        }
+
+        private IEnumerator LoadConfigThenShow()
+        {
+            var config = RuntimeConfig.Empty;
+            // Only the deployed WebGL page has a config.json; the Editor keeps the in-memory fake.
+            if (Application.platform == RuntimePlatform.WebGLPlayer)
+            {
+                using (var request = UnityWebRequest.Get(RuntimeConfig.UrlFor(Application.absoluteURL)))
+                {
+                    request.timeout = 5;
+                    yield return request.SendWebRequest();
+                    if (request.result == UnityWebRequest.Result.Success)
+                    {
+                        config = RuntimeConfig.Parse(request.downloadHandler.text);
+                    }
+                }
+            }
+
+            _auth = config.HasCognito
+                ? new CognitoAuthService(new UnityWebRequestCognitoTransport(config.Region), config.CognitoClientId, new PlayerPrefsSessionStore())
+                : new FakeAuthService();
+
+            // Guests are checked against registered names: over HTTP when the config names the endpoint,
+            // against the in-memory fake offline. A real pool without the endpoint (old config) skips the check.
+            if (config.ApiBaseUrl.Length > 0) _names = new UnityWebRequestNameAvailability(config.ApiBaseUrl);
+            else if (_auth is FakeAuthService fake) _names = new FakeNameAvailability(fake);
+            else _names = null;
+
+            // A saved session skips the title screen; the first screen stays hidden until Restore answers.
+            AuthResult restore = default;
+            var restored = false;
+            _auth.Restore(result => { restore = result; restored = true; });
+            while (!restored) yield return null;
+
+            _starting = null;
+            if (StartupDecision.InitialScreen(restore) == ScreenId.Lobby)
+            {
+                _session.Current = restore.Session;
+                _router.ResetTo(ScreenId.Lobby);
+            }
+            else
+            {
+                _host.ShowCurrent();
+            }
+
+            _mixer = new SoundMixerPresenter(new SoundMixerView(_root.Q<VisualElement>("sound-mixer")), _sound);
+        }
+
+        private void OnDisable()
+        {
+            if (_starting != null)
+            {
+                StopCoroutine(_starting);
+                _starting = null;
+            }
+
+            _root?.UnregisterCallback<PointerDownEvent>(OnPanelPointerDown, TrickleDown.TrickleDown);
+            _root?.UnregisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
+            _root?.UnregisterCallback<PointerEnterEvent>(OnPanelPointerEnter, TrickleDown.TrickleDown);
+            _root?.UnregisterCallback<KeyDownEvent>(OnPanelKeyDown, TrickleDown.TrickleDown);
+            _root = null;
+            _mixer?.Dispose();
+            _mixer = null;
+            _soundSaver?.Dispose();
+            _soundSaver = null;
+            _presenter?.Dispose();
+            _presenter = null;
+            _host?.Dispose();
+            _host = null;
+        }
+
+        private void Update()
+        {
+            var delta = Time.unscaledDeltaTime;
+            (_presenter as ITickable)?.Tick(delta);
+            _music?.Tick(delta);
+        }
+
+        private MenuMusicPlayer CreateMusic()
+        {
+            if (audioLibrary == null || themeAudioSource == null || ambientAudioSource == null)
+            {
+                return null;
+            }
+
+            // Browsers keep audio locked until the first user gesture.
+            var requireGesture = Application.platform == RuntimePlatform.WebGLPlayer;
+            return new MenuMusicPlayer(
+                new UnityMusicLayers(themeAudioSource, ambientAudioSource),
+                new[] { audioLibrary.themeVolume, audioLibrary.ambientVolume },
+                audioLibrary.musicFadeInSeconds,
+                requireGesture,
+                () => _sound.MusicMultiplier);
+        }
+
+        private void OnPanelKeyDown(KeyDownEvent evt) => _music?.OnUserGesture();
+
+        private void OnPanelPointerDown(PointerDownEvent evt)
+        {
+            OnPress(evt.target as VisualElement);
+            ReleasePointerFocusNextFrame();
+        }
+
+        private void OnPanelSubmit(NavigationSubmitEvent evt) => OnPress(evt.target as VisualElement);
+
+        // Pointer-up never reaches the root while a button or slider captures the pointer, so this runs
+        // from pointer-down on the next frame, after the press has focused its element. Capture, not
+        // focus, drives clicks and slider drags, so both keep working.
+        private void ReleasePointerFocusNextFrame() => _root?.schedule.Execute(() =>
+        {
+            var focused = _root?.focusController?.focusedElement;
+            if (PointerFocusRelease.ShouldRelease(focused))
+            {
+                focused.Blur();
+            }
+        });
+
+        private void OnPanelPointerEnter(PointerEnterEvent evt) =>
+            _soundReaction.OnPointerEnter(evt.target as VisualElement);
+
+        private void OnPress(VisualElement target)
+        {
+            _music?.OnUserGesture();
+            _soundReaction.OnPress(target);
+            _castReaction.OnClick(target);
+        }
+
+        private sealed class SilentSfx : IMenuSfx, ISpellSfx
+        {
+            public void PlayHover() { }
+            public void PlayClick() { }
+            public void PlayBack() { }
+            public void PlayCast() { }
+        }
+
+        private void OnScreenShown(ScreenId id, VisualElement screen)
+        {
+            _presenter = id switch
+            {
+                ScreenId.Title => new TitlePresenter(new TitleView(screen), _router),
+                ScreenId.Login => new LoginPresenter(new LoginView(screen), _router, _auth, _session),
+                ScreenId.Register => new RegisterPresenter(new RegisterView(screen), _router, _auth, _session),
+                ScreenId.Verify => new VerifyPresenter(new VerifyView(screen), _router, _auth, _session),
+                ScreenId.ForgotPassword => new ForgotPasswordPresenter(new ForgotPasswordView(screen), _router, _auth, _session),
+                ScreenId.Guest => new GuestPresenter(new GuestView(screen), _router, _auth, _session, _guestNames, _names),
+                ScreenId.Lobby => new LobbyPresenter(new LobbyView(screen), _router, _auth, _session),
+                _ => null,
+            };
+        }
+
+        private void OnScreenHidden(ScreenId id)
+        {
+            _presenter?.Dispose();
+            _presenter = null;
+        }
+    }
+}
