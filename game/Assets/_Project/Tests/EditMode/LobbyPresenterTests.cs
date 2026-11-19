@@ -30,9 +30,22 @@ namespace HexFall.UI.Tests
             public void RaiseLogOut() => LogOutRequested?.Invoke();
         }
 
+        private sealed class SpyAuth : IAuthService
+        {
+            public int LogOuts;
+            public void LogOut(Action done) { LogOuts++; done(); }
+            public void SignUp(string name, string email, string password, Action<AuthResult> done) { }
+            public void Verify(string email, string code, Action<AuthResult> done) { }
+            public void ResendCode(string email, Action<AuthResult> done) { }
+            public void LogIn(string email, string password, Action<AuthResult> done) { }
+            public void Guest(string name, Action<AuthResult> done) { }
+            public void Restore(Action<AuthResult> done) { }
+        }
+
         private FakeLobbyView _view;
         private ScreenRouter _router;
         private SessionState _state;
+        private SpyAuth _auth;
         private LobbyPresenter _presenter;
 
         [SetUp]
@@ -43,7 +56,8 @@ namespace HexFall.UI.Tests
             _router.ResetTo(ScreenId.Lobby);
             _state = new SessionState { Current = new PlayerSession("Ash_Mage", false) };
             _view = new FakeLobbyView();
-            _presenter = new LobbyPresenter(_view, _router, _state);
+            _auth = new SpyAuth();
+            _presenter = new LobbyPresenter(_view, _router, _auth, _state);
         }
 
         [Test]
@@ -95,6 +109,13 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(ScreenId.Title, _router.Current);
             Assert.IsFalse(_router.CanGoBack);
             Assert.IsNull(_state.Current);
+        }
+
+        [Test]
+        public void LogOutAsksTheAuthServiceToEndTheSession()
+        {
+            _view.RaiseLogOut();
+            Assert.AreEqual(1, _auth.LogOuts);
         }
 
         [Test]

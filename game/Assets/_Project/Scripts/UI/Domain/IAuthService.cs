@@ -29,5 +29,9 @@ namespace HexFall.UI
         void ResendCode(string email, Action<AuthResult> done);
         void LogIn(string email, string password, Action<AuthResult> done);
         void Guest(string name, Action<AuthResult> done);
+        // Signs in again from a saved session, if there is one. Fails (without a network call) when none is saved.
+        void Restore(Action<AuthResult> done);
+        // Forgets the session locally and invalidates it on the server; `done` runs either way.
+        void LogOut(Action done);
     }
 }

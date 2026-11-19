@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HexFall.UI
 {
-    // Tokens of the signed-in user, kept in memory only (never persisted) for later server calls.
+    // Tokens of the signed-in user, kept in memory for later server calls. Only the refresh token is persisted (ISessionStore).
     public sealed class AuthTokens
     {
         public AuthTokens(string idToken, string accessToken, string refreshToken, int expiresInSeconds)
@@ -46,10 +46,13 @@ namespace HexFall.UI
         private readonly Dictionary<string, string> _pendingPasswords =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        public CognitoAuthService(ICognitoTransport transport, string clientId)
+        private readonly ISessionStore _store;
+
+        public CognitoAuthService(ICognitoTransport transport, string clientId, ISessionStore store = null)
         {
             _transport = transport;
             _clientId = clientId;
+            _store = store ?? new InMemorySessionStore();
         }
 
         public AuthTokens Tokens { get; private set; }
@@ -124,6 +127,53 @@ namespace HexFall.UI
             else done(AuthResult.Fail("Use 3–16 letters, numbers or _ only."));
         }
 
+        public void Restore(Action<AuthResult> done)
+        {
+            if (!_store.TryLoad(out var email, out var refreshToken))
+            {
+                done(AuthResult.Fail("No saved session."));
+                return;
+            }
+
+            var body = new CognitoJsonObject()
+                .Str("AuthFlow", "REFRESH_TOKEN_AUTH")
+                .Str("ClientId", _clientId)
+                .Raw("AuthParameters", new CognitoJsonObject().Str("REFRESH_TOKEN", refreshToken).Build())
+                .Build();
+            _transport.Send("InitiateAuth", body, response =>
+            {
+                if (!response.IsSuccess)
+                {
+                    // A dropped connection says nothing about the token, so it stays for the next visit.
+                    if (!response.NetworkError) _store.Clear();
+                    done(AuthResult.Fail(CognitoErrorMapper.Map(response)));
+                    return;
+                }
+
+                // A refresh response carries no new refresh token: the stored one stays valid.
+                var result = ReadSession(response.Body, refreshToken);
+                if (!result.Success) _store.Clear();
+                done(result);
+            });
+        }
+
+        public void LogOut(Action done)
+        {
+            // Forget locally first: the player is signed out even if the server never answers.
+            var token = Tokens?.RefreshToken;
+            if (string.IsNullOrEmpty(token) && _store.TryLoad(out _, out var stored)) token = stored;
+            Tokens = null;
+            _store.Clear();
+            if (string.IsNullOrEmpty(token))
+            {
+                done();
+                return;
+            }
+
+            var body = new CognitoJsonObject().Str("Token", token).Str("ClientId", _clientId).Build();
+            _transport.Send("RevokeToken", body, _ => done());
+        }
+
         private void Authenticate(string email, string password, Action<AuthResult> done, bool cachePasswordIfUnverified = false)
         {
             var body = new CognitoJsonObject()
@@ -147,11 +197,13 @@ namespace HexFall.UI
                     return;
                 }
 
-                done(ReadSession(response.Body));
+                var result = ReadSession(response.Body);
+                if (result.Success) _store.Save(email, Tokens.RefreshToken);
+                done(result);
             });
         }
 
-        private AuthResult ReadSession(string body)
+        private AuthResult ReadSession(string body, string fallbackRefreshToken = null)
         {
             AuthenticationResultBody tokens = null;
             try
@@ -169,7 +221,11 @@ namespace HexFall.UI
                 return AuthResult.Fail(CognitoErrorMapper.Generic);
             }
 
-            Tokens = new AuthTokens(tokens.IdToken, tokens.AccessToken, tokens.RefreshToken, tokens.ExpiresIn);
+            Tokens = new AuthTokens(
+                tokens.IdToken,
+                tokens.AccessToken,
+                string.IsNullOrEmpty(tokens.RefreshToken) ? fallbackRefreshToken : tokens.RefreshToken,
+                tokens.ExpiresIn);
             return AuthResult.Ok(new PlayerSession(nickname, false));
         }
 
