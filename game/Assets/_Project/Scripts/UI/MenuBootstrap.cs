@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UIElements;
 
 namespace HexFall.UI
@@ -34,6 +36,7 @@ namespace HexFall.UI
         private SoundSettings _sound;
         private SoundSettingsSaver _soundSaver;
         private SoundMixerPresenter _mixer;
+        private Coroutine _starting;
 
         private void OnEnable()
         {
@@ -57,7 +60,6 @@ namespace HexFall.UI
             root.RegisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
             root.RegisterCallback<PointerEnterEvent>(OnPanelPointerEnter, TrickleDown.TrickleDown);
             root.RegisterCallback<KeyDownEvent>(OnPanelKeyDown, TrickleDown.TrickleDown);
-            _auth = new FakeAuthService();
             _session = new SessionState();
             _guestNames = new GuestNameGenerator(new System.Random());
             _router = new ScreenRouter(ScreenId.Title);
@@ -72,12 +74,43 @@ namespace HexFall.UI
             });
             _host.ScreenShown += OnScreenShown;
             _host.ScreenHidden += OnScreenHidden;
+            // Screens need the auth service, which depends on config.json, so the first screen waits for it.
+            _starting = StartCoroutine(LoadConfigThenShow());
+        }
+
+        private IEnumerator LoadConfigThenShow()
+        {
+            var config = RuntimeConfig.Empty;
+            // Only the deployed WebGL page has a config.json; the Editor keeps the in-memory fake.
+            if (Application.platform == RuntimePlatform.WebGLPlayer)
+            {
+                using (var request = UnityWebRequest.Get(RuntimeConfig.UrlFor(Application.absoluteURL)))
+                {
+                    request.timeout = 5;
+                    yield return request.SendWebRequest();
+                    if (request.result == UnityWebRequest.Result.Success)
+                    {
+                        config = RuntimeConfig.Parse(request.downloadHandler.text);
+                    }
+                }
+            }
+
+            _auth = config.HasCognito
+                ? new CognitoAuthService(new UnityWebRequestCognitoTransport(config.Region), config.CognitoClientId)
+                : new FakeAuthService();
+            _starting = null;
             _host.ShowCurrent();
-            _mixer = new SoundMixerPresenter(new SoundMixerView(root.Q<VisualElement>("sound-mixer")), _sound);
+            _mixer = new SoundMixerPresenter(new SoundMixerView(_root.Q<VisualElement>("sound-mixer")), _sound);
         }
 
         private void OnDisable()
         {
+            if (_starting != null)
+            {
+                StopCoroutine(_starting);
+                _starting = null;
+            }
+
             _root?.UnregisterCallback<PointerDownEvent>(OnPanelPointerDown, TrickleDown.TrickleDown);
             _root?.UnregisterCallback<NavigationSubmitEvent>(OnPanelSubmit, TrickleDown.TrickleDown);
             _root?.UnregisterCallback<PointerEnterEvent>(OnPanelPointerEnter, TrickleDown.TrickleDown);
