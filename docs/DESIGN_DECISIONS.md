@@ -189,7 +189,7 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 - **Context:** Tokens lived in memory only (DD-015), so every reload of the page signed the player out and sent them back to the title screen.
 - **Decision:** Only the Cognito refresh token and the email are persisted, behind the `ISessionStore` port (`PlayerPrefsSessionStore` in the game; in WebGL `PlayerPrefs` is backed by the browser's IndexedDB; an in-memory store in tests). ID and access tokens stay in memory. At startup, after `config.json` selects the adapter and before the first screen shows, `CognitoAuthService.Restore` calls `InitiateAuth` with `REFRESH_TOKEN_AUTH`: success opens the Lobby, otherwise the Title screen. The refresh response carries no new refresh token, so the stored one is kept. A network failure during restore keeps the stored token for the next visit; any other failure clears it. Log out clears the local state first and navigates immediately, then sends `RevokeToken` without waiting for the result (the app client has token revocation enabled). Guests are never persisted, and the fake auth never restores. Refresh tokens last 30 days (`infra/modules/user-pool/main.tf`).
 - **Rationale:** Alternatives considered:
-  - **Tokens in memory only:** the current behavior and the problem that was hit; the session is lost on every reload.
+  - **Tokens in memory only:** the previous behavior and the problem that was hit; the session is lost on every reload.
   - **Also storing ID and access tokens:** they are shorter-lived but more exposed, and unnecessary because the refresh token recreates them on every start.
   - **Cookies set by a backend:** `HttpOnly` cookies would keep the token away from page scripts, but no backend exists yet (DD-014).
 
