@@ -162,7 +162,7 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 - **Context:** A player who closed the tab before entering the verification code was stuck: logging in said "verify your email", and signing up again said the email already exists.
 - **Decision:** Logging in to an unconfirmed account returns an "unverified" result instead of an error. `LoginPresenter` requests a new code and opens the Verify screen. After sign-up the password is kept in memory only, so confirming the code signs the player in without retyping it.
 - **Rationale:** The player always has a way forward from either screen, with no manual cleanup of half-created accounts.
-- **Trade-offs:** The password stays in memory between sign-up and verification (not stored, and gone on reload). Logging in sends an email as a side effect.
+- **Trade-offs:** The password stays in memory between sign-up and verification (not stored, and gone on reload). Logging in to an unconfirmed account sends a verification email as a side effect.
 
 ## DD-017: Ignore browser-extension errors before the Unity loader
 
