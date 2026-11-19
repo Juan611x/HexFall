@@ -47,6 +47,15 @@ namespace HexFall.UI
 
             _auth.LogIn(_view.Email, _view.Password, result =>
             {
+                if (result.NeedsVerification)
+                {
+                    // The account exists but is unconfirmed: send a fresh code and let the player finish verifying.
+                    var email = _view.Email;
+                    _session.PendingEmail = email;
+                    _auth.ResendCode(email, _ => _router.Navigate(ScreenId.Verify));
+                    return;
+                }
+
                 if (!result.Success)
                 {
                     _view.ShowError(result.Error);

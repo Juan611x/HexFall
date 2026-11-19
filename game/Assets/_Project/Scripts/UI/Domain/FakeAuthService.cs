@@ -8,6 +8,7 @@ namespace HexFall.UI
         public const string ValidCode = "123456";
         public const string DemoEmail = "wizard@example.com";
         public const string DemoPassword = "Arena#2026";
+        private const string UnverifiedMessage = "Verify your email before logging in.";
 
         private sealed class Account
         {
@@ -59,8 +60,11 @@ namespace HexFall.UI
 
         public void LogIn(string email, string password, Action<AuthResult> done)
         {
-            if (_accounts.TryGetValue(email, out var account) && account.Verified && account.Password == password)
-                done(AuthResult.Ok(new PlayerSession(account.Name, false)));
+            if (_accounts.TryGetValue(email, out var account) && account.Password == password)
+            {
+                if (account.Verified) done(AuthResult.Ok(new PlayerSession(account.Name, false)));
+                else done(AuthResult.Unverified(UnverifiedMessage));
+            }
             else
                 done(AuthResult.Fail("Incorrect email or password."));
         }

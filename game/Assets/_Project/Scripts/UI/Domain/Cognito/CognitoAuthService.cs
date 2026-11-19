@@ -115,7 +115,8 @@ namespace HexFall.UI
                 done(response.IsSuccess ? AuthResult.Ok() : AuthResult.Fail(CognitoErrorMapper.Map(response))));
         }
 
-        public void LogIn(string email, string password, Action<AuthResult> done) => Authenticate(email, password, done);
+        public void LogIn(string email, string password, Action<AuthResult> done) =>
+            Authenticate(email, password, done, cachePasswordIfUnverified: true);
 
         public void Guest(string name, Action<AuthResult> done)
         {
@@ -123,7 +124,7 @@ namespace HexFall.UI
             else done(AuthResult.Fail("Use 3–16 letters, numbers or _ only."));
         }
 
-        private void Authenticate(string email, string password, Action<AuthResult> done)
+        private void Authenticate(string email, string password, Action<AuthResult> done, bool cachePasswordIfUnverified = false)
         {
             var body = new CognitoJsonObject()
                 .Str("AuthFlow", "USER_PASSWORD_AUTH")
@@ -134,6 +135,14 @@ namespace HexFall.UI
             {
                 if (!response.IsSuccess)
                 {
+                    if (cachePasswordIfUnverified && CognitoErrorMapper.IsUnverified(response))
+                    {
+                        // Kept so a later Verify can sign the player straight in.
+                        _pendingPasswords[email] = password;
+                        done(AuthResult.Unverified(CognitoErrorMapper.Map(response)));
+                        return;
+                    }
+
                     done(AuthResult.Fail(CognitoErrorMapper.Map(response)));
                     return;
                 }
