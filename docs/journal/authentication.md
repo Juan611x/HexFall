@@ -2,7 +2,7 @@
 
 This journal entry tells how HexFall got player accounts: what we needed, the options we weighed, why we chose Amazon Cognito, and what testing on dev taught us. Unlike the [client hosting](client-hosting.md) entry, this one describes something already running on the dev environment.
 
-The picture lives in [architecture.drawio](../diagrams/architecture.drawio) (the whole system, including Cognito) with the hosting detail in [client-hosting.drawio](../diagrams/client-hosting.drawio). Open them in [diagrams.net](https://app.diagrams.net) or with the VS Code Draw.io extension. The decisions are recorded in [DD-014](../DESIGN_DECISIONS.md#dd-014-cognito-user-pool-called-directly-by-the-client) to [DD-017](../DESIGN_DECISIONS.md#dd-017-ignore-browser-extension-errors-before-the-unity-loader); the operational steps are in [DEPLOY.md](../DEPLOY.md#accounts-cognito).
+The picture lives in [architecture.drawio](../diagrams/architecture.drawio) (the whole system, including Cognito) with the hosting detail in [client-hosting.drawio](../diagrams/client-hosting.drawio). Open them in [diagrams.net](https://app.diagrams.net) or with the VS Code Draw.io extension. The decisions are recorded in [DD-014](../DESIGN_DECISIONS.md#dd-014-cognito-user-pool-called-directly-by-the-client) to [DD-020](../DESIGN_DECISIONS.md#dd-020-password-reset-through-cognitos-forgot-password-flow); the operational steps are in [DEPLOY.md](../DEPLOY.md#accounts-cognito).
 
 ## What we needed
 
@@ -41,7 +41,7 @@ The pool id and client id end up in `config.json`, served to anyone. That is by 
 - **Terraform** creates the pool and client in `infra/modules/user-pool`, used as `module "auth"` in `infra/envs/dev`, and outputs `cognito_user_pool_id`, `cognito_client_id` and `aws_region`.
 - **The deploy script** reads them from environment variables and writes `config.json` next to the build (DD-011).
 - **The client** fetches `config.json` at startup. `MenuBootstrap` picks the Cognito adapter when region, pool id and client id are all set, and the in-memory fake otherwise, and always in the Editor (DD-015). Presenters only know the `IAuthService` port.
-- The wizard name is stored in the `preferred_username` attribute. After sign-up the password is kept in memory only so that the Verify screen can sign the player in; tokens also live in memory only.
+- The wizard name is stored in the `preferred_username` attribute. After sign-up the password is kept in memory only so that the Verify screen can sign the player in; ID and access tokens live in memory only; the refresh token is the one thing persisted (see [Session and password reset](#session-and-password-reset)).
 
 ## What testing on dev found
 
@@ -63,10 +63,19 @@ The pool id and client id end up in `config.json`, served to anyone. That is by 
 
 **The StudentBoundary risk.** The trigger role needs DynamoDB and Cognito admin permissions. The lab boundary (`StudentBoundary`, see AWS_ENVIRONMENT.md) may not allow them, and only the first `apply` will tell. If it denies them, the fallback is to reserve at verification time or to drop the reclaim (and with it the Cognito admin permissions).
 
+## Session and password reset
+
+**Staying signed in (DD-019).** Reloading the page used to sign the player out, because tokens lived only in memory. Now the Cognito refresh token and the email are stored through the `ISessionStore` port (`PlayerPrefs`, which is IndexedDB in WebGL). ID and access tokens are not stored: the refresh token recreates them, so storing them would only add exposure. At startup the client trades the refresh token for new tokens before the first screen shows: success opens the Lobby, anything else the Title screen. Keeping tokens in a backend-set cookie was not an option because there is no backend yet.
+
+**Two rules decide what happens to the stored token.** A network failure during restore keeps it, so an offline player is not logged out. Any other failure clears it, because Cognito rejected it. On log out the client clears its local state and navigates first, then asks Cognito to revoke the token without waiting. The accepted risk is that a script on the page could read the stored token; the page loads only the game and the Unity loader, and revocation on log out limits the window.
+
+**Resetting the password (DD-020).** "Forgot password?" on Login opens a two-step screen with the typed email prefilled. Step 1 sends a 6-digit code by email; step 2 takes the code and a new password with the same live rules as sign-up. After a successful reset the game signs in with the new password and opens the Lobby; if that sign-in fails it returns to Login with a notice to log in with the new password. An unconfirmed account cannot reset, so the screen says to sign in first to finish verifying the email, which leads into the flow from DD-016.
+
+The screens are drawn in the [HexFall Menu Mockups canvas](https://claude.ai/artifact/9UT9f4Fi5BkJLC92hEQiLn), boards "7 · Forgot password: request a code" and "8 · Forgot password: code + new password".
+
 ## What is still open
 
-- The session is not persisted: reloading the page signs the player out.
-- There is no forgot-password screen, although the pool supports recovery by verified email.
+- The refresh token sits in browser storage (DD-019). A backend that sets `HttpOnly` cookies would remove that exposure once one exists.
 - Wizard names cannot be changed after sign-up (renaming is out of scope for DD-018).
 - The default email sender caps testing at about 50 emails a day; SES would lift it.
 - The game server (ALB + Fargate, DD-005, DD-006) is not built. When it is, it can verify the Cognito JWTs instead of running login code.
