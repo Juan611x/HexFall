@@ -25,6 +25,9 @@ module "auth" {
   environment         = "dev"
   deletion_protection = "INACTIVE"
 
+  # The lab account requires this boundary on every role (docs/AWS_ENVIRONMENT.md).
+  permissions_boundary_name = "StudentBoundary"
+
   pre_sign_up_source_dir = "${path.root}/../../../services/wizard_names"
   name_check_source_dir  = "${path.root}/../../../services/name_check"
   name_check_origins     = [module.client.url]

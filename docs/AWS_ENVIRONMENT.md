@@ -2,6 +2,8 @@
 
 HexFall deploys to a restricted lab account managed through AWS IAM Identity Center. This document records what the account allows, verified with real API calls, so the infrastructure code respects it from day one.
 
+> **Lab-specific.** Everything below describes that one account (its `commit-lab` profile, the `StudentLabAccess` permission set, the `student-*` and `StudentBoundary` IAM rules, the `eu-west-1` region lock). To deploy HexFall in a normal AWS account, follow the README's "Run your own copy" section instead; the modules create IAM roles without a permissions boundary unless `permissions_boundary_name` is set.
+
 ## Access
 
 Access is through an IAM Identity Center permission set (`StudentLabAccess`). Configure a CLI profile once with `aws configure sso`; the values below are what matter:

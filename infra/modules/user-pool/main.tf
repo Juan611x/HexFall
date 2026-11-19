@@ -1,9 +1,10 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  name_prefix          = "${var.project}-${var.environment}"
-  account_id           = data.aws_caller_identity.current.account_id
-  permissions_boundary = "arn:aws:iam::${local.account_id}:policy/${var.permissions_boundary_name}"
+  name_prefix = "${var.project}-${var.environment}"
+  account_id  = data.aws_caller_identity.current.account_id
+  # null outside the lab: AWS accounts without a StudentBoundary policy get no boundary.
+  permissions_boundary = var.permissions_boundary_name == null ? null : "arn:aws:iam::${local.account_id}:policy/${var.permissions_boundary_name}"
   names_table_name     = "${local.name_prefix}-wizard-names"
   trigger_name         = "${local.name_prefix}-names-trigger"
   name_check_name      = "${local.name_prefix}-name-check"

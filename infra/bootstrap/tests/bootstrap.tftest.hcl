@@ -75,7 +75,8 @@ run "ci_role_follows_the_account_rules" {
   command = plan
 
   variables {
-    enable_ci_access = true
+    enable_ci_access          = true
+    permissions_boundary_name = "StudentBoundary"
   }
 
   assert {
@@ -96,6 +97,20 @@ run "ci_role_follows_the_account_rules" {
   assert {
     condition     = startswith(aws_iam_policy.ci[0].name, "student-")
     error_message = "Customer policy names must start with student-."
+  }
+}
+
+# Outside the lab there is no StudentBoundary policy, so no boundary is the default.
+run "ci_role_has_no_boundary_by_default" {
+  command = plan
+
+  variables {
+    enable_ci_access = true
+  }
+
+  assert {
+    condition     = aws_iam_role.ci[0].permissions_boundary == null
+    error_message = "Without permissions_boundary_name the CI role must not carry a boundary."
   }
 }
 

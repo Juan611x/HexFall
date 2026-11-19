@@ -8,7 +8,7 @@ Players sign in with their email. The email is auto-verified by a code, and `pre
 
 A Cognito Pre Sign-up trigger (Lambda, Python 3.12, source in `services/wizard_names/`) reserves each wizard name in a DynamoDB table (`<project>-<environment>-wizard-names`, key `name_key` = lowercase name) with a conditional write. A taken name rejects the sign-up with `WizardNameTaken`. Names held by deleted accounts, or by accounts left UNCONFIRMED for more than 24 hours, are reclaimed. The reasoning is in [DD-018](../../../docs/DESIGN_DECISIONS.md).
 
-The module also creates the Lambda, its log group, an IAM role `student-<project>-<environment>-names-trigger` (with the `StudentBoundary` permissions boundary and a policy scoped to the table and the pool) and the invoke permission for Cognito.
+The module also creates the Lambda, its log group, an IAM role `student-<project>-<environment>-names-trigger` (with the permissions boundary named by `permissions_boundary_name`, if any, and a policy scoped to the table and the pool) and the invoke permission for Cognito.
 
 ## Guest name check
 
@@ -24,7 +24,7 @@ A second Lambda (`services/name_check/`) answers `GET /names/<name>` with `{"nam
 | `pre_sign_up_source_dir` | string | required | Directory with the trigger source (`handler.py`); zipped with `hashicorp/archive`, tests excluded. |
 | `name_check_source_dir` | string | required | Directory with the name check source (`handler.py`); tests excluded. |
 | `name_check_origins` | list(string) | required | Browser origins allowed by CORS (the client CloudFront URL). |
-| `permissions_boundary_name` | string | `StudentBoundary` | Lab permissions boundary attached to the trigger role. |
+| `permissions_boundary_name` | string | `null` | Permissions boundary policy attached to the Lambda roles. The lab account needs `StudentBoundary` (set by `infra/envs/dev`); leave `null` in accounts without such a policy. |
 | `log_retention_days` | number | `14` | Trigger log retention. |
 | `tags` | map(string) | `{}` | Extra tags. |
 

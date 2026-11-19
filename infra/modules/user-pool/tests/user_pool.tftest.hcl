@@ -197,6 +197,10 @@ run "trigger_lambda_is_wired" {
 run "trigger_role_follows_lab_rules" {
   command = apply
 
+  variables {
+    permissions_boundary_name = "StudentBoundary"
+  }
+
   assert {
     condition     = startswith(aws_iam_role.names_trigger.name, "student-")
     error_message = "Lab roles must be named student-*."
@@ -244,6 +248,10 @@ run "name_check_lambda_is_wired" {
 # apply against the mock: ARNs and ids are unknown at plan time.
 run "name_check_role_is_read_only" {
   command = apply
+
+  variables {
+    permissions_boundary_name = "StudentBoundary"
+  }
 
   assert {
     condition     = startswith(aws_iam_role.name_check.name, "student-")
@@ -313,5 +321,21 @@ run "name_check_url_is_public_get_only" {
   assert {
     condition     = output.name_check_url == "https://abc123.lambda-url.eu-west-1.on.aws/"
     error_message = "The module must export the Function URL as name_check_url."
+  }
+}
+
+# Outside the lab there is no StudentBoundary policy, so no boundary is the default.
+# apply against the mock: ARNs and ids are unknown at plan time.
+run "roles_have_no_boundary_by_default" {
+  command = apply
+
+  assert {
+    condition     = aws_iam_role.names_trigger.permissions_boundary == null
+    error_message = "Without permissions_boundary_name the trigger role must not carry a boundary."
+  }
+
+  assert {
+    condition     = aws_iam_role.name_check.permissions_boundary == null
+    error_message = "Without permissions_boundary_name the name check role must not carry a boundary."
   }
 }
