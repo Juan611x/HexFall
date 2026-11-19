@@ -1,5 +1,11 @@
+data "aws_caller_identity" "current" {}
+
 locals {
-  name_prefix = "${var.project}-${var.environment}"
+  name_prefix          = "${var.project}-${var.environment}"
+  account_id           = data.aws_caller_identity.current.account_id
+  permissions_boundary = "arn:aws:iam::${local.account_id}:policy/${var.permissions_boundary_name}"
+  names_table_name     = "${local.name_prefix}-wizard-names"
+  trigger_name         = "${local.name_prefix}-names-trigger"
 }
 
 resource "aws_cognito_user_pool" "players" {
@@ -44,6 +50,10 @@ resource "aws_cognito_user_pool" "players" {
     allow_admin_create_user_only = false
   }
 
+  lambda_config {
+    pre_sign_up = aws_lambda_function.pre_sign_up.arn
+  }
+
   tags = var.tags
 }
 
@@ -78,4 +88,102 @@ resource "aws_cognito_user_pool_client" "game" {
 
   read_attributes  = ["email", "email_verified", "preferred_username"]
   write_attributes = ["email", "preferred_username"]
+}
+
+# Unique wizard names: a Pre Sign-up trigger reserves each name in DynamoDB
+# with a conditional write. See DD-018.
+resource "aws_dynamodb_table" "wizard_names" {
+  name         = local.names_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "name_key"
+
+  attribute {
+    name = "name_key"
+    type = "S"
+  }
+
+  tags = var.tags
+}
+
+data "archive_file" "pre_sign_up" {
+  type        = "zip"
+  source_dir  = var.pre_sign_up_source_dir
+  output_path = "${path.module}/.build/pre_sign_up.zip"
+  excludes    = ["__pycache__", "test_handler.py"]
+}
+
+resource "aws_cloudwatch_log_group" "pre_sign_up" {
+  name              = "/aws/lambda/${local.trigger_name}"
+  retention_in_days = var.log_retention_days
+  tags              = var.tags
+}
+
+resource "aws_iam_role" "names_trigger" {
+  name                 = "student-${local.trigger_name}"
+  permissions_boundary = local.permissions_boundary
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy" "names_trigger" {
+  name = "names-trigger"
+  role = aws_iam_role.names_trigger.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem"]
+        Resource = [aws_dynamodb_table.wizard_names.arn]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["cognito-idp:AdminGetUser", "cognito-idp:AdminDeleteUser"]
+        Resource = [aws_cognito_user_pool.players.arn]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = ["${aws_cloudwatch_log_group.pre_sign_up.arn}:*"]
+      },
+    ]
+  })
+}
+
+resource "aws_lambda_function" "pre_sign_up" {
+  function_name    = local.trigger_name
+  role             = aws_iam_role.names_trigger.arn
+  runtime          = "python3.12"
+  handler          = "handler.handler"
+  filename         = data.archive_file.pre_sign_up.output_path
+  source_code_hash = data.archive_file.pre_sign_up.output_base64sha256
+  timeout          = 10
+
+  environment {
+    variables = {
+      NAMES_TABLE = local.names_table_name
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.pre_sign_up]
+
+  tags = var.tags
+}
+
+resource "aws_lambda_permission" "cognito_invoke" {
+  statement_id  = "AllowCognitoInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.pre_sign_up.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.players.arn
 }
