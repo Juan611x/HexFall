@@ -30,6 +30,15 @@ namespace HexFall.UI
                 return;
             }
 
+            foreach (var other in _accounts.Values)
+            {
+                if (string.Equals(other.Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    done(AuthResult.Fail(CognitoErrorMapper.WizardNameTaken));
+                    return;
+                }
+            }
+
             _accounts[email] = new Account { Name = name, Password = password };
             done(AuthResult.Ok());
         }

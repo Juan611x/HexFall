@@ -36,6 +36,22 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void SignUpRejectsTakenWizardNameCaseInsensitive()
+        {
+            Run(d => _auth.SignUp("Ash", "a@b.co", "Arena#2026", d));
+            var r = Run(d => _auth.SignUp("ASH", "c@d.co", "Arena#2026", d));
+            Assert.IsFalse(r.Success);
+            Assert.AreEqual("That wizard name is already taken.", r.Error);
+        }
+
+        [Test]
+        public void SignUpRejectsTheDemoWizardName()
+        {
+            var r = Run(d => _auth.SignUp("demo_wizard", "c@d.co", "Arena#2026", d));
+            Assert.AreEqual("That wizard name is already taken.", r.Error);
+        }
+
+        [Test]
         public void SignUpRejectsDemoEmail()
         {
             Assert.IsFalse(Run(d => _auth.SignUp("Ash", FakeAuthService.DemoEmail, "Arena#2026", d)).Success);

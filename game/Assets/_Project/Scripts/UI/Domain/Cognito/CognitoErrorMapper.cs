@@ -9,12 +9,15 @@ namespace HexFall.UI
         public const string ResetNeedsVerification = "Sign in first to finish verifying your email.";
         public const string Generic = "Something went wrong. Try again.";
         public const string Network = "Can't reach the server. Check your connection.";
+        public const string WizardNameTaken = "That wizard name is already taken.";
+        public const string InvalidWizardName = "Use 3–16 letters, numbers or _ only.";
         private const string TooMany = "Too many attempts. Try again later.";
 
         [Serializable]
         private sealed class ErrorBody
         {
             public string __type;
+            public string message;
         }
 
         public static bool IsUnverified(CognitoResponse response) =>
@@ -38,11 +41,34 @@ namespace HexFall.UI
                 case "NotAuthorizedException": return "Incorrect email or password.";
                 case "UserNotConfirmedException": return "Verify your email before logging in.";
                 case "InvalidPasswordException": return "That password does not meet the requirements.";
+                case "UserLambdaValidationException": return MapTriggerRejection(response.Body);
                 case "LimitExceededException":
                 case "TooManyRequestsException":
                 case "TooManyFailedAttemptsException":
                     return TooMany;
                 default: return Generic;
+            }
+        }
+
+        // The Pre Sign-up trigger rejects with "PreSignUp failed with error <Reason>."; only known reasons are shown.
+        private static string MapTriggerRejection(string body)
+        {
+            var message = ErrorMessage(body) ?? "";
+            if (message.Contains("WizardNameTaken")) return WizardNameTaken;
+            if (message.Contains("InvalidWizardName")) return InvalidWizardName;
+            return Generic;
+        }
+
+        private static string ErrorMessage(string body)
+        {
+            if (string.IsNullOrEmpty(body)) return null;
+            try
+            {
+                return JsonUtility.FromJson<ErrorBody>(body)?.message;
+            }
+            catch (ArgumentException)
+            {
+                return null;
             }
         }
 
