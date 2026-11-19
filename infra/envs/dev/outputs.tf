@@ -23,3 +23,15 @@ output "distribution_domain_name" {
 output "url" {
   value = module.client.url
 }
+
+output "cognito_user_pool_id" {
+  value = module.auth.user_pool_id
+}
+
+output "cognito_client_id" {
+  value = module.auth.client_id
+}
+
+output "aws_region" {
+  value = var.aws_region
+}

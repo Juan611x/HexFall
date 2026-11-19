@@ -17,3 +17,11 @@ module "client" {
   environment   = "dev"
   force_destroy = true
 }
+
+module "auth" {
+  source = "../../modules/user-pool"
+
+  project             = "hexfall"
+  environment         = "dev"
+  deletion_protection = "INACTIVE"
+}
