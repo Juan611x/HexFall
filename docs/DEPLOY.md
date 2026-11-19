@@ -46,7 +46,7 @@ Copy the backend example and put the state bucket name in it. `backend.hcl` is g
 
 ```bash
 cp infra/envs/dev/backend.hcl.example infra/envs/dev/backend.hcl   # then edit the bucket name
-terraform -chdir=infra/envs/dev init -backend-config=backend.hcl
+terraform -chdir=infra/envs/dev init "-backend-config=backend.hcl"   # quotes: PowerShell splits -flag=a.b otherwise
 terraform -chdir=infra/envs/dev plan
 terraform -chdir=infra/envs/dev apply
 terraform -chdir=infra/envs/dev output url
