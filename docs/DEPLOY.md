@@ -26,7 +26,7 @@ Infrastructure changes (Terraform code under `infra/`) mean re-running step 2. A
 
 ## Before you start
 
-You need AWS access to the lab account ([AWS_ENVIRONMENT.md](AWS_ENVIRONMENT.md)), Terraform 1.10 or later, the AWS CLI and Python 3.
+You need an AWS account, Terraform 1.10 or later, the AWS CLI and Python 3. The commands below use the lab account's profile `commit-lab` ([AWS_ENVIRONMENT.md](AWS_ENVIRONMENT.md)) as the example; use your own profile name in another account. Outside the lab, also remove `permissions_boundary_name = "StudentBoundary"` from `infra/envs/dev/main.tf`, since that policy only exists in the lab.
 
 The Terraform providers do not name a profile, so the shell must select it. Without it Terraform falls back to the default credential chain and fails with `InvalidClientTokenId` if those credentials are stale.
 
@@ -34,7 +34,7 @@ The Terraform providers do not name a profile, so the shell must select it. With
 # Windows PowerShell
 aws sso login --profile commit-lab
 $env:AWS_PROFILE = "commit-lab"
-aws sts get-caller-identity   # must show the lab account
+aws sts get-caller-identity   # must show the account you deploy to
 ```
 
 ```bash
@@ -185,6 +185,31 @@ curl -s "$URL/config.json"
 ```
 
 `config.json` must show a non-empty `cognito.userPoolId`, `cognito.clientId` and `apiBaseUrl` (the name check URL, ending in `.lambda-url.eu-west-1.on.aws/`), not only `environment` and `region`. Empty ids mean the build was published with the fake accounts; set the variables and publish again. Then try the accounts as described in [Accounts (Cognito)](#accounts-cognito).
+
+## Releases
+
+Builds are published as GitHub Release assets, never committed. One build works in any environment because it reads `config.json` at startup.
+
+**Package a build** (after step 3, once it printed `HEXFALL_BUILD_RESULT Succeeded`):
+
+```powershell
+# Windows PowerShell
+$Version = "v0.1.0"
+$Items = Get-ChildItem game/Builds/WebGL | Where-Object { $_.Name -notlike "*_DoNotShip" }
+Compress-Archive -Path $Items.FullName -DestinationPath "HexFall-WebGL-$Version.zip" -Force
+```
+
+```bash
+# bash / zsh
+VERSION=v0.1.0
+(cd game/Builds/WebGL && zip -r "../../../HexFall-WebGL-$VERSION.zip" . -x '*_DoNotShip/*')
+```
+
+Unity writes debug folders ending in `_DoNotShip` (for example Burst symbols) inside the build output; the commands above leave them out, as the publish step does. The build has no `config.json`: the publish step generates it for each environment.
+
+**Publish the release**: tag the commit the build came from (`git tag v0.1.0`, then `git push origin v0.1.0`), open **Releases → Draft a new release** on GitHub, choose the tag and attach the zip. Note the Unity version and the commit in the release notes.
+
+**Use a release**: unzip it anywhere and pass that folder to the publish step, `python tools/deploy_webgl.py --build-dir <unzipped folder> --bucket ... --distribution-id ...` (step 4). No Unity installation is needed.
 
 ## Accounts (Cognito)
 
