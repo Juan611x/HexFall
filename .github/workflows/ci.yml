@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Decides which checks a pull request needs. A docs-only PR runs none of them.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      terraform: ${{ steps.filter.outputs.terraform }}
+      python: ${{ steps.filter.outputs.python }}
+      unity: ${{ steps.filter.outputs.unity }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            terraform:
+              - 'infra/**'
+              - '.github/workflows/**'
+            python:
+              - 'tools/**'
+              - '.github/workflows/**'
+            unity:
+              - 'game/**'
+              - '.github/workflows/**'
+
+  terraform:
+    needs: changes
+    if: needs.changes.outputs.terraform == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10"
+
+      - name: Format
+        run: terraform fmt -check -recursive infra
+
+      # No AWS credentials here: init skips the backend and the tests use a mocked provider.
+      - name: Init and validate
+        run: |
+          for dir in infra/modules/static-site infra/bootstrap infra/envs/dev; do
+            echo "::group::$dir"
+            terraform -chdir="$dir" init -backend=false -input=false
+            terraform -chdir="$dir" validate
+            echo "::endgroup::"
+          done
+
+      - name: Test
+        run: |
+          for dir in infra/modules/static-site infra/bootstrap; do
+            echo "::group::$dir"
+            terraform -chdir="$dir" test
+            echo "::endgroup::"
+          done
+
+  python:
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit tests
+        run: python -m unittest discover -s tools -p "test_*.py"
+
+  unity-tests:
+    needs: changes
+    if: needs.changes.outputs.unity == 'true'
+    runs-on: ubuntu-latest
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+    steps:
+      # Secrets are not visible to `if:` on a job, so check inside a step and
+      # skip the rest with a visible message. Forks never receive secrets.
+      - name: Check Unity license
+        id: license
+        run: |
+          if [ -z "$UNITY_LICENSE" ]; then
+            echo "::warning::UNITY_LICENSE is not set; skipping the Unity EditMode tests. See docs/DEPLOY.md."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.license.outputs.available == 'true'
+
+      - uses: actions/cache@v4
+        if: steps.license.outputs.available == 'true'
+        with:
+          path: game/Library
+          key: Library-test-${{ hashFiles('game/Packages/manifest.json', 'game/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: Library-test-
+
+      - uses: game-ci/unity-test-runner@v4
+        if: steps.license.outputs.available == 'true'
+        with:
+          projectPath: game
+          testMode: editmode
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.license.outputs.available == 'true'
+        with:
+          name: unity-editmode-results
+          path: artifacts
+          if-no-files-found: ignore

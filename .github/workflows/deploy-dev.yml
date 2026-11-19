@@ -1,0 +1,188 @@
+name: Deploy dev
+
+# Parked: manual trigger only. The lab account denies the GitHub OIDC provider and
+# IAM users, so this workflow has no way to authenticate to AWS yet. Deploys run
+# by hand (docs/DEPLOY.md). Restore `push: branches: [develop]` once CI access exists.
+on:
+  workflow_dispatch:
+
+# One deploy at a time. A newer push waits instead of cancelling a half-finished
+# apply or upload.
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+# id-token lets the job exchange GitHub's signed token for short-lived AWS credentials.
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  # Where unity-builder writes the WebGL build. The path is inside the container,
+  # where the workspace is mounted at /github/workspace (see docs/DEPLOY.md).
+  BUILD_DIR_IN_CONTAINER: /github/workspace/build/WebGL
+
+jobs:
+  infra:
+    runs-on: ubuntu-latest
+    environment: dev
+    outputs:
+      bucket_name: ${{ steps.outputs.outputs.bucket_name }}
+      distribution_id: ${{ steps.outputs.outputs.distribution_id }}
+      url: ${{ steps.outputs.outputs.url }}
+    defaults:
+      run:
+        working-directory: infra/envs/dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # The wrapper would decorate `terraform output` with extra lines.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10"
+          terraform_wrapper: false
+
+      - name: Init
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=${{ vars.TF_STATE_KEY }}" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="use_lockfile=true" \
+            -backend-config="encrypt=true"
+
+      - name: Apply
+        run: terraform apply -input=false -auto-approve
+
+      - name: Export outputs
+        id: outputs
+        run: |
+          {
+            echo "bucket_name=$(terraform output -raw bucket_name)"
+            echo "distribution_id=$(terraform output -raw distribution_id)"
+            echo "url=$(terraform output -raw url)"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+    steps:
+      - name: Check Unity license
+        run: |
+          if [ -z "$UNITY_LICENSE" ]; then
+            echo "::error::UNITY_LICENSE is not set; the WebGL build cannot run. See docs/DEPLOY.md."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: game/Library
+          key: Library-WebGL-${{ hashFiles('game/Packages/manifest.json', 'game/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: Library-WebGL-
+
+      # buildMethod runs our own entry point. It reads -buildOutput, so the output
+      # path is passed through customParameters and matches the upload step below.
+      - uses: game-ci/unity-builder@v4
+        with:
+          projectPath: game
+          targetPlatform: WebGL
+          buildMethod: HexFall.Editor.Build.WebGLBuilder.BuildFromCommandLine
+          customParameters: -buildOutput ${{ env.BUILD_DIR_IN_CONTAINER }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: webgl-build
+          path: build/WebGL
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    needs: [infra, build]
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: webgl-build
+          path: build/WebGL
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Upload build and invalidate CloudFront
+        env:
+          HEXFALL_ENVIRONMENT: dev
+          HEXFALL_REGION: ${{ vars.AWS_REGION }}
+          HEXFALL_API_BASE_URL: ${{ vars.HEXFALL_API_BASE_URL }}
+          HEXFALL_REALTIME_URL: ${{ vars.HEXFALL_REALTIME_URL }}
+          HEXFALL_COGNITO_USER_POOL_ID: ${{ vars.HEXFALL_COGNITO_USER_POOL_ID }}
+          HEXFALL_COGNITO_CLIENT_ID: ${{ vars.HEXFALL_COGNITO_CLIENT_ID }}
+        run: |
+          python tools/deploy_webgl.py \
+            --build-dir build/WebGL \
+            --bucket "${{ needs.infra.outputs.bucket_name }}" \
+            --distribution-id "${{ needs.infra.outputs.distribution_id }}"
+
+  smoke:
+    needs: [infra, deploy]
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: webgl-build
+          path: build/WebGL
+
+      # CloudFront needs a moment to apply the invalidation, so each check retries.
+      - name: Check the public URL
+        env:
+          URL: ${{ needs.infra.outputs.url }}
+        run: |
+          set -euo pipefail
+
+          retry() {
+            for attempt in 1 2 3 4 5 6; do
+              if "$@"; then return 0; fi
+              echo "attempt $attempt failed; retrying in 10s"
+              sleep 10
+            done
+            return 1
+          }
+
+          status_is_200() {
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$1")
+            echo "$1 -> $code"
+            [ "$code" = "200" ]
+          }
+
+          wasm_is_brotli() {
+            headers=$(curl -s -I -H 'Accept-Encoding: br' "$1")
+            echo "$headers" | grep -iE '^(HTTP|content-type|content-encoding)'
+            echo "$headers" | grep -qi '^content-encoding: br'
+          }
+
+          wasm=$(cd build/WebGL && find Build -name '*.wasm.br' | head -n 1)
+          test -n "$wasm" || { echo "::error::no .wasm.br in the build"; exit 1; }
+
+          retry status_is_200 "$URL/"
+          retry status_is_200 "$URL/config.json"
+          retry wasm_is_brotli "$URL/$wasm"

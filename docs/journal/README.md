@@ -7,3 +7,4 @@ The final, implemented result of each decision is recorded separately in [DESIGN
 | Entry | Topic |
 |---|---|
 | [client-hosting.md](client-hosting.md) | Minimum deployment of the WebGL client on S3 + CloudFront, provisioned with Terraform |
+| [ci-cd.md](ci-cd.md) | Pipeline that builds, deploys and smoke-tests the client: OIDC, runtime config, upload order |
