@@ -68,6 +68,8 @@ Restore the files a batch build re-serializes before committing anything (BUILD.
 
 ```powershell
 # Windows PowerShell
+$env:HEXFALL_ENVIRONMENT = "dev"
+$env:HEXFALL_REGION = "eu-west-1"
 $Bucket = terraform -chdir=infra/envs/dev output -raw bucket_name
 $Dist = terraform -chdir=infra/envs/dev output -raw distribution_id
 
@@ -77,6 +79,7 @@ python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket $Bucket --di
 
 ```bash
 # bash / zsh
+export HEXFALL_ENVIRONMENT=dev HEXFALL_REGION=eu-west-1
 BUCKET=$(terraform -chdir=infra/envs/dev output -raw bucket_name)
 DIST=$(terraform -chdir=infra/envs/dev output -raw distribution_id)
 
@@ -84,7 +87,9 @@ python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket "$BUCKET" --
 python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket "$BUCKET" --distribution-id "$DIST"
 ```
 
-`--dry-run` prints every command without running it. `HEXFALL_BUCKET` and `HEXFALL_DISTRIBUTION_ID` can replace the flags.
+Run it only after the build has finished: `build-webgl.ps1` prints `HEXFALL_BUILD_RESULT Succeeded`. A half-written build (for example a 0-byte `WebGL.wasm.br`) would be published as is.
+
+`--dry-run` prints every command without running it. Folders ending in `_DoNotShip` (Unity debug output such as Burst symbols) are never uploaded. `HEXFALL_BUCKET` and `HEXFALL_DISTRIBUTION_ID` can replace the flags.
 
 Order of operations: assets, then `config.json` and `index.html` (never cached), then deletion of files no longer in the build, then a `/*` invalidation.
 
