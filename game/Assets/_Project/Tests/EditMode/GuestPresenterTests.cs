@@ -16,6 +16,7 @@ namespace HexFall.UI.Tests
             public bool EnterEnabled;
             public string Error;
 
+            public void SetBusy(bool busy) { }
             public void SetName(string name) => Name = name;
             public void SetEnterEnabled(bool enabled) => EnterEnabled = enabled;
             public void ShowError(string message) => Error = message;
