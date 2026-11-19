@@ -1,8 +1,9 @@
 name: Deploy dev
 
+# Parked: manual trigger only. The lab account denies the GitHub OIDC provider and
+# IAM users, so this workflow has no way to authenticate to AWS yet. Deploys run
+# by hand (docs/DEPLOY.md). Restore `push: branches: [develop]` once CI access exists.
 on:
-  push:
-    branches: [develop]
   workflow_dispatch:
 
 # One deploy at a time. A newer push waits instead of cancelling a half-finished
