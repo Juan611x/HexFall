@@ -19,6 +19,7 @@ namespace HexFall.UI.Tests
             public string ResendText;
             public bool ResendEnabled;
             public string Error;
+            public VerifyBusy Busy;
 
             public void ShowEmail(string email) => Email = email;
             public void SetDigits(char?[] digits) => Digits = digits;
@@ -27,6 +28,7 @@ namespace HexFall.UI.Tests
             public void SetResend(string text, bool enabled) { ResendText = text; ResendEnabled = enabled; }
             public void ShowError(string message) => Error = message;
             public void ClearError() => Error = null;
+            public void SetBusy(VerifyBusy busy) => Busy = busy;
 
             public string DigitString()
             {
@@ -219,6 +221,101 @@ namespace HexFall.UI.Tests
             _presenter.Dispose();
             _view.Enter(0, "123456");
             Assert.AreEqual("______", _view.DigitString());
+        }
+
+        private DeferredAuthService UseDeferredAuth()
+        {
+            var deferred = new DeferredAuthService();
+            _presenter.Dispose();
+            _presenter = new VerifyPresenter(_view, _router, deferred, _state);
+            return deferred;
+        }
+
+        [Test]
+        public void VerifyIsBusyWhileTheRequestRunsAndClearedOnSuccess()
+        {
+            var auth = UseDeferredAuth();
+            _view.Enter(0, "123456");
+            _view.RaiseSubmit();
+            Assert.AreEqual(VerifyBusy.Verifying, _view.Busy);
+            auth.CompleteNext(AuthResult.Ok(new PlayerSession("Ash_Mage", false)));
+            Assert.AreEqual(VerifyBusy.None, _view.Busy);
+            Assert.AreEqual(ScreenId.Lobby, _router.Current);
+        }
+
+        [Test]
+        public void VerifyBusyClearedOnFailure()
+        {
+            var auth = UseDeferredAuth();
+            _view.Enter(0, "123456");
+            _view.RaiseSubmit();
+            auth.CompleteNext(AuthResult.Fail("bad code"));
+            Assert.AreEqual(VerifyBusy.None, _view.Busy);
+            Assert.AreEqual("bad code", _view.Error);
+        }
+
+        [Test]
+        public void SecondVerifyWhileBusyIsIgnored()
+        {
+            var auth = UseDeferredAuth();
+            _view.Enter(0, "123456");
+            _view.RaiseSubmit();
+            _view.RaiseSubmit();
+            Assert.AreEqual(1, auth.Calls);
+        }
+
+        [Test]
+        public void ResendIsBusyWhileTheRequestRunsAndClearedOnSuccess()
+        {
+            var auth = UseDeferredAuth();
+            _presenter.Tick(60f);
+            _view.RaiseResend();
+            Assert.AreEqual(VerifyBusy.Resending, _view.Busy);
+            auth.CompleteNext(AuthResult.Ok());
+            Assert.AreEqual(VerifyBusy.None, _view.Busy);
+        }
+
+        [Test]
+        public void ResendBusyClearedOnFailure()
+        {
+            var auth = UseDeferredAuth();
+            _presenter.Tick(60f);
+            _view.RaiseResend();
+            auth.CompleteNext(AuthResult.Fail("slow down"));
+            Assert.AreEqual(VerifyBusy.None, _view.Busy);
+            Assert.AreEqual("slow down", _view.Error);
+        }
+
+        [Test]
+        public void SecondResendWhileBusyIsIgnored()
+        {
+            var auth = UseDeferredAuth();
+            _presenter.Tick(60f);
+            _view.RaiseResend();
+            _view.RaiseResend();
+            Assert.AreEqual(1, auth.Calls);
+        }
+
+        [Test]
+        public void VerifyWhileResendingIsIgnored()
+        {
+            var auth = UseDeferredAuth();
+            _view.Enter(0, "123456");
+            _presenter.Tick(60f);
+            _view.RaiseResend();
+            _view.RaiseSubmit();
+            Assert.AreEqual(1, auth.Calls);
+        }
+
+        [Test]
+        public void ResendWhileVerifyingIsIgnored()
+        {
+            var auth = UseDeferredAuth();
+            _view.Enter(0, "123456");
+            _view.RaiseSubmit();
+            _presenter.Tick(60f);
+            _view.RaiseResend();
+            Assert.AreEqual(1, auth.Calls);
         }
     }
 }
