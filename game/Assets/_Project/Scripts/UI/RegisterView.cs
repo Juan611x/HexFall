@@ -13,6 +13,10 @@ namespace HexFall.UI
         private readonly Label _error;
         private readonly Button _submit;
         private readonly VisualElement _root;
+        private readonly Button _login;
+        private readonly BusyButton _submitBusy;
+        private bool _submitEnabled;
+        private bool _busy;
 
         public event Action Changed;
         public event Action SubmitRequested;
@@ -28,11 +32,13 @@ namespace HexFall.UI
             _nameHelp = root.Q<Label>("name-help");
             _error = root.Q<Label>("error-label");
             _submit = root.Q<Button>("register-submit");
+            _login = root.Q<Button>("login-link");
+            _submitBusy = new BusyButton(_submit, "CREATING...");
 
             foreach (var field in new[] { _name, _email, _password, _confirm })
                 field.RegisterValueChangedCallback(_ => Changed?.Invoke());
             _submit.clicked += () => SubmitRequested?.Invoke();
-            root.Q<Button>("login-link").clicked += () => LoginRequested?.Invoke();
+            _login.clicked += () => LoginRequested?.Invoke();
         }
 
         public string WizardName => _name.value;
@@ -58,7 +64,20 @@ namespace HexFall.UI
             SetRule("rule-match", check.Matches);
         }
 
-        public void SetSubmitEnabled(bool enabled) => _submit.SetEnabled(enabled);
+        public void SetSubmitEnabled(bool enabled)
+        {
+            _submitEnabled = enabled;
+            _submit.SetEnabled(_submitEnabled && !_busy);
+        }
+
+        public void SetBusy(bool busy)
+        {
+            _busy = busy;
+            _submitBusy.SetBusy(busy);
+            _submit.SetEnabled(_submitEnabled && !busy);
+            _login.SetEnabled(!busy);
+            foreach (var field in new[] { _name, _email, _password, _confirm }) field.SetEnabled(!busy);
+        }
         public void ShowError(string message) => _error.ShowText(message);
         public void ClearError() => _error.HideText();
 

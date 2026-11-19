@@ -262,3 +262,19 @@
 .guest__col { max-width: 480px; }
 .lobby__col { max-width: 460px; }
 .title__col { max-width: 520px; }
+
+/* Busy state: the primary button keeps its look (not the dimmed disabled one) and shows a spinner. */
+.hf-btn:disabled.hf-btn--busy { opacity: 1; }
+.hf-btn--primary:disabled.hf-btn--busy {
+    background-color: var(--hf-color-primary);
+    color: var(--hf-color-text);
+    border-color: var(--hf-color-shadow);
+}
+.hf-spinner {
+    position: absolute;
+    left: 18px;
+    top: 13px;
+    width: 20px;
+    height: 20px;
+    color: var(--hf-color-text);
+}

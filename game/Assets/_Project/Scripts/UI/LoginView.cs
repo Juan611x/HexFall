@@ -11,6 +11,10 @@ namespace HexFall.UI
         private readonly Label _notice;
         private readonly Button _toggle;
         private readonly IconElement _icon;
+        private readonly Button _submit;
+        private readonly Button _create;
+        private readonly Button _forgot;
+        private readonly BusyButton _submitBusy;
 
         public event Action LoginRequested;
         public event Action CreateAccountRequested;
@@ -25,9 +29,14 @@ namespace HexFall.UI
             _toggle = root.Q<Button>("password-toggle");
             _icon = root.Q<IconElement>("password-icon");
 
-            root.Q<Button>("login-submit").clicked += () => LoginRequested?.Invoke();
-            root.Q<Button>("create-account-link").clicked += () => CreateAccountRequested?.Invoke();
-            root.Q<Button>("forgot-link").clicked += () => ForgotPasswordRequested?.Invoke();
+            _submit = root.Q<Button>("login-submit");
+            _create = root.Q<Button>("create-account-link");
+            _forgot = root.Q<Button>("forgot-link");
+            _submitBusy = new BusyButton(_submit, "LOGGING IN...");
+
+            _submit.clicked += () => LoginRequested?.Invoke();
+            _create.clicked += () => CreateAccountRequested?.Invoke();
+            _forgot.clicked += () => ForgotPasswordRequested?.Invoke();
             _toggle.clicked += TogglePasswordVisibility;
             _email.OnEnter(() => LoginRequested?.Invoke());
             _password.OnEnter(() => LoginRequested?.Invoke());
@@ -42,6 +51,13 @@ namespace HexFall.UI
         {
             _error.HideText();
             _notice.HideText();
+        }
+
+        public void SetBusy(bool busy)
+        {
+            _submitBusy.SetBusy(busy);
+            foreach (var element in new VisualElement[] { _submit, _create, _forgot, _toggle, _email, _password })
+                element.SetEnabled(!busy);
         }
 
         private void TogglePasswordVisibility()

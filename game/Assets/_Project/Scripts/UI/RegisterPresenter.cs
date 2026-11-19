@@ -13,6 +13,7 @@ namespace HexFall.UI
         private readonly ScreenRouter _router;
         private readonly IAuthService _auth;
         private readonly SessionState _session;
+        private bool _busy;
 
         public RegisterPresenter(IRegisterView view, ScreenRouter router, IAuthService auth, SessionState session)
         {
@@ -56,14 +57,26 @@ namespace HexFall.UI
             _view.SetSubmitEnabled(IsFormValid());
         }
 
-        private void OnLogin() => _router.Navigate(ScreenId.Login);
+        private void SetBusy(bool busy)
+        {
+            _busy = busy;
+            _view.SetBusy(busy);
+        }
+
+        private void OnLogin()
+        {
+            if (_busy) return;
+            _router.Navigate(ScreenId.Login);
+        }
 
         private void OnSubmit()
         {
-            if (!IsFormValid()) return;
+            if (_busy || !IsFormValid()) return;
             var email = _view.Email;
+            SetBusy(true);
             _auth.SignUp(_view.WizardName, email, _view.Password, result =>
             {
+                SetBusy(false);
                 if (!result.Success)
                 {
                     _view.ShowError(result.Error);

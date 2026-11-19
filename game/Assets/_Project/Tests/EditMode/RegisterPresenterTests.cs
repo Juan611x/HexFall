@@ -21,12 +21,14 @@ namespace HexFall.UI.Tests
             public PasswordCheck Rules;
             public bool SubmitEnabled = true;
             public string Error;
+            public bool Busy;
 
             public void SetNameHelp(string text, HelpTone tone) { HelpText = text; Tone = tone; }
             public void SetPasswordRules(PasswordCheck check) => Rules = check;
             public void SetSubmitEnabled(bool enabled) => SubmitEnabled = enabled;
             public void ShowError(string message) => Error = message;
             public void ClearError() => Error = null;
+            public void SetBusy(bool busy) => Busy = busy;
 
             public void Type(string name = null, string email = null, string password = null, string confirm = null)
             {
@@ -167,6 +169,52 @@ namespace HexFall.UI.Tests
             _presenter.Dispose();
             _view.RaiseLogin();
             Assert.AreEqual(ScreenId.Register, _router.Current);
+        }
+
+        private DeferredAuthService UseDeferredAuth()
+        {
+            var deferred = new DeferredAuthService();
+            _presenter.Dispose();
+            _presenter = new RegisterPresenter(_view, _router, deferred, _state);
+            FillValid();
+            return deferred;
+        }
+
+        [Test]
+        public void BusyWhileSigningUpAndClearedOnSuccess()
+        {
+            var auth = UseDeferredAuth();
+            _view.RaiseSubmit();
+            Assert.IsTrue(_view.Busy);
+            auth.CompleteNext(AuthResult.Ok());
+            Assert.IsFalse(_view.Busy);
+            Assert.AreEqual(ScreenId.Verify, _router.Current);
+        }
+
+        [Test]
+        public void BusyClearedOnFailure()
+        {
+            var auth = UseDeferredAuth();
+            _view.RaiseSubmit();
+            auth.CompleteNext(AuthResult.Fail("taken"));
+            Assert.IsFalse(_view.Busy);
+            Assert.AreEqual("taken", _view.Error);
+        }
+
+        [Test]
+        public void SecondSubmitWhileBusyIsIgnored()
+        {
+            var auth = UseDeferredAuth();
+            _view.RaiseSubmit();
+            _view.RaiseSubmit();
+            Assert.AreEqual(1, auth.Calls);
+        }
+
+        [Test]
+        public void InvalidFormNeverGoesBusy()
+        {
+            _view.RaiseSubmit();
+            Assert.IsFalse(_view.Busy);
         }
     }
 }
