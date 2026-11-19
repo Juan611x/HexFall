@@ -73,9 +73,20 @@ The pool id and client id end up in `config.json`, served to anyone. That is by 
 
 The screens are drawn in the [HexFall Menu Mockups canvas](https://claude.ai/artifact/9UT9f4Fi5BkJLC92hEQiLn), boards "7 · Forgot password: request a code" and "8 · Forgot password: code + new password".
 
+## Guest names
+
+**The gap.** Guests never touch a backend, so a guest could type the wizard name of a registered player. The reservations are in DynamoDB (DD-018) and the browser has no AWS credentials to read them.
+
+**What was built (DD-021).** A small read-only Lambda answers `GET /names/<name>` with whether the name is free, behind a public Lambda Function URL. The guest screen calls it before entering, and the random-name button asks about each candidate and tries up to 5 before giving up. The call sits behind an `INameAvailability` port, so the Editor uses a fake that treats the in-memory accounts as taken and an old `config.json` without `apiBaseUrl` simply skips the check.
+
+**Choices.** Check only, no reservation: two guests may share a name, which the user accepted to avoid expiry jobs. Any reservation counts as taken, even one that sign-up could reclaim, because the conservative answer is cheaper than a second reclaim rule. A Function URL beat API Gateway because it needs no extra service for one read-only call.
+
+**The risk.** The endpoint is public and unauthenticated, and the lab may deny public Function URLs or their permissions; only the first apply tells. The fallback is an API Gateway HTTP API over the same Lambda. AWS now wants two resource-based permissions for a public URL (`lambda:InvokeFunctionUrl` and `lambda:InvokeFunction` through the URL), so the module creates both.
+
 ## What is still open
 
 - The refresh token sits in browser storage (DD-019). A backend that sets `HttpOnly` cookies would remove that exposure once one exists.
 - Wizard names cannot be changed after sign-up (renaming is out of scope for DD-018).
+- The guest name check is public and has no rate limiting beyond Lambda concurrency (DD-021).
 - The default email sender caps testing at about 50 emails a day; SES would lift it.
 - The game server (ALB + Fargate, DD-005, DD-006) is not built. When it is, it can verify the Cognito JWTs instead of running login code.
