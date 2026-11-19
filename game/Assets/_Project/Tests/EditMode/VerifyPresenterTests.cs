@@ -148,6 +148,34 @@ namespace HexFall.UI.Tests
             Assert.IsNull(_state.PendingEmail);
         }
 
+        private sealed class NoSessionAuth : IAuthService
+        {
+            public void SignUp(string name, string email, string password, Action<AuthResult> done) => done(AuthResult.Ok());
+            public void Verify(string email, string code, Action<AuthResult> done) => done(AuthResult.Ok());
+            public void ResendCode(string email, Action<AuthResult> done) => done(AuthResult.Ok());
+            public void LogIn(string email, string password, Action<AuthResult> done) => done(AuthResult.Ok());
+            public void Guest(string name, Action<AuthResult> done) => done(AuthResult.Ok());
+        }
+
+        [Test]
+        public void VerifiedWithoutSessionResetsToLoginAndClearsPendingEmail()
+        {
+            _presenter.Dispose();
+            _router = new ScreenRouter(ScreenId.Title);
+            _router.Navigate(ScreenId.Register);
+            _router.Navigate(ScreenId.Verify);
+            _view = new FakeVerifyView();
+            _presenter = new VerifyPresenter(_view, _router, new NoSessionAuth(), _state);
+
+            _view.Enter(0, "123456");
+            _view.RaiseSubmit();
+
+            Assert.AreEqual(ScreenId.Login, _router.Current);
+            Assert.IsFalse(_router.CanGoBack);
+            Assert.IsNull(_state.Current);
+            Assert.IsNull(_state.PendingEmail);
+        }
+
         [Test]
         public void TickUpdatesCountdownLabel()
         {

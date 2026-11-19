@@ -91,7 +91,8 @@ namespace HexFall.UI
 
                 _session.Current = result.Session;
                 _session.PendingEmail = null;
-                _router.ResetTo(ScreenId.Lobby);
+                // Verified but not signed in (e.g. the page was reloaded): the player logs in next.
+                _router.ResetTo(result.Session == null ? ScreenId.Login : ScreenId.Lobby);
             });
         }
 
