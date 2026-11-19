@@ -1,9 +1,10 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  account_id           = data.aws_caller_identity.current.account_id
-  state_bucket_name    = "${var.project}-tfstate-${local.account_id}"
-  permissions_boundary = "arn:aws:iam::${local.account_id}:policy/${var.permissions_boundary_name}"
+  account_id        = data.aws_caller_identity.current.account_id
+  state_bucket_name = "${var.project}-tfstate-${local.account_id}"
+  # null outside the lab: AWS accounts without a StudentBoundary policy get no boundary.
+  permissions_boundary = var.permissions_boundary_name == null ? null : "arn:aws:iam::${local.account_id}:policy/${var.permissions_boundary_name}"
 
   github_oidc_host = "token.actions.githubusercontent.com"
   # one() turns the zero-or-one resource lists into a value or null.

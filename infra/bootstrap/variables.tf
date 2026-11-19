@@ -23,9 +23,9 @@ variable "deploy_environments" {
 }
 
 variable "permissions_boundary_name" {
-  description = "Name of the permissions boundary policy the lab requires on every role."
+  description = "Name of a permissions boundary policy to attach to every role. The lab account requires \"StudentBoundary\"; leave null in accounts without such a policy."
   type        = string
-  default     = "StudentBoundary"
+  default     = null
 }
 
 variable "enable_ci_access" {

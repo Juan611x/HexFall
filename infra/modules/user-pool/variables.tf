@@ -32,9 +32,9 @@ variable "pre_sign_up_source_dir" {
 }
 
 variable "permissions_boundary_name" {
-  description = "Name of the lab permissions boundary policy attached to the trigger role."
+  description = "Name of a permissions boundary policy attached to the Lambda roles. The lab account requires \"StudentBoundary\"; leave null in accounts without such a policy."
   type        = string
-  default     = "StudentBoundary"
+  default     = null
 }
 
 variable "log_retention_days" {
