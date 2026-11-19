@@ -8,3 +8,4 @@ The final, implemented result of each decision is recorded separately in [DESIGN
 |---|---|
 | [client-hosting.md](client-hosting.md) | Minimum deployment of the WebGL client on S3 + CloudFront, provisioned with Terraform |
 | [ci-cd.md](ci-cd.md) | Pipeline that builds, deploys and smoke-tests the client: OIDC, runtime config, upload order |
+| [authentication.md](authentication.md) | Player accounts with Amazon Cognito: why not ECS or Lambda + API Gateway, how `config.json` wires it, bugs found on dev |
