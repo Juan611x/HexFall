@@ -11,6 +11,7 @@ namespace HexFall.UI
         string Email { get; }
         string Password { get; }
 
+        void ShowNotice(string message);
         void ShowError(string message);
         void ClearError();
     }

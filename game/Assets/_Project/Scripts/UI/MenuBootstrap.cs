@@ -14,6 +14,7 @@ namespace HexFall.UI
         [SerializeField] private VisualTreeAsset loginScreen;
         [SerializeField] private VisualTreeAsset registerScreen;
         [SerializeField] private VisualTreeAsset verifyScreen;
+        [SerializeField] private VisualTreeAsset forgotPasswordScreen;
         [SerializeField] private VisualTreeAsset guestScreen;
         [SerializeField] private VisualTreeAsset lobbyScreen;
         [SerializeField] private Animator wizardAnimator;
@@ -69,6 +70,7 @@ namespace HexFall.UI
                 { ScreenId.Login, loginScreen },
                 { ScreenId.Register, registerScreen },
                 { ScreenId.Verify, verifyScreen },
+                { ScreenId.ForgotPassword, forgotPasswordScreen },
                 { ScreenId.Guest, guestScreen },
                 { ScreenId.Lobby, lobbyScreen },
             });
@@ -214,6 +216,7 @@ namespace HexFall.UI
                 ScreenId.Login => new LoginPresenter(new LoginView(screen), _router, _auth, _session),
                 ScreenId.Register => new RegisterPresenter(new RegisterView(screen), _router, _auth, _session),
                 ScreenId.Verify => new VerifyPresenter(new VerifyView(screen), _router, _auth, _session),
+                ScreenId.ForgotPassword => new ForgotPasswordPresenter(new ForgotPasswordView(screen), _router, _auth, _session),
                 ScreenId.Guest => new GuestPresenter(new GuestView(screen), _router, _auth, _session, _guestNames),
                 ScreenId.Lobby => new LobbyPresenter(new LobbyView(screen), _router, _auth, _session),
                 _ => null,

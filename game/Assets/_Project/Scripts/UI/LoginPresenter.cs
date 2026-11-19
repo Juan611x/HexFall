@@ -20,15 +20,29 @@ namespace HexFall.UI
             _session = session;
             _view.LoginRequested += OnLogin;
             _view.CreateAccountRequested += OnCreateAccount;
+            _view.ForgotPasswordRequested += OnForgotPassword;
+
+            if (!string.IsNullOrEmpty(_session.Notice))
+            {
+                _view.ShowNotice(_session.Notice);
+                _session.Notice = null;
+            }
         }
 
         public void Dispose()
         {
             _view.LoginRequested -= OnLogin;
             _view.CreateAccountRequested -= OnCreateAccount;
+            _view.ForgotPasswordRequested -= OnForgotPassword;
         }
 
         private void OnCreateAccount() => _router.Navigate(ScreenId.Register);
+
+        private void OnForgotPassword()
+        {
+            _session.ResetEmail = _view.Email;
+            _router.Navigate(ScreenId.ForgotPassword);
+        }
 
         private void OnLogin()
         {
