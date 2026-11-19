@@ -11,6 +11,7 @@ namespace HexFall.UI
         private readonly ScreenRouter _router;
         private readonly IAuthService _auth;
         private readonly SessionState _session;
+        private bool _busy;
 
         public LoginPresenter(ILoginView view, ScreenRouter router, IAuthService auth, SessionState session)
         {
@@ -36,7 +37,11 @@ namespace HexFall.UI
             _view.ForgotPasswordRequested -= OnForgotPassword;
         }
 
-        private void OnCreateAccount() => _router.Navigate(ScreenId.Register);
+        private void OnCreateAccount()
+        {
+            if (_busy) return;
+            _router.Navigate(ScreenId.Register);
+        }
 
         private void OnForgotPassword()
         {
@@ -44,8 +49,15 @@ namespace HexFall.UI
             _router.Navigate(ScreenId.ForgotPassword);
         }
 
+        private void SetBusy(bool busy)
+        {
+            _busy = busy;
+            _view.SetBusy(busy);
+        }
+
         private void OnLogin()
         {
+            if (_busy) return;
             _view.ClearError();
             if (!EmailRule.IsValid(_view.Email))
             {
@@ -59,6 +71,7 @@ namespace HexFall.UI
                 return;
             }
 
+            SetBusy(true);
             _auth.LogIn(_view.Email, _view.Password, result =>
             {
                 if (result.NeedsVerification)
@@ -66,10 +79,15 @@ namespace HexFall.UI
                     // The account exists but is unconfirmed: send a fresh code and let the player finish verifying.
                     var email = _view.Email;
                     _session.PendingEmail = email;
-                    _auth.ResendCode(email, _ => _router.Navigate(ScreenId.Verify));
+                    _auth.ResendCode(email, _ =>
+                    {
+                        SetBusy(false);
+                        _router.Navigate(ScreenId.Verify);
+                    });
                     return;
                 }
 
+                SetBusy(false);
                 if (!result.Success)
                 {
                     _view.ShowError(result.Error);

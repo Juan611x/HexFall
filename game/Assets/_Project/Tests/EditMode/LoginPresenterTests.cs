@@ -16,10 +16,13 @@ namespace HexFall.UI.Tests
             public string Error;
             public string Notice;
             public int ClearCount;
+            public bool Busy;
+            public readonly System.Collections.Generic.List<bool> BusyHistory = new System.Collections.Generic.List<bool>();
 
             public void ShowNotice(string message) => Notice = message;
             public void ShowError(string message) => Error = message;
             public void ClearError() { Error = null; ClearCount++; }
+            public void SetBusy(bool busy) { Busy = busy; BusyHistory.Add(busy); }
 
             public void RaiseLogin() => LoginRequested?.Invoke();
             public void RaiseCreateAccount() => CreateAccountRequested?.Invoke();
@@ -199,6 +202,86 @@ namespace HexFall.UI.Tests
             _presenter.Dispose();
             _view.RaiseCreateAccount();
             Assert.AreEqual(ScreenId.Login, _router.Current);
+        }
+
+        private DeferredAuthService UseDeferredAuth()
+        {
+            var deferred = new DeferredAuthService();
+            _presenter.Dispose();
+            _presenter = new LoginPresenter(_view, _router, deferred, _state);
+            _view.Email = FakeAuthService.DemoEmail;
+            _view.Password = FakeAuthService.DemoPassword;
+            return deferred;
+        }
+
+        [Test]
+        public void BusyWhileTheRequestRunsAndClearedOnSuccess()
+        {
+            var auth = UseDeferredAuth();
+            _view.RaiseLogin();
+            Assert.IsTrue(_view.Busy);
+            auth.CompleteNext(AuthResult.Ok(new PlayerSession("Ash", false)));
+            Assert.IsFalse(_view.Busy);
+            Assert.AreEqual(ScreenId.Lobby, _router.Current);
+        }
+
+        [Test]
+        public void BusyClearedOnFailure()
+        {
+            var auth = UseDeferredAuth();
+            _view.RaiseLogin();
+            auth.CompleteNext(AuthResult.Fail("Incorrect email or password."));
+            Assert.IsFalse(_view.Busy);
+            Assert.AreEqual("Incorrect email or password.", _view.Error);
+        }
+
+        [Test]
+        public void BusyStaysThroughTheResendOfAnUnverifiedLoginThenClears()
+        {
+            var auth = UseDeferredAuth();
+            _view.RaiseLogin();
+            auth.CompleteNext(AuthResult.Unverified("verify"));
+            Assert.IsTrue(_view.Busy);
+            auth.CompleteNext(AuthResult.Ok());
+            Assert.IsFalse(_view.Busy);
+            Assert.AreEqual(ScreenId.Verify, _router.Current);
+        }
+
+        [Test]
+        public void SecondSubmitWhileBusyIsIgnored()
+        {
+            var auth = UseDeferredAuth();
+            _view.RaiseLogin();
+            _view.RaiseLogin();
+            Assert.AreEqual(1, auth.Calls);
+        }
+
+        [Test]
+        public void SubmitWorksAgainAfterAFailure()
+        {
+            var auth = UseDeferredAuth();
+            _view.RaiseLogin();
+            auth.CompleteNext(AuthResult.Fail("nope"));
+            _view.RaiseLogin();
+            Assert.AreEqual(2, auth.Calls);
+            Assert.IsTrue(_view.Busy);
+        }
+
+        [Test]
+        public void ValidationErrorsNeverGoBusy()
+        {
+            _view.Email = "nope";
+            _view.RaiseLogin();
+            Assert.IsEmpty(_view.BusyHistory);
+        }
+
+        [Test]
+        public void SynchronousAuthLeavesTheFormIdle()
+        {
+            _view.Email = "wizard@example.com";
+            _view.Password = "wrong";
+            _view.RaiseLogin();
+            CollectionAssert.AreEqual(new[] { true, false }, _view.BusyHistory);
         }
     }
 }
