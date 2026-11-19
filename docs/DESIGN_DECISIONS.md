@@ -20,6 +20,9 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 | [DD-012](#dd-012-reusable-static-site-module-and-thin-environments) | Reusable static-site module and thin environments | Accepted |
 | [DD-013](#dd-013-manual-deploys-until-ci-can-reach-aws) | Manual deploys until CI can reach AWS | Accepted |
 | [DD-014](#dd-014-cognito-user-pool-called-directly-by-the-client) | Cognito user pool called directly by the client | Accepted |
+| [DD-015](#dd-015-auth-port-with-a-cognito-adapter-and-an-in-memory-fake) | Auth port with a Cognito adapter and an in-memory fake | Accepted |
+| [DD-016](#dd-016-unverified-sign-in-resumes-verification) | Unverified sign-in resumes verification | Accepted |
+| [DD-017](#dd-017-ignore-browser-extension-errors-before-the-unity-loader) | Ignore browser-extension errors before the Unity loader | Accepted |
 
 ---
 
@@ -130,7 +133,41 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 ## DD-014: Cognito user pool called directly by the client
 
 - **Status:** Accepted
-- **Context:** Players need accounts (email, password, wizard name) before there is a game backend. The lab account allows Cognito but restricts IAM, so the solution must not need custom roles or servers.
-- **Decision:** An Amazon Cognito user pool (`infra/modules/user-pool`) with email as the sign-in name, auto-verified by a code, and `preferred_username` as the wizard name. A public app client with no secret allows only `USER_PASSWORD_AUTH` and refresh tokens; the Unity client calls the Cognito API directly. Emails use the default Cognito sender. The pool and client ids reach the client through the generated `config.json`.
-- **Rationale:** No backend, Lambda or IAM role is needed, and Cognito owns password storage, verification and token issuing. Hiding user-existence errors avoids leaking which emails are registered. A public client is the only option for WebGL, which cannot keep a secret. Alternatives considered: SRP (stronger, but needs a big-number crypto implementation in the client), Hosted UI with OAuth (needs a custom domain or Cognito domain, redirects and a browser flow inside WebGL) and a custom auth backend (more code and infrastructure for no gain at this stage).
-- **Trade-offs:** The password travels to Cognito over TLS instead of being proven with SRP. The default email sender is limited to about 50 emails a day, so heavy sign-up testing needs SES. Wizard names are not unique yet; enforcing that needs a trigger and a table and waits on a product decision.
+- **Context:** Players need accounts (email, password, wizard name) before there is a game backend. The lab account allows Cognito but restricts IAM: roles must be named `student-*` and carry the `StudentBoundary` boundary ([AWS_ENVIRONMENT.md](AWS_ENVIRONMENT.md)). Three ways to provide accounts were compared; the story is in the [authentication journal](journal/authentication.md).
+- **Decision:** An Amazon Cognito user pool (`infra/modules/user-pool`) with email as the sign-in name, auto-verified by a code, and `preferred_username` as the wizard name. A public app client with no secret allows only `USER_PASSWORD_AUTH` and refresh tokens; the Unity client calls the Cognito API directly. Emails use the default Cognito sender. The pool and client ids reach the client through the generated `config.json` (DD-011, DD-015).
+- **Rationale:** The options, judged on development and integration effort:
+
+  | Option | What we would have to build and run | Verdict |
+  |---|---|---|
+  | **(a) Custom auth service on ECS Fargate** | We already plan Fargate for the game server (DD-006), but auth there means writing and securing password hashing, verification emails, token signing and rotation, plus an always-on task, ALB routing and IAM task roles under the `student-*` rules. | Most code, most to secure, paid around the clock. |
+  | **(b) Lambda + API Gateway** | Serverless and cheaper when idle, but still our own code for hashing, emails (SES), tokens, a user table (DynamoDB), CORS, and a `student-*` role for every function. | Less infrastructure than (a), same security work. |
+  | **(c) Amazon Cognito** | Managed: it stores users, verifies emails, issues tokens and throttles abuse. No roles, no servers; the client calls it directly. Integration is two ids in `config.json`. | Chosen. |
+
+  Cognito wins on development and integration simplicity for this stage: the whole account system is one Terraform module plus a client adapter, and the lab's IAM restrictions never come into play. The game server (DD-006) can later verify the Cognito JWTs instead of running any login code. Hiding user-existence errors (`prevent_user_existence_errors`) avoids leaking which emails are registered. A public client is the only option for WebGL, which cannot keep a secret.
+  - **Why public ids are fine:** the pool id and client id are public identifiers by design; the browser sends them on every Cognito call. The real secret would be a client secret, and this public client has none. What remains are abuse risks, not leaks: junk sign-ups exhausting the email quota, password guessing (Cognito throttles and locks out) and sign-up revealing that an email exists. Later mitigations: AWS WAF on the pool, Cognito threat protection (Plus tier), a CAPTCHA through a pre-sign-up trigger, and SES.
+  - **Other alternatives within Cognito:** SRP (stronger, but needs a big-number crypto implementation in the client) and the Hosted UI with OAuth (needs a Cognito or custom domain, redirects and a browser flow around WebGL).
+- **Trade-offs:** The password travels to Cognito over TLS instead of being proven with SRP. The default email sender is limited to about 50 emails a day, so heavy sign-up testing needs SES. We depend on a managed service and its limits, and moving away later means migrating users. Wizard names are not unique yet; enforcing that needs a trigger Lambda and a table (with a `student-*` role) and waits on a product decision. Sessions are not persisted across reloads and there is no forgot-password screen yet.
+
+## DD-015: Auth port with a Cognito adapter and an in-memory fake
+
+- **Status:** Accepted
+- **Context:** The UI must work in the Unity Editor and in tests without AWS, and the same WebGL build should serve any environment (DD-011).
+- **Decision:** The UI depends on the `IAuthService` port. `CognitoAuthService` implements it by calling the Cognito Identity Provider JSON API with `UnityWebRequest` through an `ICognitoTransport` (no AWS SDK); `FakeAuthService` keeps accounts in memory. At startup `MenuBootstrap` reads `config.json` (WebGL only) and uses Cognito when `region`, `cognito.userPoolId` and `cognito.clientId` are all set; otherwise, and always in the Editor, it uses the fake. Errors are translated by `CognitoErrorMapper`; tokens stay in memory.
+- **Rationale:** Presenters never know which implementation they use, the fake keeps tests and Editor play fast and offline, and the environment is chosen by data rather than by a rebuild.
+- **Trade-offs:** A missing or empty config silently means fake accounts, so deploys must check `config.json` (see [DEPLOY.md](DEPLOY.md)). Tokens are lost on reload. Two implementations must keep the same behavior.
+
+## DD-016: Unverified sign-in resumes verification
+
+- **Status:** Accepted
+- **Context:** A player who closed the tab before entering the verification code was stuck: logging in said "verify your email", and signing up again said the email already exists.
+- **Decision:** Logging in to an unconfirmed account returns an "unverified" result instead of an error. `LoginPresenter` requests a new code and opens the Verify screen. After sign-up the password is kept in memory only, so confirming the code signs the player in without retyping it.
+- **Rationale:** The player always has a way forward from either screen, with no manual cleanup of half-created accounts.
+- **Trade-offs:** The password stays in memory between sign-up and verification (not stored, and gone on reload). Logging in to an unconfirmed account sends a verification email as a side effect.
+
+## DD-017: Ignore browser-extension errors before the Unity loader
+
+- **Status:** Accepted
+- **Context:** A wallet extension (MetaMask) throws page errors from its own scripts. The Unity 6 loader shows an alert on any page error, and during startup it routes errors to its internal `startupErrorHandler`, bypassing `config.errorHandler`, so setting `errorHandler` was not enough.
+- **Decision:** `game/Assets/WebGLTemplates/HexFall/index.html` registers `error` and `unhandledrejection` listeners before the Unity loader and stops errors whose origin is a browser extension (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`, `ms-browser-extension://`).
+- **Rationale:** Extension errors are not ours and the player cannot act on them; the listeners run first, so the loader never sees them.
+- **Trade-offs:** Errors from extensions are hidden, which could mask an extension that really breaks the page. Errors from our own files still reach the loader.
