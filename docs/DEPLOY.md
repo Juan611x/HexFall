@@ -103,6 +103,9 @@ $env:HEXFALL_ENVIRONMENT = "dev"
 $env:HEXFALL_REGION = "eu-west-1"
 $Bucket = terraform -chdir=infra/envs/dev output -raw bucket_name
 $Dist = terraform -chdir=infra/envs/dev output -raw distribution_id
+$env:HEXFALL_REGION = terraform -chdir=infra/envs/dev output -raw aws_region
+$env:HEXFALL_COGNITO_USER_POOL_ID = terraform -chdir=infra/envs/dev output -raw cognito_user_pool_id
+$env:HEXFALL_COGNITO_CLIENT_ID = terraform -chdir=infra/envs/dev output -raw cognito_client_id
 
 python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket $Bucket --distribution-id $Dist --dry-run
 python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket $Bucket --distribution-id $Dist
@@ -113,10 +116,15 @@ python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket $Bucket --di
 export HEXFALL_ENVIRONMENT=dev HEXFALL_REGION=eu-west-1
 BUCKET=$(terraform -chdir=infra/envs/dev output -raw bucket_name)
 DIST=$(terraform -chdir=infra/envs/dev output -raw distribution_id)
+export HEXFALL_REGION=$(terraform -chdir=infra/envs/dev output -raw aws_region)
+export HEXFALL_COGNITO_USER_POOL_ID=$(terraform -chdir=infra/envs/dev output -raw cognito_user_pool_id)
+export HEXFALL_COGNITO_CLIENT_ID=$(terraform -chdir=infra/envs/dev output -raw cognito_client_id)
 
 python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket "$BUCKET" --distribution-id "$DIST" --dry-run
 python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket "$BUCKET" --distribution-id "$DIST"
 ```
+
+The Cognito values come from `terraform output`, so apply the infrastructure first. Without them the client falls back to the in-memory fake accounts.
 
 Run it only after the build has finished: `build-webgl.ps1` prints `HEXFALL_BUILD_RESULT Succeeded`. A half-written build (for example a 0-byte `WebGL.wasm.br`) would be published as is.
 

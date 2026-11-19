@@ -19,6 +19,7 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 | [DD-011](#dd-011-terraform-provisions-a-script-publishes-builds) | Terraform provisions, a script publishes builds | Accepted |
 | [DD-012](#dd-012-reusable-static-site-module-and-thin-environments) | Reusable static-site module and thin environments | Accepted |
 | [DD-013](#dd-013-manual-deploys-until-ci-can-reach-aws) | Manual deploys until CI can reach AWS | Accepted |
+| [DD-014](#dd-014-cognito-user-pool-called-directly-by-the-client) | Cognito user pool called directly by the client | Accepted |
 
 ---
 
@@ -125,3 +126,11 @@ This log records the meaningful decisions behind HexFall: what was decided, why,
 - **Decision:** Deploys run by hand from a developer machine with the lab SSO profile, following the runbook in `docs/DEPLOY.md`. CI access in the bootstrap is behind `enable_ci_access` (off). The deploy workflow only runs on manual trigger; pull request checks, which need no AWS access, stay on.
 - **Rationale:** A working public URL now, using the same three steps a pipeline would run, without long-lived credentials.
 - **Trade-offs:** Releases depend on a person with lab access. Automation needs either the GitHub OIDC provider created by the lab admins or a CodeBuild-based deploy with a `student-*` role.
+
+## DD-014: Cognito user pool called directly by the client
+
+- **Status:** Accepted
+- **Context:** Players need accounts (email, password, wizard name) before there is a game backend. The lab account allows Cognito but restricts IAM, so the solution must not need custom roles or servers.
+- **Decision:** An Amazon Cognito user pool (`infra/modules/user-pool`) with email as the sign-in name, auto-verified by a code, and `preferred_username` as the wizard name. A public app client with no secret allows only `USER_PASSWORD_AUTH` and refresh tokens; the Unity client calls the Cognito API directly. Emails use the default Cognito sender. The pool and client ids reach the client through the generated `config.json`.
+- **Rationale:** No backend, Lambda or IAM role is needed, and Cognito owns password storage, verification and token issuing. Hiding user-existence errors avoids leaking which emails are registered. A public client is the only option for WebGL, which cannot keep a secret. Alternatives considered: SRP (stronger, but needs a big-number crypto implementation in the client), Hosted UI with OAuth (needs a custom domain or Cognito domain, redirects and a browser flow inside WebGL) and a custom auth backend (more code and infrastructure for no gain at this stage).
+- **Trade-offs:** The password travels to Cognito over TLS instead of being proven with SRP. The default email sender is limited to about 50 emails a day, so heavy sign-up testing needs SES. Wizard names are not unique yet; enforcing that needs a trigger and a table and waits on a product decision.
