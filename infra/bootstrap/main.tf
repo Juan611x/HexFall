@@ -6,10 +6,11 @@ locals {
   permissions_boundary = "arn:aws:iam::${local.account_id}:policy/${var.permissions_boundary_name}"
 
   github_oidc_host = "token.actions.githubusercontent.com"
+  # one() turns the zero-or-one resource lists into a value or null.
   oidc_provider_arn = (
-    var.create_github_oidc_provider
-    ? aws_iam_openid_connect_provider.github[0].arn
-    : data.aws_iam_openid_connect_provider.github[0].arn
+    !var.enable_ci_access ? null
+    : var.create_github_oidc_provider ? one(aws_iam_openid_connect_provider.github[*].arn)
+    : one(data.aws_iam_openid_connect_provider.github[*].arn)
   )
 
   # Buckets the client module creates: <project>-<environment>-client-<account id>.
@@ -67,24 +68,30 @@ resource "aws_s3_bucket_versioning" "state" {
 # ---------------------------------------------------------------------------
 # GitHub OIDC: Actions exchanges its signed token for short-lived credentials,
 # so no access key is stored in GitHub.
+#
+# Off by default (enable_ci_access): the lab account denies
+# iam:CreateOpenIDConnectProvider and iam:CreateUser, has no GitHub provider,
+# so there is no way in for GitHub Actions yet. Deploys run by hand until then.
 # ---------------------------------------------------------------------------
 
 # thumbprint_list is omitted on purpose: AWS validates GitHub's certificate
 # against its own trusted CA store and the argument is optional in provider 6.x.
 resource "aws_iam_openid_connect_provider" "github" {
-  count = var.create_github_oidc_provider ? 1 : 0
+  count = var.enable_ci_access && var.create_github_oidc_provider ? 1 : 0
 
   url            = "https://${local.github_oidc_host}"
   client_id_list = ["sts.amazonaws.com"]
 }
 
 data "aws_iam_openid_connect_provider" "github" {
-  count = var.create_github_oidc_provider ? 0 : 1
+  count = var.enable_ci_access && !var.create_github_oidc_provider ? 1 : 0
 
   url = "https://${local.github_oidc_host}"
 }
 
 data "aws_iam_policy_document" "trust" {
+  count = var.enable_ci_access ? 1 : 0
+
   statement {
     sid     = "GitHubActionsOidc"
     effect  = "Allow"
@@ -121,9 +128,11 @@ data "aws_iam_policy_document" "trust" {
 
 # The lab only lets roles named student-* exist, and only with the boundary.
 resource "aws_iam_role" "ci" {
+  count = var.enable_ci_access ? 1 : 0
+
   name                 = "student-ci-deploy"
   description          = "Assumed by GitHub Actions to deploy the HexFall client."
-  assume_role_policy   = data.aws_iam_policy_document.trust.json
+  assume_role_policy   = data.aws_iam_policy_document.trust[0].json
   permissions_boundary = local.permissions_boundary
 }
 
@@ -231,12 +240,16 @@ data "aws_iam_policy_document" "ci" {
 }
 
 resource "aws_iam_policy" "ci" {
+  count = var.enable_ci_access ? 1 : 0
+
   name        = "student-ci-deploy"
   description = "Least-privilege permissions for the HexFall client deploy pipeline."
   policy      = data.aws_iam_policy_document.ci.json
 }
 
 resource "aws_iam_role_policy_attachment" "ci" {
-  role       = aws_iam_role.ci.name
-  policy_arn = aws_iam_policy.ci.arn
+  count = var.enable_ci_access ? 1 : 0
+
+  role       = aws_iam_role.ci[0].name
+  policy_arn = aws_iam_policy.ci[0].arn
 }

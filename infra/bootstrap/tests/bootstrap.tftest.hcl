@@ -49,26 +49,52 @@ run "state_bucket_is_private_versioned_and_protected" {
   }
 }
 
+run "default_bootstrap_creates_only_the_state_bucket" {
+  command = plan
+
+  # The lab account denies the GitHub OIDC provider and IAM users, so CI access
+  # stays off until there is a way in (docs/DEPLOY.md, "CI/CD status").
+  assert {
+    condition = alltrue([
+      length(aws_iam_openid_connect_provider.github) == 0,
+      length(data.aws_iam_openid_connect_provider.github) == 0,
+      length(aws_iam_role.ci) == 0,
+      length(aws_iam_policy.ci) == 0,
+      length(aws_iam_role_policy_attachment.ci) == 0,
+    ])
+    error_message = "Without enable_ci_access the bootstrap must not touch IAM."
+  }
+
+  assert {
+    condition     = output.ci_role_arn == null && output.oidc_provider_arn == null
+    error_message = "CI outputs must be null when CI access is off."
+  }
+}
+
 run "ci_role_follows_the_account_rules" {
   command = plan
 
+  variables {
+    enable_ci_access = true
+  }
+
   assert {
-    condition     = startswith(aws_iam_role.ci.name, "student-")
+    condition     = startswith(aws_iam_role.ci[0].name, "student-")
     error_message = "IAM role names must start with student-."
   }
 
   assert {
-    condition     = endswith(aws_iam_role.ci.permissions_boundary, "policy/StudentBoundary")
+    condition     = endswith(aws_iam_role.ci[0].permissions_boundary, "policy/StudentBoundary")
     error_message = "The role must carry the StudentBoundary permissions boundary."
   }
 
   assert {
-    condition     = aws_iam_role.ci.permissions_boundary == "arn:aws:iam::123456789012:policy/StudentBoundary"
+    condition     = aws_iam_role.ci[0].permissions_boundary == "arn:aws:iam::123456789012:policy/StudentBoundary"
     error_message = "The boundary ARN must use this account id."
   }
 
   assert {
-    condition     = startswith(aws_iam_policy.ci.name, "student-")
+    condition     = startswith(aws_iam_policy.ci[0].name, "student-")
     error_message = "Customer policy names must start with student-."
   }
 }
@@ -76,14 +102,18 @@ run "ci_role_follows_the_account_rules" {
 run "trust_policy_is_limited_to_the_repository_branches" {
   command = plan
 
+  variables {
+    enable_ci_access = true
+  }
+
   assert {
-    condition     = one(data.aws_iam_policy_document.trust.statement).actions == toset(["sts:AssumeRoleWithWebIdentity"])
+    condition     = one(data.aws_iam_policy_document.trust[0].statement).actions == toset(["sts:AssumeRoleWithWebIdentity"])
     error_message = "Only AssumeRoleWithWebIdentity may be allowed."
   }
 
   assert {
     condition = anytrue([
-      for c in one(data.aws_iam_policy_document.trust.statement).condition :
+      for c in one(data.aws_iam_policy_document.trust[0].statement).condition :
       c.test == "StringEquals" && c.variable == "token.actions.githubusercontent.com:aud" && toset(c.values) == toset(["sts.amazonaws.com"])
     ])
     error_message = "The audience must be sts.amazonaws.com."
@@ -91,7 +121,7 @@ run "trust_policy_is_limited_to_the_repository_branches" {
 
   assert {
     condition = anytrue([
-      for c in one(data.aws_iam_policy_document.trust.statement).condition :
+      for c in one(data.aws_iam_policy_document.trust[0].statement).condition :
       c.test == "StringLike" && c.variable == "token.actions.githubusercontent.com:sub" && toset(c.values) == toset([
         "repo:Juan611x/HexFall:ref:refs/heads/develop",
         "repo:Juan611x/HexFall:ref:refs/heads/main",
@@ -105,6 +135,10 @@ run "trust_policy_is_limited_to_the_repository_branches" {
 
 run "oidc_provider_is_created_by_default" {
   command = plan
+
+  variables {
+    enable_ci_access = true
+  }
 
   assert {
     condition     = length(aws_iam_openid_connect_provider.github) == 1
@@ -126,6 +160,7 @@ run "existing_oidc_provider_is_reused_when_creation_is_off" {
   command = plan
 
   variables {
+    enable_ci_access            = true
     create_github_oidc_provider = false
   }
 
@@ -151,12 +186,13 @@ run "repository_is_a_parameter" {
   command = plan
 
   variables {
+    enable_ci_access  = true
     github_repository = "someone/else"
   }
 
   assert {
     condition = anytrue([
-      for c in one(data.aws_iam_policy_document.trust.statement).condition :
+      for c in one(data.aws_iam_policy_document.trust[0].statement).condition :
       c.variable == "token.actions.githubusercontent.com:sub" && contains(c.values, "repo:someone/else:ref:refs/heads/develop")
     ])
     error_message = "github_repository must drive the subject."

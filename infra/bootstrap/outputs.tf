@@ -4,11 +4,11 @@ output "state_bucket_name" {
 }
 
 output "ci_role_arn" {
-  description = "Role GitHub Actions assumes. Goes into the AWS_ROLE_ARN variable."
-  value       = aws_iam_role.ci.arn
+  description = "Role GitHub Actions assumes (AWS_ROLE_ARN). Null while enable_ci_access is false."
+  value       = one(aws_iam_role.ci[*].arn)
 }
 
 output "oidc_provider_arn" {
-  description = "GitHub OIDC provider (created here or read from the account)."
+  description = "GitHub OIDC provider (created here or read from the account). Null while enable_ci_access is false."
   value       = local.oidc_provider_arn
 }

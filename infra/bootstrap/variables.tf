@@ -28,6 +28,12 @@ variable "permissions_boundary_name" {
   default     = "StudentBoundary"
 }
 
+variable "enable_ci_access" {
+  description = "Create the GitHub OIDC trust, CI role and CI policy. Off: the lab account denies the OIDC provider and IAM users, so deploys run by hand (docs/DEPLOY.md)."
+  type        = bool
+  default     = false
+}
+
 variable "create_github_oidc_provider" {
   description = "Create the GitHub OIDC provider. Set false if the account already has one (or denies creating it); it is then read with a data source."
   type        = bool
