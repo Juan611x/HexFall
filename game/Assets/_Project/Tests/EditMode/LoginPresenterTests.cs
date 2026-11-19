@@ -24,6 +24,23 @@ namespace HexFall.UI.Tests
             public void RaiseForgot() => ForgotPasswordRequested?.Invoke();
         }
 
+        private sealed class SpyAuth : IAuthService
+        {
+            private readonly FakeAuthService _inner = new FakeAuthService();
+            public bool ResendFails;
+            public readonly System.Collections.Generic.List<string> Resent = new System.Collections.Generic.List<string>();
+
+            public void SignUp(string name, string email, string password, Action<AuthResult> done) => _inner.SignUp(name, email, password, done);
+            public void Verify(string email, string code, Action<AuthResult> done) => _inner.Verify(email, code, done);
+            public void LogIn(string email, string password, Action<AuthResult> done) => _inner.LogIn(email, password, done);
+            public void Guest(string name, Action<AuthResult> done) => _inner.Guest(name, done);
+            public void ResendCode(string email, Action<AuthResult> done)
+            {
+                Resent.Add(email);
+                done(ResendFails ? AuthResult.Fail("nope") : AuthResult.Ok());
+            }
+        }
+
         private FakeLoginView _view;
         private ScreenRouter _router;
         private SessionState _state;
@@ -79,6 +96,52 @@ namespace HexFall.UI.Tests
             Assert.IsFalse(_router.CanGoBack);
             Assert.IsNotNull(_state.Current);
             Assert.IsFalse(_state.Current.IsGuest);
+        }
+
+        private SpyAuth UseSpyWithUnverifiedAccount()
+        {
+            var spy = new SpyAuth();
+            spy.SignUp("Ash", "ash@example.com", "Arena#2026", _ => { });
+            _presenter.Dispose();
+            _presenter = new LoginPresenter(_view, _router, spy, _state);
+            _view.Email = "ash@example.com";
+            _view.Password = "Arena#2026";
+            return spy;
+        }
+
+        [Test]
+        public void UnverifiedLoginResendsCodeAndNavigatesToVerify()
+        {
+            var spy = UseSpyWithUnverifiedAccount();
+            _view.RaiseLogin();
+            Assert.AreEqual("ash@example.com", _state.PendingEmail);
+            CollectionAssert.AreEqual(new[] { "ash@example.com" }, spy.Resent);
+            Assert.AreEqual(ScreenId.Verify, _router.Current);
+            Assert.IsNull(_state.Current);
+            Assert.IsNull(_view.Error);
+        }
+
+        [Test]
+        public void UnverifiedLoginNavigatesToVerifyEvenWhenResendFails()
+        {
+            var spy = UseSpyWithUnverifiedAccount();
+            spy.ResendFails = true;
+            _view.RaiseLogin();
+            Assert.AreEqual(ScreenId.Verify, _router.Current);
+            Assert.AreEqual("ash@example.com", _state.PendingEmail);
+            Assert.IsNull(_view.Error);
+        }
+
+        [Test]
+        public void OrdinaryFailureDoesNotResendOrSetPendingEmail()
+        {
+            var spy = UseSpyWithUnverifiedAccount();
+            _view.Password = "wrong";
+            _view.RaiseLogin();
+            Assert.AreEqual("Incorrect email or password.", _view.Error);
+            Assert.AreEqual(ScreenId.Login, _router.Current);
+            Assert.IsEmpty(spy.Resent);
+            Assert.IsNull(_state.PendingEmail);
         }
 
         [Test]

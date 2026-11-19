@@ -232,7 +232,6 @@ namespace HexFall.UI.Tests
         }
 
         [TestCase("NotAuthorizedException", "Incorrect email or password.")]
-        [TestCase("UserNotConfirmedException", "Verify your email before logging in.")]
         public void LogInErrorsAreMapped(string type, string expected)
         {
             _transport.EnqueueError(type);
@@ -240,6 +239,45 @@ namespace HexFall.UI.Tests
             Assert.IsFalse(result.Success);
             Assert.AreEqual(expected, result.Error);
             Assert.IsNull(_auth.Tokens);
+        }
+
+        [Test]
+        public void LogInOfUnconfirmedAccountReturnsUnverifiedResult()
+        {
+            _transport.EnqueueError("com.amazonaws.cognito#UserNotConfirmedException");
+            var result = LogIn();
+            Assert.IsFalse(result.Success);
+            Assert.IsTrue(result.NeedsVerification);
+            Assert.AreEqual("Verify your email before logging in.", result.Error);
+            Assert.IsNull(result.Session);
+            Assert.IsNull(_auth.Tokens);
+        }
+
+        [Test]
+        public void OrdinaryLogInFailureDoesNotNeedVerification()
+        {
+            _transport.EnqueueError("NotAuthorizedException");
+            Assert.IsFalse(LogIn().NeedsVerification);
+        }
+
+        [Test]
+        public void VerifyAfterUnverifiedLogInSignsInWithCachedPassword()
+        {
+            _transport.EnqueueError("UserNotConfirmedException");
+            LogIn(password: "Arena#2026");
+            _transport.EnqueueOk();
+            _transport.EnqueueOk(AuthBody("Ash_Mage"));
+
+            var result = Verify();
+
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("Ash_Mage", result.Session.Nickname);
+            Assert.AreEqual(3, _transport.Calls.Count);
+            Assert.AreEqual("ConfirmSignUp", _transport.Calls[1].Key);
+            Assert.AreEqual("InitiateAuth", _transport.Calls[2].Key);
+            Assert.AreEqual(
+                "{\"AuthFlow\":\"USER_PASSWORD_AUTH\",\"ClientId\":\"client123\",\"AuthParameters\":{\"USERNAME\":\"ash@example.com\",\"PASSWORD\":\"Arena#2026\"}}",
+                _transport.Calls[2].Value);
         }
 
         [Test]

@@ -16,6 +16,9 @@ namespace HexFall.UI
             public string __type;
         }
 
+        public static bool IsUnverified(CognitoResponse response) =>
+            !response.NetworkError && ErrorType(response.Body) == "UserNotConfirmedException";
+
         public static string Map(CognitoResponse response)
         {
             if (response.NetworkError) return Network;

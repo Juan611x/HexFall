@@ -70,11 +70,24 @@ namespace HexFall.UI.Tests
         public void LogInFailsBeforeVerificationAndSucceedsAfter()
         {
             Run(d => _auth.SignUp("Ash", "a@b.co", "Arena#2026", d));
-            Assert.IsFalse(Run(d => _auth.LogIn("a@b.co", "Arena#2026", d)).Success);
+            var pending = Run(d => _auth.LogIn("a@b.co", "Arena#2026", d));
+            Assert.IsFalse(pending.Success);
+            Assert.IsTrue(pending.NeedsVerification);
+            Assert.AreEqual("Verify your email before logging in.", pending.Error);
             Run(d => _auth.Verify("a@b.co", "123456", d));
             var r = Run(d => _auth.LogIn("A@b.co", "Arena#2026", d));
             Assert.IsTrue(r.Success);
             Assert.AreEqual("Ash", r.Session.Nickname);
+        }
+
+        [Test]
+        public void LogInOfUnverifiedAccountWithWrongPasswordIsOrdinaryFailure()
+        {
+            Run(d => _auth.SignUp("Ash", "a@b.co", "Arena#2026", d));
+            var r = Run(d => _auth.LogIn("a@b.co", "nope", d));
+            Assert.IsFalse(r.Success);
+            Assert.IsFalse(r.NeedsVerification);
+            Assert.AreEqual("Incorrect email or password.", r.Error);
         }
 
         [Test]

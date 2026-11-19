@@ -187,8 +187,17 @@
     -unity-font-definition: var(--hf-font-ui-bold);
 }
 .lobby__stats { color: var(--hf-color-text-muted); font-size: 15px; }
-.lobby__right { flex-direction: row; align-items: center; }
+.lobby__card { flex-shrink: 0; }
+/* The shared SOUND trigger floats over the header (right: 96px, ~150px wide), so the region label
+   reserves that space in flow and shrinks with an ellipsis instead of sliding under it. */
+.lobby__right { flex-direction: row; align-items: center; flex-shrink: 1; min-width: 0; margin-left: 16px; }
 .lobby__region {
+    flex-shrink: 1;
+    min-width: 0;
+    margin-right: 168px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     padding: 8px 14px;
     background-color: var(--hf-color-panel);
     border-width: 2px;

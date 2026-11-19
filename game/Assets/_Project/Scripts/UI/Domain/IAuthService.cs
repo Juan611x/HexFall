@@ -4,17 +4,20 @@ namespace HexFall.UI
 {
     public readonly struct AuthResult
     {
-        private AuthResult(bool success, string error, PlayerSession session)
+        private AuthResult(bool success, string error, PlayerSession session, bool needsVerification = false)
         {
-            Success = success; Error = error; Session = session;
+            Success = success; Error = error; Session = session; NeedsVerification = needsVerification;
         }
 
         public bool Success { get; }
         public string Error { get; }
         public PlayerSession Session { get; }
+        // A failure kind: the account exists but its email is not verified yet.
+        public bool NeedsVerification { get; }
 
         public static AuthResult Ok(PlayerSession session = null) => new AuthResult(true, null, session);
         public static AuthResult Fail(string error) => new AuthResult(false, error, null);
+        public static AuthResult Unverified(string error) => new AuthResult(false, error, null, true);
     }
 
     // Callback-shaped so an asynchronous (Cognito) adapter can replace the in-memory fake.
