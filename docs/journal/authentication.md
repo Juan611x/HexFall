@@ -75,7 +75,7 @@ The screens are drawn in the [HexFall Menu Mockups canvas](https://claude.ai/art
 
 ## Guest names
 
-**How we found it.** Unique names (DD-018) went live on dev and worked for sign-up. Testing the rest of the menu, the user entered as a guest with the name of a registered account, and the game let them in; the random-name button could produce a registered name too. Two players could then show up with the same name, which is exactly what DD-018 set out to prevent.
+**How we found it.** Unique names (DD-018) went live on dev and worked for sign-up. Reviewing the rest of the menu after that release, the user pointed out that guests skipped the rule: a guest could enter with the name of a registered account, and the random-name button could produce one too. Two players could then show up with the same name, which is exactly what DD-018 set out to prevent.
 
 **Why the game could not check by itself.** The guest flow never talks to a backend: `GuestPresenter` validated only the name format, locally. The list of taken names exists in two places, and the browser can reach neither. The DynamoDB table `hexfall-<env>-wizard-names` is private and needs AWS credentials. Cognito can list users by `preferred_username`, but `ListUsers` is an IAM-signed admin call that needs the same kind of credentials, and the pre sign-up trigger only runs when someone creates an account. Before this change, nothing checked guests at all; for real accounts the check has always been the pre sign-up trigger of DD-018, because Cognito by itself does not keep `preferred_username` unique. So the gap was not a bug in the trigger: there was simply no public way to ask "is this name taken?"
 
