@@ -13,6 +13,7 @@ namespace HexFall.UI
         private readonly VerificationCodeInput _input = new VerificationCodeInput();
         private readonly Countdown _countdown = new Countdown(ResendSeconds);
         private string _resendText;
+        private bool _busy;
 
         public VerifyPresenter(IVerifyView view, ScreenRouter router, IAuthService auth, SessionState session)
         {
@@ -76,11 +77,19 @@ namespace HexFall.UI
             Render(_input.Backspace(index));
         }
 
+        private void SetBusy(VerifyBusy busy)
+        {
+            _busy = busy != VerifyBusy.None;
+            _view.SetBusy(busy);
+        }
+
         private void OnSubmit()
         {
-            if (!_input.IsComplete) return;
+            if (_busy || !_input.IsComplete) return;
+            SetBusy(VerifyBusy.Verifying);
             _auth.Verify(_session.PendingEmail, _input.Code, result =>
             {
+                SetBusy(VerifyBusy.None);
                 if (!result.Success)
                 {
                     _view.ShowError(result.Error);
@@ -98,9 +107,11 @@ namespace HexFall.UI
 
         private void OnResend()
         {
-            if (_countdown.IsRunning) return;
+            if (_busy || _countdown.IsRunning) return;
+            SetBusy(VerifyBusy.Resending);
             _auth.ResendCode(_session.PendingEmail, result =>
             {
+                SetBusy(VerifyBusy.None);
                 if (!result.Success)
                 {
                     _view.ShowError(result.Error);

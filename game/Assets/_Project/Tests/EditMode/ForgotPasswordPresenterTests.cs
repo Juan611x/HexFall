@@ -29,6 +29,7 @@ namespace HexFall.UI.Tests
             public string ResendText;
             public bool ResendEnabled;
             public string Error;
+            public ForgotBusy Busy;
 
             public void SetEmail(string email) => Email = email;
             public void ShowStep(ForgotPasswordStep step, string email) { Step = step; StepEmail = email; }
@@ -40,6 +41,7 @@ namespace HexFall.UI.Tests
             public void SetResend(string text, bool enabled) { ResendText = text; ResendEnabled = enabled; }
             public void ShowError(string message) => Error = message;
             public void ClearError() => Error = null;
+            public void SetBusy(ForgotBusy busy) => Busy = busy;
 
             public string DigitString()
             {
@@ -352,6 +354,134 @@ namespace HexFall.UI.Tests
             _view.Edit(email: Email);
             _view.RaiseSend();
             Assert.IsEmpty(_auth.Requested);
+        }
+
+        private DeferredAuthService UseDeferredAuth()
+        {
+            var deferred = new DeferredAuthService();
+            _presenter.Dispose();
+            _presenter = new ForgotPasswordPresenter(_view, _router, deferred, _state);
+            return deferred;
+        }
+
+        private DeferredAuthService DeferredAtCodeStep()
+        {
+            var auth = UseDeferredAuth();
+            GoToCodeStep();
+            auth.CompleteNext(AuthResult.Ok());
+            return auth;
+        }
+
+        [Test]
+        public void SendIsBusyWhileTheRequestRunsAndClearedOnSuccess()
+        {
+            var auth = UseDeferredAuth();
+            GoToCodeStep();
+            Assert.AreEqual(ForgotBusy.Sending, _view.Busy);
+            auth.CompleteNext(AuthResult.Ok());
+            Assert.AreEqual(ForgotBusy.None, _view.Busy);
+            Assert.AreEqual(ForgotPasswordStep.Code, _view.Step);
+        }
+
+        [Test]
+        public void SendBusyClearedOnFailure()
+        {
+            var auth = UseDeferredAuth();
+            GoToCodeStep();
+            auth.CompleteNext(AuthResult.Fail("boom"));
+            Assert.AreEqual(ForgotBusy.None, _view.Busy);
+            Assert.AreEqual("boom", _view.Error);
+        }
+
+        [Test]
+        public void SecondSendWhileBusyIsIgnored()
+        {
+            var auth = UseDeferredAuth();
+            GoToCodeStep();
+            _view.RaiseSend();
+            Assert.AreEqual(1, auth.Calls);
+        }
+
+        [Test]
+        public void ResetIsBusyThroughTheResetAndTheFollowUpLogin()
+        {
+            var auth = DeferredAtCodeStep();
+            FillValidForm();
+            _view.RaiseReset();
+            Assert.AreEqual(ForgotBusy.Resetting, _view.Busy);
+            auth.CompleteNext(AuthResult.Ok());
+            Assert.AreEqual(ForgotBusy.Resetting, _view.Busy);
+            auth.CompleteNext(AuthResult.Ok(new PlayerSession("Ash_Mage", false)));
+            Assert.AreEqual(ForgotBusy.None, _view.Busy);
+            Assert.AreEqual(ScreenId.Lobby, _router.Current);
+        }
+
+        [Test]
+        public void ResetBusyClearedWhenTheCodeIsRejected()
+        {
+            var auth = DeferredAtCodeStep();
+            FillValidForm();
+            _view.RaiseReset();
+            auth.CompleteNext(AuthResult.Fail("bad code"));
+            Assert.AreEqual(ForgotBusy.None, _view.Busy);
+            Assert.AreEqual("bad code", _view.Error);
+        }
+
+        [Test]
+        public void ResetBusyClearedWhenTheFollowUpLoginFails()
+        {
+            var auth = DeferredAtCodeStep();
+            FillValidForm();
+            _view.RaiseReset();
+            auth.CompleteNext(AuthResult.Ok());
+            auth.CompleteNext(AuthResult.Fail("nope"));
+            Assert.AreEqual(ForgotBusy.None, _view.Busy);
+            Assert.AreEqual(ScreenId.Login, _router.Current);
+        }
+
+        [Test]
+        public void SecondResetWhileBusyIsIgnored()
+        {
+            var auth = DeferredAtCodeStep();
+            FillValidForm();
+            _view.RaiseReset();
+            _view.RaiseReset();
+            Assert.AreEqual(1, auth.Calls - 1);
+        }
+
+        [Test]
+        public void ResendIsBusyWhileTheRequestRunsAndClearedOnEveryOutcome()
+        {
+            var auth = DeferredAtCodeStep();
+            _presenter.Tick(60f);
+            _view.RaiseResend();
+            Assert.AreEqual(ForgotBusy.Resending, _view.Busy);
+            auth.CompleteNext(AuthResult.Fail("slow down"));
+            Assert.AreEqual(ForgotBusy.None, _view.Busy);
+            _view.RaiseResend();
+            auth.CompleteNext(AuthResult.Ok());
+            Assert.AreEqual(ForgotBusy.None, _view.Busy);
+        }
+
+        [Test]
+        public void SecondResendWhileBusyIsIgnored()
+        {
+            var auth = DeferredAtCodeStep();
+            _presenter.Tick(60f);
+            _view.RaiseResend();
+            _view.RaiseResend();
+            Assert.AreEqual(2, auth.Calls);
+        }
+
+        [Test]
+        public void ResetWhileResendingIsIgnored()
+        {
+            var auth = DeferredAtCodeStep();
+            FillValidForm();
+            _presenter.Tick(60f);
+            _view.RaiseResend();
+            _view.RaiseReset();
+            Assert.AreEqual(2, auth.Calls);
         }
     }
 }

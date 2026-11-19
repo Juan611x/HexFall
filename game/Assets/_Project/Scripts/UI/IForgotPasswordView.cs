@@ -4,6 +4,8 @@ namespace HexFall.UI
 {
     public enum ForgotPasswordStep { Email, Code }
 
+    public enum ForgotBusy { None, Sending, Resetting, Resending }
+
     public interface IForgotPasswordView
     {
         // Raised whenever the e-mail, password or confirmation field changes.
@@ -29,5 +31,7 @@ namespace HexFall.UI
         void SetResend(string text, bool enabled);
         void ShowError(string message);
         void ClearError();
+        // Which request is running; everything else on the form is locked until it is None again.
+        void SetBusy(ForgotBusy busy);
     }
 }

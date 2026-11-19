@@ -19,7 +19,15 @@ namespace HexFall.UI
         private readonly Button _resend;
         private readonly Label _emailError;
         private readonly Label _codeError;
+        private readonly Button _changeEmail;
+        private readonly BusyButton _sendBusy;
+        private readonly BusyButton _resetBusy;
         private ForgotPasswordStep _step = ForgotPasswordStep.Email;
+        private bool _sendEnabled;
+        private bool _resetEnabled;
+        private string _resendText = string.Empty;
+        private bool _resendEnabled;
+        private ForgotBusy _busy;
 
         public event Action Changed;
         public event Action SendCodeRequested;
@@ -43,6 +51,9 @@ namespace HexFall.UI
             _resend = root.Q<Button>("resend-button");
             _emailError = root.Q<Label>("email-error");
             _codeError = root.Q<Label>("code-error");
+            _changeEmail = root.Q<Button>("change-email-link");
+            _sendBusy = new BusyButton(_send, "SENDING...");
+            _resetBusy = new BusyButton(_reset, "RESETTING...");
 
             foreach (var field in new[] { _email, _password, _confirm })
                 field.RegisterValueChangedCallback(_ => Changed?.Invoke());
@@ -50,7 +61,7 @@ namespace HexFall.UI
             _send.clicked += () => SendCodeRequested?.Invoke();
             _reset.clicked += () => ResetRequested?.Invoke();
             _resend.clicked += () => ResendRequested?.Invoke();
-            root.Q<Button>("change-email-link").clicked += () => ChangeEmailRequested?.Invoke();
+            _changeEmail.clicked += () => ChangeEmailRequested?.Invoke();
 
             for (var i = 0; i < _boxes.Length; i++)
             {
@@ -81,7 +92,11 @@ namespace HexFall.UI
                 : $"We sent a 6-digit code to {email}. Enter it with your new password.";
         }
 
-        public void SetSendEnabled(bool enabled) => _send.SetEnabled(enabled);
+        public void SetSendEnabled(bool enabled)
+        {
+            _sendEnabled = enabled;
+            ApplyEnabled();
+        }
 
         public void SetDigits(char?[] digits)
         {
@@ -102,12 +117,38 @@ namespace HexFall.UI
             SetRule("rule-match", check.Matches);
         }
 
-        public void SetResetEnabled(bool enabled) => _reset.SetEnabled(enabled);
+        public void SetResetEnabled(bool enabled)
+        {
+            _resetEnabled = enabled;
+            ApplyEnabled();
+        }
 
         public void SetResend(string text, bool enabled)
         {
-            _resend.text = text;
-            _resend.SetEnabled(enabled);
+            _resendText = text;
+            _resendEnabled = enabled;
+            ApplyEnabled();
+        }
+
+        public void SetBusy(ForgotBusy busy)
+        {
+            _busy = busy;
+            _sendBusy.SetBusy(busy == ForgotBusy.Sending);
+            _resetBusy.SetBusy(busy == ForgotBusy.Resetting);
+            var idle = busy == ForgotBusy.None;
+            foreach (var field in new[] { _email, _password, _confirm }) field.SetEnabled(idle);
+            foreach (var box in _boxes) box.SetEnabled(idle);
+            _changeEmail.SetEnabled(idle);
+            ApplyEnabled();
+        }
+
+        private void ApplyEnabled()
+        {
+            var idle = _busy == ForgotBusy.None;
+            _send.SetEnabled(_sendEnabled && idle);
+            _reset.SetEnabled(_resetEnabled && idle);
+            _resend.text = _busy == ForgotBusy.Resending ? "Sending..." : _resendText;
+            _resend.SetEnabled(_resendEnabled && idle);
         }
 
         public void ShowError(string message) => ActiveError.ShowText(message);

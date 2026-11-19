@@ -16,6 +16,7 @@ namespace HexFall.UI
         private ForgotPasswordStep _step = ForgotPasswordStep.Email;
         private string _email;
         private string _resendText;
+        private bool _busy;
 
         public ForgotPasswordPresenter(IForgotPasswordView view, ScreenRouter router, IAuthService auth, SessionState session)
         {
@@ -88,13 +89,21 @@ namespace HexFall.UI
             RefreshCodeStep();
         }
 
+        private void SetBusy(ForgotBusy busy)
+        {
+            _busy = busy != ForgotBusy.None;
+            _view.SetBusy(busy);
+        }
+
         private void OnSendCode()
         {
             var email = _view.Email;
-            if (!EmailRule.IsValid(email)) return;
+            if (_busy || !EmailRule.IsValid(email)) return;
             _view.ClearError();
+            SetBusy(ForgotBusy.Sending);
             _auth.RequestPasswordReset(email, result =>
             {
+                SetBusy(ForgotBusy.None);
                 if (!result.Success)
                 {
                     _view.ShowError(result.Error);
@@ -134,9 +143,11 @@ namespace HexFall.UI
 
         private void OnResend()
         {
-            if (_countdown.IsRunning) return;
+            if (_busy || _countdown.IsRunning) return;
+            SetBusy(ForgotBusy.Resending);
             _auth.RequestPasswordReset(_email, result =>
             {
+                SetBusy(ForgotBusy.None);
                 if (!result.Success)
                 {
                     _view.ShowError(result.Error);
@@ -150,12 +161,14 @@ namespace HexFall.UI
 
         private void OnReset()
         {
-            if (!CanReset()) return;
+            if (_busy || !CanReset()) return;
             var password = _view.Password;
+            SetBusy(ForgotBusy.Resetting);
             _auth.ConfirmPasswordReset(_email, _input.Code, password, result =>
             {
                 if (!result.Success)
                 {
+                    SetBusy(ForgotBusy.None);
                     _view.ShowError(result.Error);
                     return;
                 }
@@ -163,6 +176,7 @@ namespace HexFall.UI
                 // The password is changed; sign in with it so the player lands in the lobby.
                 _auth.LogIn(_email, password, login =>
                 {
+                    SetBusy(ForgotBusy.None);
                     _session.ResetEmail = null;
                     if (login.Success && login.Session != null)
                     {

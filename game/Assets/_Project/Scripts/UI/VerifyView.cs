@@ -11,6 +11,11 @@ namespace HexFall.UI
         private readonly Label _error;
         private readonly Button _submit;
         private readonly Button _resend;
+        private readonly BusyButton _submitBusy;
+        private bool _submitEnabled;
+        private string _resendText = string.Empty;
+        private bool _resendEnabled;
+        private VerifyBusy _busy;
 
         public event Action<int, string> DigitEntered;
         public event Action<int> BackspacePressed;
@@ -23,6 +28,7 @@ namespace HexFall.UI
             _error = root.Q<Label>("error-label");
             _submit = root.Q<Button>("verify-submit");
             _resend = root.Q<Button>("resend-button");
+            _submitBusy = new BusyButton(_submit, "VERIFYING...");
 
             for (var i = 0; i < _boxes.Length; i++)
             {
@@ -51,12 +57,33 @@ namespace HexFall.UI
         // Deferred so the key event that produced the digit is not delivered to the next box.
         public void FocusDigit(int index) => _boxes[index].schedule.Execute(() => _boxes[index].Focus());
 
-        public void SetSubmitEnabled(bool enabled) => _submit.SetEnabled(enabled);
+        public void SetSubmitEnabled(bool enabled)
+        {
+            _submitEnabled = enabled;
+            ApplyEnabled();
+        }
 
         public void SetResend(string text, bool enabled)
         {
-            _resend.text = text;
-            _resend.SetEnabled(enabled);
+            _resendText = text;
+            _resendEnabled = enabled;
+            ApplyEnabled();
+        }
+
+        public void SetBusy(VerifyBusy busy)
+        {
+            _busy = busy;
+            _submitBusy.SetBusy(busy == VerifyBusy.Verifying);
+            foreach (var box in _boxes) box.SetEnabled(busy == VerifyBusy.None);
+            ApplyEnabled();
+        }
+
+        private void ApplyEnabled()
+        {
+            var idle = _busy == VerifyBusy.None;
+            _submit.SetEnabled(_submitEnabled && idle);
+            _resend.text = _busy == VerifyBusy.Resending ? "Sending..." : _resendText;
+            _resend.SetEnabled(_resendEnabled && idle);
         }
 
         public void ShowError(string message) => _error.ShowText(message);
