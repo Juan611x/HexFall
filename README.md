@@ -37,7 +37,7 @@ The rationale for each choice is recorded in [docs/DESIGN_DECISIONS.md](docs/DES
 | `infra/bootstrap/` | One-time Terraform state backend |
 | `infra/modules/` | Reusable Terraform modules |
 | `infra/envs/dev/` | Development environment composition |
-| `docs/` | [Design decisions](docs/DESIGN_DECISIONS.md), [AWS environment](docs/AWS_ENVIRONMENT.md), [decision journal](docs/journal/), [asset credits](docs/ASSET_CREDITS.md), [WebGL build](docs/BUILD.md), [deploy runbook](docs/DEPLOY.md), diagrams, runbooks |
+| `docs/` | [Design decisions](docs/DESIGN_DECISIONS.md), [AWS environment](docs/AWS_ENVIRONMENT.md), [decision journal](docs/journal/), [asset credits](docs/ASSET_CREDITS.md), [WebGL build](docs/BUILD.md), [deploy runbook](docs/DEPLOY.md), diagrams ([architecture](docs/diagrams/architecture.drawio), [client hosting](docs/diagrams/client-hosting.drawio)), runbooks |
 | `.github/workflows/` | CI/CD pipelines |
 
 ## Branching
