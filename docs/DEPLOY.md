@@ -195,6 +195,10 @@ After a publish, open the `url` output and walk through:
 3. **Log out and log in** again with the same email and password: lobby.
 4. **Wrong password**: log in with a bad one. The message is `Incorrect email or password.`
 5. **Closed tab before verifying**: sign up with another email, close the tab without entering the code, reopen the page and log in. The game sends a fresh code and opens the Verify screen; enter it and you land in the lobby.
+6. **Reload keeps the session**: while in the lobby, reload the page (F5). You land in the lobby again, not on the title screen.
+7. **Log out, then reload**: log out and reload. The title screen shows.
+8. **Forgot password**: on Login choose **Forgot password?**. Enter the email, read the code from the email, enter it with a new password: the game signs you in and opens the lobby. Log out and log in with the new password to confirm.
+9. **Duplicate wizard name**: sign up with the wizard name `Merlin`, then try another email with `merlin`. The register screen shows `That wizard name is already taken.` (see [Unique wizard names](#unique-wizard-names)).
 
 If sign-up never sends an email, check `config.json` first (previous section): the game is probably using the fake accounts.
 
