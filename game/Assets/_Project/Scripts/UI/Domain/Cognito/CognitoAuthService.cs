@@ -127,6 +127,25 @@ namespace HexFall.UI
             else done(AuthResult.Fail("Use 3–16 letters, numbers or _ only."));
         }
 
+        public void RequestPasswordReset(string email, Action<AuthResult> done)
+        {
+            var body = new CognitoJsonObject().Str("ClientId", _clientId).Str("Username", email).Build();
+            _transport.Send("ForgotPassword", body, response =>
+                done(response.IsSuccess ? AuthResult.Ok() : AuthResult.Fail(CognitoErrorMapper.MapForgotPassword(response))));
+        }
+
+        public void ConfirmPasswordReset(string email, string code, string newPassword, Action<AuthResult> done)
+        {
+            var body = new CognitoJsonObject()
+                .Str("ClientId", _clientId)
+                .Str("Username", email)
+                .Str("ConfirmationCode", code)
+                .Str("Password", newPassword)
+                .Build();
+            _transport.Send("ConfirmForgotPassword", body, response =>
+                done(response.IsSuccess ? AuthResult.Ok() : AuthResult.Fail(CognitoErrorMapper.Map(response))));
+        }
+
         public void Restore(Action<AuthResult> done)
         {
             if (!_store.TryLoad(out var email, out var refreshToken))
