@@ -83,3 +83,15 @@ The pipeline is written, its unit-testable parts are tested, and the Terraform c
 - whether the CI role needs more permissions than we granted once `apply` meets the real account.
 
 Each of them is listed in DEPLOY.md under known risks, so the first run is a checklist and not a surprise.
+
+## Meeting the real account
+
+The first of those questions was answered quickly, and not the way we hoped.
+
+Running the bootstrap for real taught us something small first. The Terraform providers do not name an AWS profile, so the first `plan` used whatever stale credentials the default chain found and failed with `InvalidClientTokenId`. Selecting the SSO profile (`AWS_PROFILE=commit-lab`) fixed it, and the runbook now says so for both PowerShell and bash.
+
+The `apply` then created the state bucket and the CI policy, and stopped at the OIDC provider: `iam:CreateOpenIDConnectProvider` is not allowed for the lab role. We checked whether the admins had already created one we could reuse. The list was empty. We tried the fallback we had ranked last, an IAM user with access keys, and `iam:CreateUser` was denied too. So in this account GitHub Actions has no door into AWS at all: no federated identity, and no user to hold a key.
+
+Two doors are still possible. The lab admins could create the GitHub provider, which would leave everything we wrote untouched. Or the deploy could run inside AWS CodeBuild with our own `student-*` role, because the lab does let us create roles; it only blocks trusting GitHub. Both cost time we would rather spend on the game right now.
+
+So we parked the automation. What we needed today was a public URL, and every piece of the pipeline is a step a person can run: `terraform apply`, the Unity build script, the deploy script. The bootstrap now creates only the state bucket unless `enable_ci_access` is switched on, the deploy workflow runs only when triggered by hand, and the pull request checks stay on because they never needed AWS. When we come back to CI/CD, the pipeline will run those same three steps; nothing about them changes.
