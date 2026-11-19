@@ -60,4 +60,8 @@ Discovery looks like the better fit: the repository already follows a fixed layo
 
 - Whether to add the Unity license secrets, and who does it.
 - Whether a missing license on this repository's own PRs should fail or warn.
-- Switching the Terraform job to directory discovery (and, until then, adding `user-pool` by hand).
+- Switching the Terraform job to directory discovery.
+
+## Update: user-pool added by hand
+
+The unique wizard names work (branch `feat/wizard-names-02-infra`) added `infra/modules/user-pool` to both Terraform lists, so CI now validates the module and runs its tests. The same change made the `python` job also run on `services/**` and discover the tests of the new Cognito trigger in `services/wizard_names`. Gap 2 is closed for the modules that exist today; the trap for the next module remains until the job discovers directories on its own.
