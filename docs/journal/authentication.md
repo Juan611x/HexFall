@@ -51,10 +51,22 @@ The pool id and client id end up in `config.json`, served to anyone. That is by 
 
 **Empty config is silent.** If a deploy runs without the Cognito variables, the page still publishes and the game quietly uses fake accounts. DEPLOY.md now has a check command before publishing and asks to verify `config.json` afterwards.
 
+## Unique wizard names
+
+**Decision.** Wizard names are unique, case-insensitive, and reserved when the player signs up (DD-018). Cognito's `preferred_username` is not unique, so the pool alone cannot enforce it.
+
+**Why a Pre Sign-up trigger plus a DynamoDB conditional write.** Checking with `ListUsers` before sign-up is not atomic: two players can both see the name free and both succeed. A conditional `PutItem` (`attribute_not_exists(name_key) OR owner_email = :email`) is atomic, so only one concurrent sign-up wins. Reserving at verification time instead would let the player type the whole code before learning the name is taken. The trigger runs inside the sign-up call, so the rejection comes back on the register screen (`UserLambdaValidationException` carrying `WizardNameTaken`), and the client maps it.
+
+**Why the pool id comes from the event.** The trigger needs the pool id for `AdminGetUser` and `AdminDeleteUser`. The pool references the Lambda (`lambda_config`) and the role policy references the pool, so passing the id as an environment variable would make the Lambda depend on the pool that depends on the Lambda: a Terraform cycle. The event already carries `userPoolId`, and the policy can use the pool ARN because it is a separate resource.
+
+**The reclaim rule.** A reservation is taken over when its owner no longer exists, or is UNCONFIRMED for more than 24 hours. In the second case the stale Cognito user is deleted first, so its owner cannot confirm later with a name now held by someone else. The takeover is a conditional write on the old owner, so if two new players race for the same stale name, one loses. The same email signing up again with the same name is not a clash: it is a retry.
+
+**The StudentBoundary risk.** The trigger role needs DynamoDB and Cognito admin permissions. The lab boundary (`StudentBoundary`, see AWS_ENVIRONMENT.md) may not allow them, and only the first `apply` will tell. If it denies them, the fallback is to reserve at verification time or to drop the reclaim (and with it the Cognito admin permissions).
+
 ## What is still open
 
 - The session is not persisted: reloading the page signs the player out.
 - There is no forgot-password screen, although the pool supports recovery by verified email.
-- Wizard names are not unique. Enforcing it needs a DynamoDB table and a Cognito trigger Lambda with a `student-*` role, and waits on a product decision.
+- Wizard names cannot be changed after sign-up (renaming is out of scope for DD-018).
 - The default email sender caps testing at about 50 emails a day; SES would lift it.
 - The game server (ALB + Fargate, DD-005, DD-006) is not built. When it is, it can verify the Cognito JWTs instead of running login code.

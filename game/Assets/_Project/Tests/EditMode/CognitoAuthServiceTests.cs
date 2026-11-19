@@ -101,6 +101,32 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void SignUpTakenWizardNameIsMapped()
+        {
+            _transport.Enqueue(new CognitoResponse(400,
+                "{\"__type\":\"UserLambdaValidationException\",\"message\":\"PreSignUp failed with error WizardNameTaken.\"}", false));
+            var result = SignUp();
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual("That wizard name is already taken.", result.Error);
+        }
+
+        [Test]
+        public void SignUpInvalidWizardNameIsMapped()
+        {
+            _transport.Enqueue(new CognitoResponse(400,
+                "{\"__type\":\"UserLambdaValidationException\",\"message\":\"PreSignUp failed with error InvalidWizardName.\"}", false));
+            Assert.AreEqual("Use 3–16 letters, numbers or _ only.", SignUp().Error);
+        }
+
+        [Test]
+        public void SignUpOtherTriggerFailureIsGeneric()
+        {
+            _transport.Enqueue(new CognitoResponse(400,
+                "{\"__type\":\"UserLambdaValidationException\",\"message\":\"PreSignUp failed with error boom.\"}", false));
+            Assert.AreEqual(CognitoErrorMapper.Generic, SignUp().Error);
+        }
+
+        [Test]
         public void SignUpNetworkFailureIsMapped()
         {
             _transport.Enqueue(new CognitoResponse(0, "", true));
