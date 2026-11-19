@@ -9,6 +9,7 @@
     --hf-color-ghost-hover: rgba(30, 24, 54, 0.85);
     --hf-color-ghost-border: rgb(75, 67, 112);
     --hf-color-accent: rgb(94, 234, 212);
+    --hf-color-selection: rgba(94, 234, 212, 0.35);
     --hf-color-text: rgb(245, 243, 255);
     --hf-color-text-soft: rgb(217, 212, 242);
     --hf-color-text-muted: rgb(163, 159, 192);

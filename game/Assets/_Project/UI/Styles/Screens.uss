@@ -52,6 +52,8 @@
     font-size: 20px;
     -unity-font-definition: var(--hf-font-ui);
     -unity-text-align: middle-left;
+    --unity-cursor-color: var(--hf-color-accent);
+    --unity-selection-color: var(--hf-color-selection);
 }
 .hf-input .unity-base-text-field__input:focus { border-color: var(--hf-color-accent); }
 .hf-input .unity-base-text-field__input--placeholder { color: var(--hf-color-placeholder); }
