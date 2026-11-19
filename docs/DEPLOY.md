@@ -124,7 +124,33 @@ python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket "$BUCKET" --
 python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket "$BUCKET" --distribution-id "$DIST"
 ```
 
-The Cognito values come from `terraform output`, so apply the infrastructure first. Without them the client falls back to the in-memory fake accounts.
+The Cognito values come from `terraform output`, so apply the infrastructure first.
+
+> **The variables live only in the current shell session.** A new terminal starts empty, so repeat the block above (or at least the `HEXFALL_*` lines) before every publish. **Empty Cognito values publish without any error**: the game then falls back to the in-memory fake accounts and nobody can really sign up.
+
+Check the values before running `deploy_webgl.py`:
+
+```powershell
+# Windows PowerShell
+"AWS_PROFILE=$env:AWS_PROFILE"
+"HEXFALL_REGION=$env:HEXFALL_REGION"
+"HEXFALL_COGNITO_USER_POOL_ID=$env:HEXFALL_COGNITO_USER_POOL_ID"
+"HEXFALL_COGNITO_CLIENT_ID=$env:HEXFALL_COGNITO_CLIENT_ID"
+"Bucket=$Bucket"
+"Distribution=$Dist"
+```
+
+```bash
+# bash / zsh
+echo "AWS_PROFILE=$AWS_PROFILE"
+echo "HEXFALL_REGION=$HEXFALL_REGION"
+echo "HEXFALL_COGNITO_USER_POOL_ID=$HEXFALL_COGNITO_USER_POOL_ID"
+echo "HEXFALL_COGNITO_CLIENT_ID=$HEXFALL_COGNITO_CLIENT_ID"
+echo "Bucket=$BUCKET"
+echo "Distribution=$DIST"
+```
+
+All six lines must have a value.
 
 Run it only after the build has finished: `build-webgl.ps1` prints `HEXFALL_BUILD_RESULT Succeeded`. A half-written build (for example a 0-byte `WebGL.wasm.br`) would be published as is.
 
@@ -143,7 +169,7 @@ Open the `url` output. CloudFront can take a few minutes to serve a brand-new di
 $Url = terraform -chdir=infra/envs/dev output -raw url
 curl.exe -sI "$Url/"                     # first line: HTTP/1.1 200 or HTTP/2 200
 curl.exe -sI "$Url/Build/WebGL.wasm.br"  # must include content-encoding: br
-curl.exe -s "$Url/config.json"           # environment "dev", region "eu-west-1"
+curl.exe -s "$Url/config.json"           # environment "dev", region "eu-west-1", cognito ids filled in
 ```
 
 ```bash
@@ -153,6 +179,51 @@ curl -sI "$URL/" | head -1
 curl -sI "$URL/Build/WebGL.wasm.br" | grep -i content-encoding
 curl -s "$URL/config.json"
 ```
+
+`config.json` must show a non-empty `cognito.userPoolId` and `cognito.clientId`, not only `environment` and `region`. Empty ids mean the build was published with the fake accounts; set the variables and publish again. Then try the accounts as described in [Accounts (Cognito)](#accounts-cognito).
+
+## Accounts (Cognito)
+
+Player accounts live in the Cognito user pool `hexfall-dev-players` (design: [DD-014](DESIGN_DECISIONS.md#dd-014-cognito-user-pool-called-directly-by-the-client) and the [authentication journal](journal/authentication.md)). Terraform creates it with the rest of `infra/envs/dev`; the deploy script only copies its ids into `config.json`.
+
+### Smoke test in the browser
+
+After a publish, open the `url` output and walk through:
+
+1. **Sign up** with a real email you can read, a wizard name and a password with 8+ characters, upper and lower case, a number and a symbol.
+2. An email titled **HexFall verification code** arrives (check spam; the default sender is limited to about 50 emails a day). Enter the code: you land in the lobby.
+3. **Log out and log in** again with the same email and password: lobby.
+4. **Wrong password**: log in with a bad one. The message is `Incorrect email or password.`
+5. **Closed tab before verifying**: sign up with another email, close the tab without entering the code, reopen the page and log in. The game sends a fresh code and opens the Verify screen; enter it and you land in the lobby.
+
+If sign-up never sends an email, check `config.json` first (previous section): the game is probably using the fake accounts.
+
+### View and reset users
+
+Console: Amazon Cognito in `eu-west-1` → user pool `hexfall-dev-players` → **Users**. Status `Confirmed` means the code was entered; `Unconfirmed` means sign-up finished but verification did not.
+
+CLI (same profile as the rest of this runbook):
+
+```powershell
+# Windows PowerShell
+$PoolId = terraform -chdir=infra/envs/dev output -raw cognito_user_pool_id
+aws cognito-idp list-users --region eu-west-1 --user-pool-id $PoolId `
+  --query "Users[].{email:Attributes[?Name=='email']|[0].Value,wizard:Attributes[?Name=='preferred_username']|[0].Value,status:UserStatus}" --output table
+
+# Delete a test account so the email can sign up again
+aws cognito-idp admin-delete-user --region eu-west-1 --user-pool-id $PoolId --username someone@example.com
+```
+
+```bash
+# bash / zsh
+POOL_ID=$(terraform -chdir=infra/envs/dev output -raw cognito_user_pool_id)
+aws cognito-idp list-users --region eu-west-1 --user-pool-id "$POOL_ID"   --query "Users[].{email:Attributes[?Name=='email']|[0].Value,wizard:Attributes[?Name=='preferred_username']|[0].Value,status:UserStatus}" --output table
+
+# Delete a test account so the email can sign up again
+aws cognito-idp admin-delete-user --region eu-west-1 --user-pool-id "$POOL_ID" --username someone@example.com
+```
+
+The sign-in name is the email address. Deleting a user is permanent.
 
 ## Tearing down an environment
 
@@ -168,6 +239,8 @@ terraform -chdir=infra/envs/dev destroy
 |---|---|---|
 | `InvalidClientTokenId` on `plan` | No profile selected; Terraform used stale default credentials | `$env:AWS_PROFILE = "commit-lab"` (or `export`) |
 | `ExpiredToken` / `Token has expired` | The SSO session ended (it lasts hours) | `aws sso login --profile commit-lab` |
+| `Module not installed` after pulling infra changes | A new module (for example `user-pool`) was added since the last `init` | Re-run `terraform -chdir=infra/envs/dev init "-backend-config=backend.hcl"` |
+| Sign-up never sends an email code | `config.json` has empty Cognito ids, so the client uses the fake accounts | Set the `HEXFALL_COGNITO_*` variables (new shell?) and publish again |
 | `No positional arguments are expected` | PowerShell split `-backend-config=backend.hcl` at the dot | Quote it: `"-backend-config=backend.hcl"` |
 | `AccessDenied` creating IAM resources | The lab only allows roles/policies `student-*`; no OIDC providers or users | Expected; see [CI/CD status](#cicd-status) |
 | The page shows the previous build | CloudFront or the browser cache | Wait 1–2 minutes for the invalidation; hard refresh (Ctrl+F5) |
