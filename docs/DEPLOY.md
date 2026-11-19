@@ -106,6 +106,7 @@ $Dist = terraform -chdir=infra/envs/dev output -raw distribution_id
 $env:HEXFALL_REGION = terraform -chdir=infra/envs/dev output -raw aws_region
 $env:HEXFALL_COGNITO_USER_POOL_ID = terraform -chdir=infra/envs/dev output -raw cognito_user_pool_id
 $env:HEXFALL_COGNITO_CLIENT_ID = terraform -chdir=infra/envs/dev output -raw cognito_client_id
+$env:HEXFALL_API_BASE_URL = terraform -chdir=infra/envs/dev output -raw name_check_url
 
 python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket $Bucket --distribution-id $Dist --dry-run
 python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket $Bucket --distribution-id $Dist
@@ -119,14 +120,15 @@ DIST=$(terraform -chdir=infra/envs/dev output -raw distribution_id)
 export HEXFALL_REGION=$(terraform -chdir=infra/envs/dev output -raw aws_region)
 export HEXFALL_COGNITO_USER_POOL_ID=$(terraform -chdir=infra/envs/dev output -raw cognito_user_pool_id)
 export HEXFALL_COGNITO_CLIENT_ID=$(terraform -chdir=infra/envs/dev output -raw cognito_client_id)
+export HEXFALL_API_BASE_URL=$(terraform -chdir=infra/envs/dev output -raw name_check_url)
 
 python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket "$BUCKET" --distribution-id "$DIST" --dry-run
 python tools/deploy_webgl.py --build-dir game/Builds/WebGL --bucket "$BUCKET" --distribution-id "$DIST"
 ```
 
-The Cognito values come from `terraform output`, so apply the infrastructure first.
+The Cognito and name check values come from `terraform output`, so apply the infrastructure first.
 
-> **The variables live only in the current shell session.** A new terminal starts empty, so repeat the block above (or at least the `HEXFALL_*` lines) before every publish. **Empty Cognito values publish without any error**: the game then falls back to the in-memory fake accounts and nobody can really sign up.
+> **The variables live only in the current shell session.** A new terminal starts empty, so repeat the block above (or at least the `HEXFALL_*` lines) before every publish. **Empty Cognito values publish without any error**: the game then falls back to the in-memory fake accounts and nobody can really sign up. An empty `HEXFALL_API_BASE_URL` also publishes silently: guests then enter without the name check.
 
 Check the values before running `deploy_webgl.py`:
 
@@ -136,6 +138,7 @@ Check the values before running `deploy_webgl.py`:
 "HEXFALL_REGION=$env:HEXFALL_REGION"
 "HEXFALL_COGNITO_USER_POOL_ID=$env:HEXFALL_COGNITO_USER_POOL_ID"
 "HEXFALL_COGNITO_CLIENT_ID=$env:HEXFALL_COGNITO_CLIENT_ID"
+"HEXFALL_API_BASE_URL=$env:HEXFALL_API_BASE_URL"
 "Bucket=$Bucket"
 "Distribution=$Dist"
 ```
@@ -146,11 +149,12 @@ echo "AWS_PROFILE=$AWS_PROFILE"
 echo "HEXFALL_REGION=$HEXFALL_REGION"
 echo "HEXFALL_COGNITO_USER_POOL_ID=$HEXFALL_COGNITO_USER_POOL_ID"
 echo "HEXFALL_COGNITO_CLIENT_ID=$HEXFALL_COGNITO_CLIENT_ID"
+echo "HEXFALL_API_BASE_URL=$HEXFALL_API_BASE_URL"
 echo "Bucket=$BUCKET"
 echo "Distribution=$DIST"
 ```
 
-All six lines must have a value.
+All seven lines must have a value.
 
 Run it only after the build has finished: `build-webgl.ps1` prints `HEXFALL_BUILD_RESULT Succeeded`. A half-written build (for example a 0-byte `WebGL.wasm.br`) would be published as is.
 
@@ -180,7 +184,7 @@ curl -sI "$URL/Build/WebGL.wasm.br" | grep -i content-encoding
 curl -s "$URL/config.json"
 ```
 
-`config.json` must show a non-empty `cognito.userPoolId` and `cognito.clientId`, not only `environment` and `region`. Empty ids mean the build was published with the fake accounts; set the variables and publish again. Then try the accounts as described in [Accounts (Cognito)](#accounts-cognito).
+`config.json` must show a non-empty `cognito.userPoolId`, `cognito.clientId` and `apiBaseUrl` (the name check URL, ending in `.lambda-url.eu-west-1.on.aws/`), not only `environment` and `region`. Empty ids mean the build was published with the fake accounts; set the variables and publish again. Then try the accounts as described in [Accounts (Cognito)](#accounts-cognito).
 
 ## Accounts (Cognito)
 
@@ -199,6 +203,7 @@ After a publish, open the `url` output and walk through:
 7. **Log out, then reload**: log out and reload. The title screen shows.
 8. **Forgot password**: on Login choose **Forgot password?**. Enter the email, read the code from the email, enter it with a new password: the game signs you in and opens the lobby. Log out and log in with the new password to confirm.
 9. **Duplicate wizard name**: sign up with the wizard name `Merlin`, then try another email with `merlin`. The register screen shows `That wizard name is already taken.` (see [Unique wizard names](#unique-wizard-names)).
+10. **Guest with a registered name**: on the title screen choose **PLAY AS GUEST**, type `Merlin` (a registered name, any capitalisation) and press enter. The button shows `CHECKING...`, then the screen shows `That wizard name is already taken.` Press the random-name button a few times: each name appears after a short check and entering with it opens the lobby.
 
 If sign-up never sends an email, check `config.json` first (previous section): the game is probably using the fake accounts.
 
@@ -244,6 +249,30 @@ aws dynamodb scan --region eu-west-1 --table-name hexfall-dev-wizard-names --que
 ```
 
 Trigger logs are in CloudWatch under `/aws/lambda/hexfall-dev-names-trigger`.
+
+### Guest name check
+
+The same apply creates the guest name check ([DD-021](DESIGN_DECISIONS.md#dd-021-guest-names-checked-through-a-public-lambda-function-url)): the Lambda `hexfall-dev-name-check`, its log group, the role `student-hexfall-dev-name-check` (`StudentBoundary`, read-only on the names table), a public **Lambda Function URL** limited by CORS to the client origin, and two resource-based permissions that make the URL public. If the apply fails creating the URL or a permission with an access-denied error, the lab denies public Function URLs: stop and use the fallback in DD-021 (an API Gateway HTTP API over the same Lambda).
+
+The client reads the URL from `apiBaseUrl` in `config.json`, so publish with `HEXFALL_API_BASE_URL` set (step 4). Check the endpoint directly:
+
+```powershell
+# Windows PowerShell
+$Api = terraform -chdir=infra/envs/dev output -raw name_check_url
+curl.exe -s "${Api}names/Merlin"      # {"name": "Merlin", "available": false} once Merlin has signed up
+curl.exe -s "${Api}names/Free_Name"   # {"name": "Free_Name", "available": true}
+curl.exe -s "${Api}names/no"          # {"error": "InvalidWizardName"}
+```
+
+```bash
+# bash / zsh
+API=$(terraform -chdir=infra/envs/dev output -raw name_check_url)
+curl -s "${API}names/Merlin"
+curl -s "${API}names/Free_Name"
+curl -s "${API}names/no"
+```
+
+The output ends with a slash, so append the path without another one. Logs are under `/aws/lambda/hexfall-dev-name-check`.
 
 ## Tearing down an environment
 

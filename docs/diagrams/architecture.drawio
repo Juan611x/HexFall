@@ -4,7 +4,7 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" value="&lt;b style=&quot;font-size:20px&quot;&gt;HexFall — Architecture (dev)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#545B64&quot;&gt;Unity WebGL client on S3 + CloudFront, player accounts in Amazon Cognito with unique wizard names (Lambda + DynamoDB), everything provisioned with Terraform · game server planned&lt;/span&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontColor=#232F3E;" vertex="1" parent="1">
+        <mxCell id="title" value="&lt;b style=&quot;font-size:20px&quot;&gt;HexFall — Architecture (dev)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#545B64&quot;&gt;Unity WebGL client on S3 + CloudFront, player accounts in Amazon Cognito with unique wizard names and a public guest name check (Lambda + DynamoDB), everything provisioned with Terraform · game server planned&lt;/span&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontColor=#232F3E;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="1200" height="60" as="geometry" />
         </mxCell>
         <mxCell id="dev" value="Developer workstation" style="outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;verticalAlign=top;align=left;spacingLeft=30;fontStyle=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_corporate_data_center;strokeColor=#7D8998;fillColor=none;fontColor=#5A6C86;dashed=0;" vertex="1" parent="1">
@@ -23,7 +23,7 @@
           <mxGeometry x="480" y="140" width="1070" height="855" as="geometry" />
         </mxCell>
         <mxCell id="region" value="Region eu-west-1 (Ireland)" style="outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;verticalAlign=top;align=left;spacingLeft=30;fontStyle=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_region;strokeColor=#00A4A6;fillColor=none;fontColor=#147EBA;dashed=1;" vertex="1" parent="cloud">
-          <mxGeometry x="30" y="50" width="570" height="775" as="geometry" />
+          <mxGeometry x="30" y="50" width="570" height="790" as="geometry" />
         </mxCell>
         <mxCell id="client" value="Client hosting bucket" style="rounded=0;html=1;whiteSpace=wrap;container=1;collapsible=0;recursiveResize=0;verticalAlign=top;align=left;spacingLeft=10;spacingTop=4;fontSize=12;fontStyle=1;strokeColor=#7AA116;fillColor=#F2F6E8;fontColor=#248814;" vertex="1" parent="region">
           <mxGeometry x="30" y="50" width="510" height="170" as="geometry" />
@@ -40,11 +40,11 @@
         <mxCell id="pool" value="&lt;b&gt;User pool&lt;/b&gt; hexfall-dev-players&lt;br&gt;email sign-in · code verification" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;dashed=0;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;labelPosition=right;verticalLabelPosition=middle;verticalAlign=middle;align=left;spacingLeft=8;fillColor=#DD344C;shape=mxgraph.aws4.cognito;" vertex="1" parent="cognito">
           <mxGeometry x="20" y="36" width="48" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="poolnote" value="&lt;b&gt;User pool:&lt;/b&gt; email as username, auto-verified by code, wizard name in &lt;code&gt;preferred_username&lt;/code&gt; (unique, DD-018), password policy 8+ with upper/lower/number/symbol, default email sender (about 50 emails/day).&lt;br&gt;&lt;b&gt;App client:&lt;/b&gt; public, no secret, &lt;code&gt;USER_PASSWORD_AUTH&lt;/code&gt; + refresh tokens, no Hosted UI. The only Lambda is the Pre Sign-up trigger below." style="text;html=1;whiteSpace=wrap;fontSize=10;fontColor=#545B64;verticalAlign=top;strokeColor=none;fillColor=none;spacing=0;align=left;" vertex="1" parent="cognito">
+        <mxCell id="poolnote" value="&lt;b&gt;User pool:&lt;/b&gt; email as username, auto-verified by code, wizard name in &lt;code&gt;preferred_username&lt;/code&gt; (unique, DD-018), password policy 8+ with upper/lower/number/symbol, default email sender (about 50 emails/day).&lt;br&gt;&lt;b&gt;App client:&lt;/b&gt; public, no secret, &lt;code&gt;USER_PASSWORD_AUTH&lt;/code&gt; + refresh tokens, no Hosted UI. Its Lambdas are below: the Pre Sign-up trigger and the guest name check." style="text;html=1;whiteSpace=wrap;fontSize=10;fontColor=#545B64;verticalAlign=top;strokeColor=none;fillColor=none;spacing=0;align=left;" vertex="1" parent="cognito">
           <mxGeometry x="20" y="92" width="470" height="66" as="geometry" />
         </mxCell>
         <mxCell id="wiz" value="Unique wizard names" style="rounded=0;html=1;whiteSpace=wrap;container=1;collapsible=0;recursiveResize=0;verticalAlign=top;align=right;spacingRight=10;spacingTop=4;fontSize=12;fontStyle=1;strokeColor=#ED7100;fillColor=#FEF3E8;fontColor=#C25400;" vertex="1" parent="region">
-          <mxGeometry x="30" y="415" width="510" height="195" as="geometry" />
+          <mxGeometry x="30" y="415" width="510" height="290" as="geometry" />
         </mxCell>
         <mxCell id="lambda" value="&lt;b&gt;Pre Sign-up Lambda&lt;/b&gt;&lt;br&gt;hexfall-dev-names-trigger" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;dashed=0;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;labelPosition=right;verticalLabelPosition=middle;verticalAlign=middle;align=left;spacingLeft=8;fillColor=#ED7100;shape=mxgraph.aws4.lambda_function;" vertex="1" parent="wiz">
           <mxGeometry x="180" y="34" width="48" height="48" as="geometry" />
@@ -52,11 +52,11 @@
         <mxCell id="ddb" value="&lt;b&gt;DynamoDB table&lt;/b&gt;&lt;br&gt;hexfall-dev-wizard-names" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;dashed=0;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;labelPosition=right;verticalLabelPosition=middle;verticalAlign=middle;align=left;spacingLeft=8;fillColor=#C925D1;shape=mxgraph.aws4.dynamodb;" vertex="1" parent="wiz">
           <mxGeometry x="180" y="118" width="48" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="wiznote" value="Reserves each lowercase name with a conditional write; stale reservations are reclaimed (DD-018)." style="text;html=1;whiteSpace=wrap;fontSize=10;fontColor=#545B64;verticalAlign=top;strokeColor=none;fillColor=none;spacing=0;align=left;" vertex="1" parent="wiz">
-          <mxGeometry x="20" y="170" width="470" height="20" as="geometry" />
+        <mxCell id="namecheck" value="&lt;b&gt;Name check Lambda&lt;/b&gt;&lt;br&gt;hexfall-dev-name-check&lt;br&gt;public Function URL, GET only" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;dashed=0;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;labelPosition=right;verticalLabelPosition=middle;verticalAlign=middle;align=left;spacingLeft=8;fillColor=#ED7100;shape=mxgraph.aws4.lambda_function;" vertex="1" parent="wiz">
+          <mxGeometry x="180" y="202" width="48" height="48" as="geometry" />
         </mxCell>
         <mxCell id="state" value="Terraform remote state" style="rounded=0;html=1;whiteSpace=wrap;container=1;collapsible=0;recursiveResize=0;verticalAlign=top;align=left;spacingLeft=10;spacingTop=4;fontSize=12;fontStyle=1;strokeColor=#00A4A6;fillColor=#E6F6F7;fontColor=#147EBA;" vertex="1" parent="region">
-          <mxGeometry x="30" y="630" width="510" height="110" as="geometry" />
+          <mxGeometry x="30" y="720" width="510" height="110" as="geometry" />
         </mxCell>
         <mxCell id="s3state" value="&lt;b&gt;Amazon S3 bucket&lt;/b&gt;&lt;br&gt;hexfall-tfstate-&lt;account-id&gt;" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;strokeColor=none;dashed=0;html=1;fontSize=11;fontStyle=0;aspect=fixed;pointerEvents=1;labelPosition=right;verticalLabelPosition=middle;verticalAlign=middle;align=left;spacingLeft=8;fillColor=#7AA116;shape=mxgraph.aws4.bucket;" vertex="1" parent="state">
           <mxGeometry x="20" y="36" width="48" height="48" as="geometry" />
@@ -132,11 +132,11 @@
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="400" y="521" />
-              <mxPoint x="400" y="853" />
+              <mxPoint x="400" y="943" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e-tf-deploy" value="outputs: bucket, distribution id,&lt;br&gt;pool id, client id" style="edgeStyle=orthogonalEdgeStyle;html=1;jettySize=auto;orthogonalLoop=1;labelBackgroundColor=#FFFFFF;rounded=1;strokeColor=#8C4FFF;strokeWidth=1.5;dashed=1;endArrow=open;endFill=0;fontSize=10;fontColor=#8C4FFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="tf" target="deploy">
+        <mxCell id="e-tf-deploy" value="outputs: bucket, distribution id,&lt;br&gt;pool id, client id, name check URL" style="edgeStyle=orthogonalEdgeStyle;html=1;jettySize=auto;orthogonalLoop=1;labelBackgroundColor=#FFFFFF;rounded=1;strokeColor=#8C4FFF;strokeWidth=1.5;dashed=1;endArrow=open;endFill=0;fontSize=10;fontColor=#8C4FFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="tf" target="deploy">
           <mxGeometry relative="1" as="geometry">
           </mxGeometry>
         </mxCell>
@@ -188,6 +188,26 @@
             </Array>
           </mxGeometry>
         </mxCell>
+        <mxCell id="e-players-namecheck" value="HTTPS GET /names/&amp;lt;name&amp;gt;&lt;br&gt;guest name check, public Function URL&lt;br&gt;(CORS: the client origin only)" style="edgeStyle=orthogonalEdgeStyle;html=1;jettySize=auto;orthogonalLoop=1;labelBackgroundColor=#FFFFFF;rounded=1;strokeColor=#232F3E;strokeWidth=2;endArrow=block;endFill=1;fontSize=11;fontColor=#232F3E;exitX=0.75;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="players" target="namecheck">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1676" y="831" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-namecheck-ddb" value="GetItem" style="edgeStyle=orthogonalEdgeStyle;html=1;jettySize=auto;orthogonalLoop=1;labelBackgroundColor=#FFFFFF;rounded=1;strokeColor=#232F3E;strokeWidth=1.5;endArrow=block;endFill=1;fontSize=10;fontColor=#232F3E;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="namecheck" target="ddb">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-30" y="0" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-tf-namecheck" value="terraform apply" style="edgeStyle=orthogonalEdgeStyle;html=1;jettySize=auto;orthogonalLoop=1;labelBackgroundColor=#FFFFFF;rounded=1;strokeColor=#8C4FFF;strokeWidth=1.5;dashed=1;endArrow=open;endFill=0;fontSize=10;fontColor=#8C4FFF;exitX=1;exitY=0.95;entryX=0;entryY=0.5;" edge="1" parent="1" source="tf" target="namecheck">
+          <mxGeometry x="0.8" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="366" y="531" />
+              <mxPoint x="366" y="831" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
         <mxCell id="e-alb-fargate" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;jettySize=auto;orthogonalLoop=1;labelBackgroundColor=#FFFFFF;rounded=1;strokeColor=#7D8998;strokeWidth=1;dashed=1;endArrow=block;endFill=1;fontSize=10;fontColor=#7D8998;" edge="1" parent="planned" source="alb" target="fargate">
           <mxGeometry relative="1" as="geometry">
           </mxGeometry>
@@ -231,7 +251,7 @@
         <mxCell id="lg-sw5" value="" style="rounded=0;html=1;strokeWidth=1;strokeColor=#ED7100;fillColor=#FEF3E8;" vertex="1" parent="legend">
           <mxGeometry x="10" y="180" width="30" height="16" as="geometry" />
         </mxCell>
-        <mxCell id="lg-swt5" value="Pre Sign-up trigger and names table" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;fontColor=#232F3E;fontSize=11;verticalAlign=middle;" vertex="1" parent="legend">
+        <mxCell id="lg-swt5" value="Names: trigger, name check and table" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;fontColor=#232F3E;fontSize=11;verticalAlign=middle;" vertex="1" parent="legend">
           <mxGeometry x="50" y="176" width="260" height="24" as="geometry" />
         </mxCell>
         <mxCell id="lg-ln0" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;jettySize=auto;orthogonalLoop=1;labelBackgroundColor=#FFFFFF;rounded=1;strokeColor=#232F3E;strokeWidth=2;endArrow=block;endFill=1;fontSize=11;fontColor=#232F3E;" edge="1" parent="legend">
@@ -279,10 +299,10 @@
         <mxCell id="ex-2" value="&lt;div style=&quot;box-sizing:border-box;width:100%;height:100%;padding:10px 14px;font-size:12px;line-height:1.42&quot;&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#1A5276&quot;&gt;2. config.json wires the environment&lt;/div&gt;&lt;div style=&quot;margin-top:7px&quot;&gt;The deploy script writes &lt;b&gt;config.json&lt;/b&gt; with region, pool id and client id from Terraform outputs. The same build serves any environment.&lt;/div&gt;&lt;div style=&quot;margin-top:7px&quot;&gt;If those values are empty the client silently falls back to in-memory fake accounts (DD-015). Check the published file after every deploy.&lt;/div&gt;&lt;/div&gt;" style="html=1;whiteSpace=wrap;overflow=fill;rounded=0;strokeColor=#C5CCD3;fillColor=#FFFFFF;fontColor=#232F3E;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="653" y="1342" width="593" height="210" as="geometry" />
         </mxCell>
-        <mxCell id="ex-3" value="&lt;div style=&quot;box-sizing:border-box;width:100%;height:100%;padding:10px 14px;font-size:12px;line-height:1.42&quot;&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#1A5276&quot;&gt;3. Terraform provisions, a script releases&lt;/div&gt;&lt;div style=&quot;margin-top:7px&quot;&gt;Terraform owns the bucket, CloudFront, the user pool, the app client, the trigger Lambda and the names table, and exports the ids. The deploy script uploads the build and &lt;code&gt;config.json&lt;/code&gt; and invalidates the cache.&lt;/div&gt;&lt;div style=&quot;margin-top:7px&quot;&gt;The game server (ALB + Fargate) is planned; the client will keep using Cognito for sign-in.&lt;/div&gt;&lt;/div&gt;" style="html=1;whiteSpace=wrap;overflow=fill;rounded=0;strokeColor=#C5CCD3;fillColor=#FFFFFF;fontColor=#232F3E;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="ex-3" value="&lt;div style=&quot;box-sizing:border-box;width:100%;height:100%;padding:10px 14px;font-size:12px;line-height:1.42&quot;&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#1A5276&quot;&gt;3. Terraform provisions, a script releases&lt;/div&gt;&lt;div style=&quot;margin-top:7px&quot;&gt;Terraform owns the bucket, CloudFront, the user pool, the app client, the trigger and name check Lambdas (with the public Function URL) and the names table, and exports the ids. The deploy script uploads the build and &lt;code&gt;config.json&lt;/code&gt; and invalidates the cache.&lt;/div&gt;&lt;div style=&quot;margin-top:7px&quot;&gt;The game server (ALB + Fargate) is planned; the client will keep using Cognito for sign-in.&lt;/div&gt;&lt;/div&gt;" style="html=1;whiteSpace=wrap;overflow=fill;rounded=0;strokeColor=#C5CCD3;fillColor=#FFFFFF;fontColor=#232F3E;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1267" y="1342" width="593" height="210" as="geometry" />
         </mxCell>
-        <mxCell id="ex-4" value="&lt;div style=&quot;box-sizing:border-box;width:100%;height:100%;padding:10px 14px;font-size:12px;line-height:1.42&quot;&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#1A5276&quot;&gt;4. Session, names and password reset&lt;/div&gt;&lt;div style=&quot;margin-top:7px&quot;&gt;The browser stores only the Cognito &lt;b&gt;refresh token&lt;/b&gt; and the email (PlayerPrefs, IndexedDB in WebGL); ID and access tokens stay in memory. Any script on the page could read it: the page loads only the game and the Unity loader, and log out revokes the token (DD-019).&lt;/div&gt;&lt;div style=&quot;margin-top:7px&quot;&gt;Wizard names are reserved by the Pre Sign-up Lambda with a conditional DynamoDB write (DD-018). Password reset uses the Cognito forgot-password codes (DD-020).&lt;/div&gt;&lt;/div&gt;" style="html=1;whiteSpace=wrap;overflow=fill;rounded=0;strokeColor=#C5CCD3;fillColor=#FFFFFF;fontColor=#232F3E;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="ex-4" value="&lt;div style=&quot;box-sizing:border-box;width:100%;height:100%;padding:10px 14px;font-size:12px;line-height:1.42&quot;&gt;&lt;div style=&quot;font-size:14px;font-weight:bold;color:#1A5276&quot;&gt;4. Session, names and password reset&lt;/div&gt;&lt;div style=&quot;margin-top:7px&quot;&gt;The browser stores only the Cognito &lt;b&gt;refresh token&lt;/b&gt; and the email (PlayerPrefs, IndexedDB in WebGL); ID and access tokens stay in memory. Any script on the page could read it: the page loads only the game and the Unity loader, and log out revokes the token (DD-019).&lt;/div&gt;&lt;div style=&quot;margin-top:7px&quot;&gt;Wizard names are reserved by the Pre Sign-up Lambda with a conditional DynamoDB write (DD-018). Guests are checked against those names by a public read-only Function URL (DD-021). Password reset uses the Cognito forgot-password codes (DD-020).&lt;/div&gt;&lt;/div&gt;" style="html=1;whiteSpace=wrap;overflow=fill;rounded=0;strokeColor=#C5CCD3;fillColor=#FFFFFF;fontColor=#232F3E;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="40" y="1582" width="593" height="210" as="geometry" />
         </mxCell>
       </root>
