@@ -130,6 +130,32 @@ class StaleKeyTests(unittest.TestCase):
         self.assertEqual(d.parse_remote_keys('["a","b"]'), ["a", "b"])
 
 
+class CollectKeysTests(unittest.TestCase):
+    def _build(self, files):
+        root = tempfile.mkdtemp()
+        for rel in files:
+            path = os.path.join(root, *rel.split("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            open(path, "w").close()
+        return root
+
+    def test_lists_every_shipped_file_as_posix_keys(self):
+        root = self._build(["index.html", "Build/WebGL.wasm.br", "TemplateData/style.css"])
+        self.assertEqual(sorted(d.collect_keys(root)),
+                         ["Build/WebGL.wasm.br", "TemplateData/style.css", "index.html"])
+
+    def test_skips_unity_do_not_ship_folders(self):
+        # Burst writes debug symbols next to the build in <Product>_BurstDebugInformation_DoNotShip.
+        root = self._build([
+            "index.html",
+            "Build/WebGL.wasm.br",
+            "HexFall_BurstDebugInformation_DoNotShip/Data/Plugins/lib_burst_generated.txt",
+        ])
+        keys = d.collect_keys(root)
+        self.assertNotIn("HexFall_BurstDebugInformation_DoNotShip/Data/Plugins/lib_burst_generated.txt", keys)
+        self.assertEqual(sorted(keys), ["Build/WebGL.wasm.br", "index.html"])
+
+
 class InvalidationTests(unittest.TestCase):
     def test_invalidates_everything(self):
         self.assertEqual(

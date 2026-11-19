@@ -29,6 +29,7 @@ ASSET_CACHE_CONTROL = "public, max-age=300"  # Unity file names are not hashed
 ENTRY_CACHE_CONTROL = "no-cache"
 ENTRY_POINT = "index.html"
 CONFIG_KEY = "config.json"
+DO_NOT_SHIP_SUFFIX = "_DoNotShip"
 
 _PLAIN_TYPES = {
     ".html": "text/html",
@@ -140,7 +141,10 @@ def collect_keys(build_dir):
     if not os.path.isdir(build_dir):
         raise DeployError(f"Build directory not found: {build_dir}")
     keys = []
-    for root, _, files in os.walk(build_dir):
+    for root, dirs, files in os.walk(build_dir):
+        # Unity writes debug output beside the build (e.g. Burst's
+        # <Product>_BurstDebugInformation_DoNotShip); it must never be published.
+        dirs[:] = [name for name in dirs if not name.endswith(DO_NOT_SHIP_SUFFIX)]
         for name in files:
             path = os.path.join(root, name)
             keys.append(os.path.relpath(path, build_dir).replace(os.sep, "/"))
