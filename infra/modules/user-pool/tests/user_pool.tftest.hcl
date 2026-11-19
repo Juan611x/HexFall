@@ -11,6 +11,12 @@ mock_provider "aws" {
     }
   }
 
+  mock_resource "aws_lambda_function_url" {
+    defaults = {
+      function_url = "https://abc123.lambda-url.eu-west-1.on.aws/"
+    }
+  }
+
   mock_resource "aws_cognito_user_pool" {
     defaults = {
       arn = "arn:aws:cognito-idp:eu-west-1:123456789012:userpool/mock"
@@ -40,6 +46,8 @@ override_data {
 variables {
   environment            = "dev"
   pre_sign_up_source_dir = "../../../services/wizard_names"
+  name_check_source_dir  = "../../../services/name_check"
+  name_check_origins     = ["https://dxxxx.cloudfront.net"]
 }
 
 run "pool_identity_and_sign_up" {
@@ -210,5 +218,100 @@ run "trigger_policy_is_scoped" {
       !contains(flatten([s.Resource]), "*") if length([for a in flatten([s.Action]) : a if startswith(a, "dynamodb:") || startswith(a, "cognito-idp:")]) > 0
     ])
     error_message = "DynamoDB and Cognito permissions must not use a wildcard resource."
+  }
+}
+
+# apply against the mock: ARNs and ids are unknown at plan time.
+run "name_check_lambda_is_wired" {
+  command = apply
+
+  assert {
+    condition     = aws_lambda_function.name_check.runtime == "python3.12" && aws_lambda_function.name_check.handler == "handler.handler"
+    error_message = "The name check must run handler.handler on python3.12."
+  }
+
+  assert {
+    condition     = aws_lambda_function.name_check.function_name == "hexfall-dev-name-check"
+    error_message = "Function name must be <project>-<environment>-name-check."
+  }
+
+  assert {
+    condition     = aws_lambda_function.name_check.environment[0].variables["NAMES_TABLE"] == "hexfall-dev-wizard-names"
+    error_message = "The name check must receive the table name in NAMES_TABLE."
+  }
+}
+
+# apply against the mock: ARNs and ids are unknown at plan time.
+run "name_check_role_is_read_only" {
+  command = apply
+
+  assert {
+    condition     = startswith(aws_iam_role.name_check.name, "student-")
+    error_message = "Lab roles must be named student-*."
+  }
+
+  assert {
+    condition     = endswith(aws_iam_role.name_check.permissions_boundary, "policy/StudentBoundary")
+    error_message = "The role must carry the StudentBoundary permissions boundary."
+  }
+
+  assert {
+    condition = (
+      length(jsondecode(aws_iam_role_policy.name_check.policy).Statement) == 2 &&
+      jsondecode(aws_iam_role_policy.name_check.policy).Statement[0].Action == ["dynamodb:GetItem"] &&
+      jsondecode(aws_iam_role_policy.name_check.policy).Statement[0].Resource == [aws_dynamodb_table.wizard_names.arn]
+    )
+    error_message = "The only data permission is dynamodb:GetItem on the names table."
+  }
+
+  assert {
+    condition = (
+      jsondecode(aws_iam_role_policy.name_check.policy).Statement[1].Action == ["logs:CreateLogStream", "logs:PutLogEvents"] &&
+      !contains(flatten([jsondecode(aws_iam_role_policy.name_check.policy).Statement[1].Resource]), "*")
+    )
+    error_message = "Logging is limited to the function log group."
+  }
+}
+
+# apply against the mock: ARNs and ids are unknown at plan time.
+run "name_check_url_is_public_get_only" {
+  command = apply
+
+  assert {
+    condition     = aws_lambda_function_url.name_check.authorization_type == "NONE"
+    error_message = "The name check URL must be public (no IAM auth)."
+  }
+
+  assert {
+    condition     = aws_lambda_function_url.name_check.cors[0].allow_methods == toset(["GET"])
+    error_message = "CORS must allow GET only."
+  }
+
+  assert {
+    condition     = aws_lambda_function_url.name_check.cors[0].allow_origins == toset(["https://dxxxx.cloudfront.net"])
+    error_message = "CORS origins must come from name_check_origins."
+  }
+
+  assert {
+    condition = (
+      aws_lambda_permission.name_check_url.action == "lambda:InvokeFunctionUrl" &&
+      aws_lambda_permission.name_check_url.principal == "*" &&
+      aws_lambda_permission.name_check_url.function_url_auth_type == "NONE"
+    )
+    error_message = "A public URL needs a lambda:InvokeFunctionUrl permission for principal * with auth type NONE."
+  }
+
+  assert {
+    condition = (
+      aws_lambda_permission.name_check_invoke.action == "lambda:InvokeFunction" &&
+      aws_lambda_permission.name_check_invoke.principal == "*" &&
+      aws_lambda_permission.name_check_invoke.invoked_via_function_url == true
+    )
+    error_message = "A public URL also needs lambda:InvokeFunction, limited to calls through the URL."
+  }
+
+  assert {
+    condition     = output.name_check_url == "https://abc123.lambda-url.eu-west-1.on.aws/"
+    error_message = "The module must export the Function URL as name_check_url."
   }
 }
