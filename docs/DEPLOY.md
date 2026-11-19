@@ -124,7 +124,7 @@ Run it only after the build has finished: `build-webgl.ps1` prints `HEXFALL_BUIL
 
 Order of operations: assets, then `config.json` and `index.html` (never cached), then deletion of files no longer in the build, then a `/*` invalidation.
 
-`config.json` is generated from `HEXFALL_ENVIRONMENT`, `HEXFALL_REGION`, `HEXFALL_API_BASE_URL`, `HEXFALL_REALTIME_URL`, `HEXFALL_COGNITO_USER_POOL_ID` and `HEXFALL_COGNITO_CLIENT_ID`; unset values become empty strings. The client does not read it yet; it is there so backend URLs can be added without rebuilding the game.
+`config.json` is generated from `HEXFALL_ENVIRONMENT`, `HEXFALL_REGION`, `HEXFALL_API_BASE_URL`, `HEXFALL_REALTIME_URL`, `HEXFALL_COGNITO_USER_POOL_ID` and `HEXFALL_COGNITO_CLIENT_ID`; unset values become empty strings. The client fetches it at startup, next to `index.html`. When `region`, `cognito.userPoolId` and `cognito.clientId` are all set it signs players in through Amazon Cognito; otherwise (and in the Unity Editor) it uses the in-memory fake accounts. Backend URLs can be changed without rebuilding the game.
 
 ## 5. Check
 
