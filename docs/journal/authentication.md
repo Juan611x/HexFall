@@ -75,11 +75,15 @@ The screens are drawn in the [HexFall Menu Mockups canvas](https://claude.ai/art
 
 ## Guest names
 
-**The gap.** Guests never touch a backend, so a guest could type the wizard name of a registered player. The reservations are in DynamoDB (DD-018) and the browser has no AWS credentials to read them.
+**How we found it.** Unique names (DD-018) went live on dev and worked for sign-up. Testing the rest of the menu, the user entered as a guest with the name of a registered account, and the game let them in; the random-name button could produce a registered name too. Two players could then show up with the same name, which is exactly what DD-018 set out to prevent.
+
+**Why the game could not check by itself.** The guest flow never talks to a backend: `GuestPresenter` validated only the name format, locally. The list of taken names exists in two places, and the browser can reach neither. The DynamoDB table `hexfall-<env>-wizard-names` is private and needs AWS credentials. Cognito can list users by `preferred_username`, but `ListUsers` is an IAM-signed admin call that needs the same kind of credentials, and the pre sign-up trigger only runs when someone creates an account. Before this change, nothing checked guests at all; for real accounts the check has always been the pre sign-up trigger of DD-018, because Cognito by itself does not keep `preferred_username` unique. So the gap was not a bug in the trigger: there was simply no public way to ask "is this name taken?"
 
 **What was built (DD-021).** A small read-only Lambda answers `GET /names/<name>` with whether the name is free, behind a public Lambda Function URL. The guest screen calls it before entering, and the random-name button asks about each candidate and tries up to 5 before giving up. The call sits behind an `INameAvailability` port, so the Editor uses a fake that treats the in-memory accounts as taken and an old `config.json` without `apiBaseUrl` simply skips the check.
 
-**Choices.** Check only, no reservation: two guests may share a name, which the user accepted to avoid expiry jobs. Any reservation counts as taken, even one that sign-up could reclaim, because the conservative answer is cheaper than a second reclaim rule. A Function URL beat API Gateway because it needs no extra service for one read-only call.
+**Choices.** Check only, no reservation: two guests may share a name, which the user accepted to avoid expiry jobs. Any reservation counts as taken, even one that sign-up could reclaim, because the conservative answer is cheaper than a second reclaim rule. A Function URL beat API Gateway because it needs no extra service for one read-only call; DD-021 lists what API Gateway would add and when to switch.
+
+**Who deploys it.** Terraform, like the pre sign-up trigger: `terraform apply` zips `services/name_check/` with `archive_file`, creates the Lambda, its role, log group and Function URL, and prints `name_check_url`. The release script `tools/deploy_webgl.py` only uploads the game to S3; it learns the URL through `HEXFALL_API_BASE_URL` and writes it into `config.json` as `apiBaseUrl`.
 
 **The risk.** The endpoint is public and unauthenticated, and the lab may deny public Function URLs or their permissions; only the first apply tells. The fallback is an API Gateway HTTP API over the same Lambda. AWS now wants two resource-based permissions for a public URL (`lambda:InvokeFunctionUrl` and `lambda:InvokeFunction` through the URL), so the module creates both.
 
