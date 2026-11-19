@@ -24,4 +24,6 @@ module "auth" {
   project             = "hexfall"
   environment         = "dev"
   deletion_protection = "INACTIVE"
+
+  pre_sign_up_source_dir = "${path.root}/../../../services/wizard_names"
 }

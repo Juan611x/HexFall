@@ -52,7 +52,7 @@ jobs:
       # No AWS credentials here: init skips the backend and the tests use a mocked provider.
       - name: Init and validate
         run: |
-          for dir in infra/modules/static-site infra/bootstrap infra/envs/dev; do
+          for dir in infra/modules/static-site infra/modules/user-pool infra/bootstrap infra/envs/dev; do
             echo "::group::$dir"
             terraform -chdir="$dir" init -backend=false -input=false
             terraform -chdir="$dir" validate
@@ -61,7 +61,7 @@ jobs:
 
       - name: Test
         run: |
-          for dir in infra/modules/static-site infra/bootstrap; do
+          for dir in infra/modules/static-site infra/modules/user-pool infra/bootstrap; do
             echo "::group::$dir"
             terraform -chdir="$dir" test
             echo "::endgroup::"

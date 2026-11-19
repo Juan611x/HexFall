@@ -25,3 +25,20 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "pre_sign_up_source_dir" {
+  description = "Directory with the Pre Sign-up Lambda source (handler.py). Tests are excluded from the zip."
+  type        = string
+}
+
+variable "permissions_boundary_name" {
+  description = "Name of the lab permissions boundary policy attached to the trigger role."
+  type        = string
+  default     = "StudentBoundary"
+}
+
+variable "log_retention_days" {
+  description = "Retention of the trigger Lambda logs."
+  type        = number
+  default     = 14
+}

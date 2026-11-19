@@ -1,7 +1,45 @@
-mock_provider "aws" {}
+mock_provider "aws" {
+  mock_resource "aws_iam_role" {
+    defaults = {
+      arn = "arn:aws:iam::123456789012:role/mock"
+    }
+  }
+
+  mock_resource "aws_lambda_function" {
+    defaults = {
+      arn = "arn:aws:lambda:eu-west-1:123456789012:function:mock"
+    }
+  }
+
+  mock_resource "aws_cognito_user_pool" {
+    defaults = {
+      arn = "arn:aws:cognito-idp:eu-west-1:123456789012:userpool/mock"
+    }
+  }
+
+  mock_resource "aws_dynamodb_table" {
+    defaults = {
+      arn = "arn:aws:dynamodb:eu-west-1:123456789012:table/mock"
+    }
+  }
+
+  mock_resource "aws_cloudwatch_log_group" {
+    defaults = {
+      arn = "arn:aws:logs:eu-west-1:123456789012:log-group:mock"
+    }
+  }
+}
+
+override_data {
+  target = data.aws_caller_identity.current
+  values = {
+    account_id = "123456789012"
+  }
+}
 
 variables {
-  environment = "dev"
+  environment            = "dev"
+  pre_sign_up_source_dir = "../../../services/wizard_names"
 }
 
 run "pool_identity_and_sign_up" {
@@ -105,5 +143,72 @@ run "client_is_public_and_password_auth_only" {
   assert {
     condition     = length(aws_cognito_user_pool_client.game.allowed_oauth_flows) == 0
     error_message = "No OAuth flows: the client talks to the Cognito API directly."
+  }
+}
+
+run "names_table_is_keyed_by_lowercase_name" {
+  command = plan
+
+  assert {
+    condition     = aws_dynamodb_table.wizard_names.name == "hexfall-dev-wizard-names"
+    error_message = "Table name must be <project>-<environment>-wizard-names."
+  }
+
+  assert {
+    condition     = aws_dynamodb_table.wizard_names.hash_key == "name_key" && aws_dynamodb_table.wizard_names.billing_mode == "PAY_PER_REQUEST"
+    error_message = "The table must be keyed by name_key and billed on demand."
+  }
+}
+
+# apply against the mock: ARNs and ids are unknown at plan time.
+run "trigger_lambda_is_wired" {
+  command = apply
+
+  assert {
+    condition     = aws_lambda_function.pre_sign_up.runtime == "python3.12" && aws_lambda_function.pre_sign_up.handler == "handler.handler"
+    error_message = "The trigger must run handler.handler on python3.12."
+  }
+
+  assert {
+    condition     = aws_lambda_function.pre_sign_up.environment[0].variables["NAMES_TABLE"] == "hexfall-dev-wizard-names"
+    error_message = "The Lambda must receive the table name in NAMES_TABLE."
+  }
+
+  assert {
+    condition     = aws_cognito_user_pool.players.lambda_config[0].pre_sign_up != null
+    error_message = "The pool must call the Lambda before sign-up."
+  }
+
+  assert {
+    condition     = aws_lambda_permission.cognito_invoke.principal == "cognito-idp.amazonaws.com"
+    error_message = "Only Cognito may invoke the trigger."
+  }
+}
+
+# apply against the mock: ARNs and ids are unknown at plan time.
+run "trigger_role_follows_lab_rules" {
+  command = apply
+
+  assert {
+    condition     = startswith(aws_iam_role.names_trigger.name, "student-")
+    error_message = "Lab roles must be named student-*."
+  }
+
+  assert {
+    condition     = endswith(aws_iam_role.names_trigger.permissions_boundary, "policy/StudentBoundary")
+    error_message = "The role must carry the StudentBoundary permissions boundary."
+  }
+}
+
+# apply against the mock: ARNs and ids are unknown at plan time.
+run "trigger_policy_is_scoped" {
+  command = apply
+
+  assert {
+    condition = alltrue([
+      for s in jsondecode(aws_iam_role_policy.names_trigger.policy).Statement :
+      !contains(flatten([s.Resource]), "*") if length([for a in flatten([s.Action]) : a if startswith(a, "dynamodb:") || startswith(a, "cognito-idp:")]) > 0
+    ])
+    error_message = "DynamoDB and Cognito permissions must not use a wildcard resource."
   }
 }
