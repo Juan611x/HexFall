@@ -75,6 +75,27 @@ namespace HexFall.UI
             else done(AuthResult.Fail("Use 3–16 letters, numbers or _ only."));
         }
 
+        public void RequestPasswordReset(string email, Action<AuthResult> done)
+        {
+            // Like the real pool, an unknown email is not revealed: the request looks successful.
+            if (_accounts.TryGetValue(email, out var account) && !account.Verified)
+                done(AuthResult.Fail(CognitoErrorMapper.ResetNeedsVerification));
+            else
+                done(AuthResult.Ok());
+        }
+
+        public void ConfirmPasswordReset(string email, string code, string newPassword, Action<AuthResult> done)
+        {
+            if (!_accounts.TryGetValue(email, out var account) || code != ValidCode)
+            {
+                done(AuthResult.Fail("That code is not valid. Try again."));
+                return;
+            }
+
+            account.Password = newPassword;
+            done(AuthResult.Ok());
+        }
+
         // Nothing is persisted, so there is never a session to restore.
         public void Restore(Action<AuthResult> done) => done(AuthResult.Fail("No saved session."));
 

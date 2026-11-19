@@ -142,5 +142,52 @@ namespace HexFall.UI.Tests
             _auth.LogOut(() => done = true);
             Assert.IsTrue(done);
         }
+
+        [Test]
+        public void RequestPasswordResetSucceedsForAVerifiedAccount()
+        {
+            Assert.IsTrue(Run(d => _auth.RequestPasswordReset(FakeAuthService.DemoEmail, d)).Success);
+        }
+
+        [Test]
+        public void RequestPasswordResetForAnUnverifiedAccountTellsToSignInFirst()
+        {
+            Run(d => _auth.SignUp("Ash", "a@b.co", "Arena#2026", d));
+            var r = Run(d => _auth.RequestPasswordReset("a@b.co", d));
+            Assert.IsFalse(r.Success);
+            Assert.AreEqual(CognitoErrorMapper.ResetNeedsVerification, r.Error);
+        }
+
+        [Test]
+        public void RequestPasswordResetForAnUnknownEmailRevealsNothing()
+        {
+            Assert.IsTrue(Run(d => _auth.RequestPasswordReset("nobody@example.com", d)).Success);
+        }
+
+        [Test]
+        public void ConfirmPasswordResetWithWrongCodeFails()
+        {
+            var r = Run(d => _auth.ConfirmPasswordReset(FakeAuthService.DemoEmail, "000000", "New#Pass1", d));
+            Assert.IsFalse(r.Success);
+            Assert.AreEqual("That code is not valid. Try again.", r.Error);
+            Assert.IsTrue(Run(d => _auth.LogIn(FakeAuthService.DemoEmail, FakeAuthService.DemoPassword, d)).Success);
+        }
+
+        [Test]
+        public void ConfirmPasswordResetChangesThePassword()
+        {
+            var r = Run(d => _auth.ConfirmPasswordReset(FakeAuthService.DemoEmail, FakeAuthService.ValidCode, "New#Pass1", d));
+            Assert.IsTrue(r.Success);
+            Assert.IsTrue(Run(d => _auth.LogIn(FakeAuthService.DemoEmail, "New#Pass1", d)).Success);
+            Assert.IsFalse(Run(d => _auth.LogIn(FakeAuthService.DemoEmail, FakeAuthService.DemoPassword, d)).Success);
+        }
+
+        [Test]
+        public void ConfirmPasswordResetForAnUnknownEmailLooksLikeAWrongCode()
+        {
+            var r = Run(d => _auth.ConfirmPasswordReset("nobody@example.com", FakeAuthService.ValidCode, "New#Pass1", d));
+            Assert.IsFalse(r.Success);
+            Assert.AreEqual("That code is not valid. Try again.", r.Error);
+        }
     }
 }

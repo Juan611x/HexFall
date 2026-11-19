@@ -460,6 +460,73 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void RequestPasswordResetSendsForgotPassword()
+        {
+            _transport.EnqueueOk("{\"CodeDeliveryDetails\":{}}");
+            AuthResult result = default;
+            _auth.RequestPasswordReset("ash@example.com", r => result = r);
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("ForgotPassword", _transport.Calls[0].Key);
+            Assert.AreEqual("{\"ClientId\":\"client123\",\"Username\":\"ash@example.com\"}", _transport.Calls[0].Value);
+        }
+
+        [TestCase("InvalidParameterException", CognitoErrorMapper.ResetNeedsVerification)]
+        [TestCase("LimitExceededException", "Too many attempts. Try again later.")]
+        [TestCase("UserNotFoundException", CognitoErrorMapper.Generic)]
+        public void RequestPasswordResetErrorsAreMapped(string type, string expected)
+        {
+            _transport.EnqueueError(type);
+            AuthResult result = default;
+            _auth.RequestPasswordReset("ash@example.com", r => result = r);
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(expected, result.Error);
+        }
+
+        [Test]
+        public void RequestPasswordResetNetworkFailureIsMapped()
+        {
+            _transport.Enqueue(new CognitoResponse(0, "", true));
+            AuthResult result = default;
+            _auth.RequestPasswordReset("ash@example.com", r => result = r);
+            Assert.AreEqual(CognitoErrorMapper.Network, result.Error);
+        }
+
+        [Test]
+        public void ConfirmPasswordResetSendsConfirmForgotPassword()
+        {
+            _transport.EnqueueOk();
+            AuthResult result = default;
+            _auth.ConfirmPasswordReset("ash@example.com", "123456", "New#Pass1", r => result = r);
+            Assert.IsTrue(result.Success);
+            Assert.AreEqual("ConfirmForgotPassword", _transport.Calls[0].Key);
+            Assert.AreEqual(
+                "{\"ClientId\":\"client123\",\"Username\":\"ash@example.com\",\"ConfirmationCode\":\"123456\",\"Password\":\"New#Pass1\"}",
+                _transport.Calls[0].Value);
+            Assert.IsNull(_auth.Tokens);
+        }
+
+        [TestCase("CodeMismatchException", "That code is not valid. Try again.")]
+        [TestCase("ExpiredCodeException", "That code has expired. Request a new one.")]
+        [TestCase("InvalidPasswordException", "That password does not meet the requirements.")]
+        [TestCase("LimitExceededException", "Too many attempts. Try again later.")]
+        [TestCase("InvalidParameterException", CognitoErrorMapper.Generic)]
+        public void ConfirmPasswordResetErrorsAreMapped(string type, string expected)
+        {
+            _transport.EnqueueError(type);
+            AuthResult result = default;
+            _auth.ConfirmPasswordReset("ash@example.com", "123456", "New#Pass1", r => result = r);
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(expected, result.Error);
+        }
+
+        [Test]
+        public void InvalidParameterOutsidePasswordResetStaysGeneric()
+        {
+            _transport.EnqueueError("InvalidParameterException");
+            Assert.AreEqual(CognitoErrorMapper.Generic, LogIn().Error);
+        }
+
+        [Test]
         public void GuestFollowsWizardNameRuleWithoutCallingTransport()
         {
             AuthResult ok = default, bad = default;

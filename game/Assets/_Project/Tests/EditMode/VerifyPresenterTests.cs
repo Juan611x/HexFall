@@ -155,6 +155,8 @@ namespace HexFall.UI.Tests
             public void ResendCode(string email, Action<AuthResult> done) => done(AuthResult.Ok());
             public void LogIn(string email, string password, Action<AuthResult> done) => done(AuthResult.Ok());
             public void Guest(string name, Action<AuthResult> done) => done(AuthResult.Ok());
+            public void RequestPasswordReset(string email, Action<AuthResult> done) { }
+            public void ConfirmPasswordReset(string email, string code, string newPassword, Action<AuthResult> done) { }
             public void Restore(Action<AuthResult> done) => done(AuthResult.Fail("none"));
             public void LogOut(Action done) => done();
         }

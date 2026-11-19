@@ -6,6 +6,7 @@ namespace HexFall.UI
     // Turns a failed Cognito response into player-facing copy. Raw server text is never surfaced.
     public static class CognitoErrorMapper
     {
+        public const string ResetNeedsVerification = "Sign in first to finish verifying your email.";
         public const string Generic = "Something went wrong. Try again.";
         public const string Network = "Can't reach the server. Check your connection.";
         private const string TooMany = "Too many attempts. Try again later.";
@@ -18,6 +19,12 @@ namespace HexFall.UI
 
         public static bool IsUnverified(CognitoResponse response) =>
             !response.NetworkError && ErrorType(response.Body) == "UserNotConfirmedException";
+
+        // ForgotPassword on an unconfirmed account is rejected as InvalidParameterException.
+        public static string MapForgotPassword(CognitoResponse response) =>
+            !response.NetworkError && ErrorType(response.Body) == "InvalidParameterException"
+                ? ResetNeedsVerification
+                : Map(response);
 
         public static string Map(CognitoResponse response)
         {
