@@ -40,6 +40,7 @@ Created for HexFall with no third-party source; listed so every binary in the re
 | Asset | Location | How |
 |---|---|---|
 | `T_LightShaft.png` (64×256), `T_Moon.png` (64×64) | `game/Assets/_Project/Art/Environment/Textures/` | Generated procedurally in the Unity Editor (tapered alpha gradient for the moonbeam, crescent mask for the moon) |
+| `T_MistNoise.png` (64×64) | `game/Assets/_Project/Art/Environment/Textures/` | Generated procedurally in the Unity Editor: 4-octave Perlin noise × smooth radial falloff, alpha posterised to 6 steps for the PSX look; used by the `GroundMist` particles |
 | `MenuTheme.wav` (91.4 s seamless loop, 22.05 kHz mono) | `game/Assets/_Project/Audio/Music/` | Composed and synthesized by `art/audio/compose_menu_theme.py` (pure Python, chip-style voices, D Phrygian dominant, 84 BPM); key chosen to match the Cathedral ambient layer (D/A drone) |
 | `Scanlines.png` (1×3) | `game/Assets/_Project/UI/Textures/` | Generated for HexFall: tiling pattern for the UI scanline overlay |
 | Hexagon emblem and UI icons (eye, dice, envelope, gear) | `HexagonElement.cs`, `IconElement.cs` | Drawn at runtime with UI Toolkit `Painter2D`; no image files |
