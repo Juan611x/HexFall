@@ -3,6 +3,7 @@
     "rootNamespace": "HexFall.UI.Tests",
     "references": [
         "HexFall.UI",
+        "HexFall.Player",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
