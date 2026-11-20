@@ -24,6 +24,8 @@ namespace HexFall.UI.Tests
         {
             _controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
             _player = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+            Assert.IsNotNull(_player, $"PlayerWizard prefab not found at {PlayerPrefabPath}");
+            Assert.IsNotNull(_controller, $"Animator controller not found at {ControllerPath}");
             _bridge = _player.GetComponent<PlayerAnimatorBridge>();
         }
 
