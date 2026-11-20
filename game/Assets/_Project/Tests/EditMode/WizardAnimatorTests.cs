@@ -7,27 +7,44 @@ using UnityEngine;
 
 namespace HexFall.UI.Tests
 {
-    // The controller is code-driven: these checks keep AC_WizardThirdPerson in step with
-    // PlayerAnimatorBridge and the locomotion states.
+    // The controller is code-driven: these checks keep AC_WizardThirdPerson in step with the
+    // PlayerAnimatorBridge and PlayerMotor settings that ship on the PlayerWizard prefab.
     public class WizardAnimatorTests
     {
         private const string ControllerPath = "Assets/_Project/Animation/AC_WizardThirdPerson.controller";
+        private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Characters/PlayerWizard.prefab";
         private static readonly string[] DrivenParameters = { "Jump", "Grounded", "FreeFall" };
 
         private AnimatorController _controller;
-        private GameObject _host;
+        private GameObject _player;
         private PlayerAnimatorBridge _bridge;
 
         [SetUp]
         public void Load()
         {
             _controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
-            _host = new GameObject("BridgeHost", typeof(Animator));
-            _bridge = _host.AddComponent<PlayerAnimatorBridge>();
+            _player = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+            _bridge = _player.GetComponent<PlayerAnimatorBridge>();
         }
 
-        [TearDown]
-        public void Clean() => Object.DestroyImmediate(_host);
+        // Walk, jog and sprint speeds as serialized on the prefab's PlayerMotor.
+        private float[] PrefabSpeeds()
+        {
+            var settings = new SerializedObject(_player.GetComponent<PlayerMotor>()).FindProperty("settings");
+            return new[]
+            {
+                settings.FindPropertyRelative("walkSpeed").floatValue,
+                settings.FindPropertyRelative("jogSpeed").floatValue,
+                settings.FindPropertyRelative("sprintSpeed").floatValue,
+            };
+        }
+
+        [Test]
+        public void PlayerPrefabUsesTheControllerAndTheBridge()
+        {
+            Assert.IsNotNull(_bridge);
+            Assert.AreSame(_controller, _player.GetComponent<Animator>().runtimeAnimatorController);
+        }
 
         private AnimatorStateMachine Base => _controller.layers[0].stateMachine;
 
@@ -53,9 +70,9 @@ namespace HexFall.UI.Tests
             var tree = (BlendTree)locomotion.motion;
             var clips = tree.children.OrderBy(c => c.threshold).Select(c => c.motion.name).ToArray();
             CollectionAssert.AreEqual(new[] { "Idle_Loop", "Walk_Loop", "Jog_Fwd_Loop", "Sprint_Loop" }, clips);
-            var settings = new LocomotionSettings();
+            var speeds = PrefabSpeeds();
             var thresholds = tree.children.OrderBy(c => c.threshold).Select(c => c.threshold).ToArray();
-            CollectionAssert.AreEqual(new[] { 0f, settings.walkSpeed, settings.jogSpeed, settings.sprintSpeed }, thresholds);
+            CollectionAssert.AreEqual(new[] { 0f, speeds[0], speeds[1], speeds[2] }, thresholds);
         }
 
         [Test]
