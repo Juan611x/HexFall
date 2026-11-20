@@ -36,7 +36,7 @@ namespace HexFall.UI
                 PlayerHudFormat.Seals(status.ShieldCharges, status.MaxShieldCharges));
             _name.text = status.Name;
             _health.text = PlayerHudFormat.HealthLabel(status.Health, status.MaxHealth);
-            _shield.text = PlayerHudFormat.ShieldLabel(status.ShieldCharges, status.MaxShieldCharges);
+            if (_shield != null) _shield.text = PlayerHudFormat.ShieldLabel(status.ShieldCharges, status.MaxShieldCharges);
         }
     }
 }

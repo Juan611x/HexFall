@@ -6,7 +6,6 @@
             <ui:Label name="player-portrait" text="PORTRAIT" class="hud-player__portrait" picking-mode="Ignore" />
             <ui:Label name="player-name" text="Wizard" class="hud-player__name" picking-mode="Ignore" />
             <ui:Label name="player-health" text="100 / 100" class="hud-player__health" picking-mode="Ignore" />
-            <ui:Label name="player-shield" text="Shield 3 / 3" class="hud-player__shield" picking-mode="Ignore" />
         </hf:InkPlayerHudElement>
     </ui:VisualElement>
 </ui:UXML>
