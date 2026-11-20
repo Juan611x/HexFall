@@ -109,6 +109,60 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void SideInputWhileJoggingTurnsTheVelocityAtTheTurnRate()
+        {
+            var settings = Settings();
+            settings.turnAcceleration = 40f;
+            var machine = new LocomotionMachine(settings, LocomotionStateId.Grounded);
+            machine.Context.Velocity = new Vector3(0f, 0f, 3.5f);
+
+            TickMany(machine, 5, Move(Vector2.right), OnGround);
+
+            // Five ticks at 40 * 0.02 cover 4.0 of the 4.95 distance; deceleration alone would cover 1.6.
+            var remaining = (new Vector3(machine.Context.Velocity.x, 0f, machine.Context.Velocity.z) - new Vector3(3.5f, 0f, 0f)).magnitude;
+            Assert.AreEqual(4.95f - 4f, remaining, 0.01f);
+        }
+
+        [Test]
+        public void FullReversalFlipsTheVelocityWithinAFewTicks()
+        {
+            var settings = Settings();
+            settings.turnAcceleration = 40f;
+            var machine = new LocomotionMachine(settings, LocomotionStateId.Grounded);
+            machine.Context.Velocity = new Vector3(0f, 0f, 3.5f);
+
+            TickMany(machine, 5, Move(Vector2.down), OnGround);
+
+            // Four ticks at 0.8 stop the body; deceleration alone would still be moving forward.
+            Assert.Less(machine.Context.Velocity.z, 0f);
+        }
+
+        [Test]
+        public void StartingFromRestStillUsesTheAcceleration()
+        {
+            var settings = Settings();
+            settings.turnAcceleration = 40f;
+            var machine = new LocomotionMachine(settings, LocomotionStateId.Grounded);
+
+            machine.Tick(Move(Vector2.right), OnGround, Dt);
+
+            Assert.AreEqual(settings.acceleration * Dt, Planar(machine), 0.0001f);
+        }
+
+        [Test]
+        public void ReleasingTheInputStillUsesTheDeceleration()
+        {
+            var settings = Settings();
+            settings.turnAcceleration = 40f;
+            var machine = new LocomotionMachine(settings, LocomotionStateId.Grounded);
+            machine.Context.Velocity = new Vector3(0f, 0f, 3.5f);
+
+            machine.Tick(Idle(), OnGround, Dt);
+
+            Assert.AreEqual(3.5f - settings.deceleration * Dt, Planar(machine), 0.0001f);
+        }
+
+        [Test]
         public void FacingTurnsSmoothlyTowardTheMovementDirection()
         {
             var machine = new LocomotionMachine(Settings(), LocomotionStateId.Grounded);

@@ -6,6 +6,7 @@ namespace HexFall.Player.Locomotion
     internal static class LocomotionMath
     {
         private const float WalkThreshold = 0.6f;
+        private const float TurnAngleThreshold = 15f;
 
         // Target planar speed: no input stops; a stick below 0.6 walks, scaled by magnitude / 0.6;
         // from 0.6 up it jogs; sprint with any input sprints.
@@ -33,6 +34,9 @@ namespace HexFall.Player.Locomotion
             var target = direction * TargetSpeed(settings, intent);
             var planar = new Vector3(ctx.Velocity.x, 0f, ctx.Velocity.z);
             var rate = target.sqrMagnitude > planar.sqrMagnitude ? settings.acceleration : settings.deceleration;
+            // A direction change while moving uses the sharper turn rate; starts and stops do not.
+            if (hasInput && planar.sqrMagnitude > 0.0001f && Vector3.Angle(planar, target) > TurnAngleThreshold)
+                rate = Mathf.Max(rate, settings.turnAcceleration);
             planar = Vector3.MoveTowards(planar, target, rate * accelerationScale * deltaTime);
             ctx.Velocity = new Vector3(planar.x, ctx.Velocity.y, planar.z);
             ctx.PlanarSpeed = planar.magnitude;

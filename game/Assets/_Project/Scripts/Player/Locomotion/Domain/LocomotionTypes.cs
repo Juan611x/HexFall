@@ -42,6 +42,9 @@ namespace HexFall.Player.Locomotion
         public float sprintSpeed = 6f;
         public float acceleration = 12f;
         public float deceleration = 16f;
+        // Rate used when the requested direction diverges from the current velocity, so direction
+        // changes feel planted while starts and stops keep acceleration and deceleration.
+        public float turnAcceleration = 40f;
         public float airControl = 0.35f;
         public float rotationSmoothSeconds = 0.08f;
         public float jumpHeight = 1.2f;
