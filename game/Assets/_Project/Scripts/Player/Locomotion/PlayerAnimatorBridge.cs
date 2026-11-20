@@ -96,13 +96,18 @@ namespace HexFall.Player.Locomotion
             var context = _motor.Machine.Context;
             var key = AnimatorStateSelector.For(to, from, context.LastLandingSpeed, context.PlanarSpeed, hardLandingSpeed);
             var stateName = StateNameFor(key);
-            if (stateName == null) return;
+            if (stateName == null)
+            {
+                Debug.LogWarning($"[PlayerAnimatorBridge] No animator state mapped for '{key}'.", this);
+                return;
+            }
 
             var fade = to == LocomotionStateId.Grounded ? landingFadeSeconds : crossFadeSeconds;
             _animator.CrossFadeInFixedTime(Animator.StringToHash(stateName), fade, 0);
         }
 
-        private string StateNameFor(string key)
+        // Animator state the given selector key cross-fades to, or null when it is not mapped.
+        public string StateNameFor(string key)
         {
             foreach (var mapping in stateMappings)
             {
