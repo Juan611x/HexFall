@@ -42,6 +42,16 @@ Created for HexFall with no third-party source; listed so every binary in the re
 | `Scanlines.png` (1×3) | `game/Assets/_Project/UI/Textures/` | Generated for HexFall: tiling pattern for the UI scanline overlay |
 | Hexagon emblem and UI icons (eye, dice, envelope, gear) | `HexagonElement.cs`, `IconElement.cs` | Drawn at runtime with UI Toolkit `Painter2D`; no image files |
 
+## Unity packages
+
+Code packages from Unity Technologies, declared in `game/Packages/manifest.json` and downloaded by the Package Manager (never committed; `Library/` is ignored). Listed so every third-party dependency is in one place. Packages that ship with the project template (URP, Input System, Test Framework, UI Toolkit) are not repeated here.
+
+| Package | Version | Used for | License |
+|---|---|---|---|
+| Cinemachine (`com.unity.cinemachine`) | 3.1.7 | Third-person camera: follow, shoulder aim, wall collision | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
+| Animation Rigging (`com.unity.animation.rigging`) | 1.4.1 | Runtime IK: head and torso aim at the crosshair, hand locked to the staff | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
+| Splines (`com.unity.splines`) | 2.9.0 | Not used directly; pulled in as a dependency of Cinemachine | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
+
 ## Engine template content
 
 | Asset | Location | Note |
