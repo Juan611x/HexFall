@@ -7,8 +7,12 @@ namespace HexFall.Player.Locomotion
     // Applies the IK profile of the current locomotion state to the Animation Rigging constraints:
     // feet are planted on the ground with ground rays and the body sinks to reach the lower foot;
     // the head and chest aim at the crosshair. Any missing reference only disables its own part.
-    // Animation Rigging evaluates during the animation update, so the foot bones read in LateUpdate
-    // hold last frame's pose; that one frame of lag is acceptable for placing the targets.
+    // The feet are placed from the ANIMATED foot positions, captured in OnAnimatorIK (the humanoid IK
+    // pass, before Animation Rigging runs). Reading the foot bones in LateUpdate would return the pose
+    // the rig already produced, feed it back as the next target and pin the feet in place. The base
+    // layer must have its IK pass enabled; until it reports, the feet stay unconstrained. Foot rotation
+    // follows the animation (the constraints use position only): humanoid IK rotations live in the
+    // avatar's normalised space, not the bones', so aligning feet to slopes is left for later.
     [RequireComponent(typeof(PlayerMotor))]
     public sealed class PlayerIKDriver : MonoBehaviour
     {
@@ -22,13 +26,10 @@ namespace HexFall.Player.Locomotion
         [SerializeField] private Transform leftFootTarget;
         [SerializeField] private Transform rightFootTarget;
         [SerializeField] private Transform aimTarget;
-        [SerializeField] private Transform leftFootBone;
-        [SerializeField] private Transform rightFootBone;
         [Tooltip("The animated model (CharacterArmature); lowered so the lower foot reaches the ground.")]
         [SerializeField] private Transform modelRoot;
         [Header("Tuning")]
         [SerializeField] private float blendRate = 6f;
-        [SerializeField] private float footHeight = 0.08f;
         [SerializeField] private float rayStartHeight = 0.6f;
         [SerializeField] private float rayLength = 1.2f;
         [SerializeField] private float maxHipDrop = 0.35f;
@@ -38,6 +39,10 @@ namespace HexFall.Player.Locomotion
 
         private PlayerMotor _motor;
         private PlayerCombat _combat;
+        private Animator _animator;
+        private Vector3 _animatedLeftFoot;
+        private Vector3 _animatedRightFoot;
+        private bool _hasAnimatedFeet;
         private IkProfile _profile;
         private float _hipY;
 
@@ -45,6 +50,16 @@ namespace HexFall.Player.Locomotion
         {
             _motor = GetComponent<PlayerMotor>();
             _combat = GetComponent<PlayerCombat>();
+            _animator = GetComponent<Animator>();
+        }
+
+        // Humanoid IK pass of the base layer: the foot goals here are still the animation's own.
+        private void OnAnimatorIK(int layerIndex)
+        {
+            if (layerIndex != 0 || _animator == null) return;
+            _animatedLeftFoot = _animator.GetIKPosition(AvatarIKGoal.LeftFoot);
+            _animatedRightFoot = _animator.GetIKPosition(AvatarIKGoal.RightFoot);
+            _hasAnimatedFeet = true;
         }
 
         private void OnEnable()
@@ -58,8 +73,6 @@ namespace HexFall.Player.Locomotion
             if (leftFootTarget == null) missing.Add(nameof(leftFootTarget));
             if (rightFootTarget == null) missing.Add(nameof(rightFootTarget));
             if (aimTarget == null) missing.Add(nameof(aimTarget));
-            if (leftFootBone == null) missing.Add(nameof(leftFootBone));
-            if (rightFootBone == null) missing.Add(nameof(rightFootBone));
             if (modelRoot == null) missing.Add(nameof(modelRoot));
             if (_combat == null) missing.Add("PlayerCombat");
             if (missing.Count > 0)
@@ -75,41 +88,40 @@ namespace HexFall.Player.Locomotion
             var target = IkProfiles.For(machine.Current, acting);
             _profile = IkBlend.Toward(_profile, target, blendRate, Time.deltaTime);
 
-            if (leftFoot != null) leftFoot.weight = _profile.FeetWeight;
-            if (rightFoot != null) rightFoot.weight = _profile.FeetWeight;
+            var feetWeight = _hasAnimatedFeet ? _profile.FeetWeight : 0f;
+            if (leftFoot != null) leftFoot.weight = feetWeight;
+            if (rightFoot != null) rightFoot.weight = feetWeight;
             if (headAim != null) headAim.weight = _profile.HeadAimWeight;
             if (chestAim != null) chestAim.weight = _profile.ChestAimWeight;
 
-            var leftDrop = PlaceFoot(leftFootBone, leftFootTarget);
-            var rightDrop = PlaceFoot(rightFootBone, rightFootTarget);
-            ApplyHipOffset(leftDrop, rightDrop);
+            var leftDrop = _hasAnimatedFeet ? PlaceFoot(_animatedLeftFoot, leftFootTarget) : 0f;
+            var rightDrop = _hasAnimatedFeet ? PlaceFoot(_animatedRightFoot, rightFootTarget) : 0f;
+            ApplyHipOffset(leftDrop, rightDrop, feetWeight);
             PlaceAimTarget();
         }
 
-        // Puts the target on the ground below the animated foot and returns how far below the
-        // animated foot the ground is (positive when the ground is lower).
-        private float PlaceFoot(Transform bone, Transform target)
+        // Moves the target to the animated foot shifted by how much the ground under it differs from
+        // the ground under the body, and returns how much lower that ground is (for the hip drop).
+        private float PlaceFoot(Vector3 animatedPosition, Transform target)
         {
-            if (bone == null || target == null) return 0f;
+            if (target == null) return 0f;
 
-            var animatedPosition = bone.position;
-            var animatedRotation = bone.rotation;
-            var origin = animatedPosition + Vector3.up * rayStartHeight;
+            var rootGround = transform.position.y;
+            var origin = new Vector3(animatedPosition.x, rootGround + rayStartHeight, animatedPosition.z);
             if (!Physics.Raycast(origin, Vector3.down, out var hit, rayLength, groundLayers, QueryTriggerInteraction.Ignore))
             {
-                target.SetPositionAndRotation(animatedPosition, animatedRotation);
+                target.position = animatedPosition;
                 return 0f;
             }
 
-            var placed = FootPlacement.Target(animatedPosition, footHeight, hit.point, hit.normal);
-            target.SetPositionAndRotation(placed, FootPlacement.Rotation(animatedRotation, hit.normal));
-            return animatedPosition.y - placed.y;
+            target.position = FootPlacement.Follow(animatedPosition, rootGround, hit.point.y);
+            return FootPlacement.GroundDrop(rootGround, hit.point.y);
         }
 
-        private void ApplyHipOffset(float leftDrop, float rightDrop)
+        private void ApplyHipOffset(float leftDrop, float rightDrop, float feetWeight)
         {
             if (modelRoot == null) return;
-            var wanted = FootPlacement.HipOffset(leftDrop, rightDrop, maxHipDrop) * _profile.FeetWeight;
+            var wanted = FootPlacement.HipOffset(leftDrop, rightDrop, maxHipDrop) * feetWeight;
             _hipY = Mathf.Lerp(_hipY, wanted, 1f - Mathf.Exp(-hipSmoothing * Time.deltaTime));
             var local = modelRoot.localPosition;
             local.y = _hipY;

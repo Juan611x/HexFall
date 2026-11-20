@@ -53,27 +53,21 @@ namespace HexFall.Player.Locomotion
         }
     }
 
-    // Foot placement maths, fed with a ground hit instead of querying physics so it stays testable.
+    // Foot placement maths, fed with ground heights instead of querying physics so it stays testable.
+    // The animation is authored on flat ground under the body, so a foot only needs moving by how
+    // much its own ground differs from that: the step's lift is kept, slopes and steps are followed.
     public static class FootPlacement
     {
-        // Where the foot should go: on the ground plane below the animated foot's horizontal
-        // position, lifted along the normal by the distance between the foot bone and the sole.
-        public static Vector3 Target(Vector3 animatedFoot, float footHeightAboveSole, Vector3 groundPoint, Vector3 groundNormal)
+        // The animated foot shifted vertically by the ground difference between the foot and the body.
+        public static Vector3 Follow(Vector3 animatedFoot, float rootGroundHeight, float groundHeightUnderFoot)
         {
-            var onPlane = new Vector3(animatedFoot.x, groundPoint.y, animatedFoot.z);
-            if (groundNormal.y > 0.001f)
-            {
-                var planeY = groundPoint.y
-                    - (groundNormal.x * (animatedFoot.x - groundPoint.x) + groundNormal.z * (animatedFoot.z - groundPoint.z)) / groundNormal.y;
-                onPlane.y = planeY;
-            }
-            return onPlane + groundNormal * footHeightAboveSole;
+            return animatedFoot + Vector3.up * (groundHeightUnderFoot - rootGroundHeight);
         }
 
-        // The animated rotation tilted so the foot's up follows the ground normal.
-        public static Quaternion Rotation(Quaternion animatedFootRotation, Vector3 groundNormal)
+        // How much lower the ground under a foot is than under the body (0 when it is higher).
+        public static float GroundDrop(float rootGroundHeight, float groundHeightUnderFoot)
         {
-            return Quaternion.FromToRotation(Vector3.up, groundNormal) * animatedFootRotation;
+            return Mathf.Max(0f, rootGroundHeight - groundHeightUnderFoot);
         }
 
         // Drops are positive distances the feet must go down. The body sinks by the larger one so

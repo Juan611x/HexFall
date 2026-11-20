@@ -115,74 +115,48 @@ namespace HexFall.UI.Tests
 
     public class FootPlacementTests
     {
-        private const float Height = 0.08f;
-
         [Test]
-        public void FlatGroundPutsTheFootAboveTheSurface()
+        public void FlatGroundKeepsTheAnimatedFootUntouched()
         {
-            var target = FootPlacement.Target(new Vector3(1f, 0.3f, 2f), Height, new Vector3(1f, 0f, 2f), Vector3.up);
-            Assert.AreEqual(1f, target.x, 0.0001f);
-            Assert.AreEqual(Height, target.y, 0.0001f);
-            Assert.AreEqual(2f, target.z, 0.0001f);
+            var lifted = new Vector3(0.2f, 0.3f, 0.4f);
+            Assert.AreEqual(lifted, FootPlacement.Follow(lifted, rootGroundHeight: 0f, groundHeightUnderFoot: 0f));
         }
 
         [Test]
-        public void FlatGroundKeepsTheAnimatedHorizontalPosition()
+        public void HigherGroundRaisesTheFootByTheDifference()
         {
-            var target = FootPlacement.Target(new Vector3(0.4f, 0.3f, -0.7f), Height, new Vector3(0.1f, 0f, -0.2f), Vector3.up);
-            Assert.AreEqual(0.4f, target.x, 0.0001f);
-            Assert.AreEqual(-0.7f, target.z, 0.0001f);
+            var planted = new Vector3(0.1f, 0.08f, 0.3f);
+            var result = FootPlacement.Follow(planted, rootGroundHeight: 1f, groundHeightUnderFoot: 1.25f);
+            Assert.AreEqual(new Vector3(0.1f, 0.33f, 0.3f).y, result.y, 0.0001f);
+            Assert.AreEqual(planted.x, result.x, 0.0001f);
+            Assert.AreEqual(planted.z, result.z, 0.0001f);
         }
 
         [Test]
-        public void SlopeKeepsHorizontalPositionAndLiesOnThePlane()
+        public void LowerGroundLowersTheFootByTheDifference()
         {
-            var normal = Quaternion.Euler(14f, 0f, 0f) * Vector3.up;
-            var groundPoint = new Vector3(0f, 1f, 0f);
-            var animated = new Vector3(0.3f, 1.4f, 0.5f);
-
-            var target = FootPlacement.Target(animated, Height, groundPoint, normal);
-            var sole = target - normal * Height;
-
-            Assert.AreEqual(animated.x, sole.x, 0.0001f);
-            Assert.AreEqual(animated.z, sole.z, 0.0001f);
-            Assert.AreEqual(0f, Vector3.Dot(sole - groundPoint, normal), 0.0001f);
+            var result = FootPlacement.Follow(new Vector3(0f, 1.08f, 0f), rootGroundHeight: 1f, groundHeightUnderFoot: 0.9f);
+            Assert.AreEqual(0.98f, result.y, 0.0001f);
         }
 
         [Test]
-        public void SlopeLiftsTheFootByTheHeightAlongTheNormal()
+        public void ALiftedFootStaysLiftedOnASlope()
         {
-            var normal = Quaternion.Euler(0f, 0f, 14f) * Vector3.up;
-            var groundPoint = new Vector3(2f, 0.5f, 2f);
-            var animated = new Vector3(2.2f, 0.9f, 2.1f);
-
-            var target = FootPlacement.Target(animated, Height, groundPoint, normal);
-
-            Assert.AreEqual(Height, Vector3.Dot(target - groundPoint, normal), 0.0001f);
+            // Mid-stride the foot is 30 cm up; on a slope it keeps those 30 cm above its own ground.
+            var result = FootPlacement.Follow(new Vector3(0f, 1.3f, 0f), rootGroundHeight: 1f, groundHeightUnderFoot: 1.1f);
+            Assert.AreEqual(1.4f, result.y, 0.0001f);
         }
 
         [Test]
-        public void RotationOnFlatGroundIsUnchanged()
+        public void DropIsHowMuchLowerTheGroundIsThanUnderTheBody()
         {
-            var animated = Quaternion.Euler(10f, 40f, 0f);
-            var result = FootPlacement.Rotation(animated, Vector3.up);
-            Assert.AreEqual(0f, Quaternion.Angle(animated, result), 0.001f);
+            Assert.AreEqual(0.15f, FootPlacement.GroundDrop(rootGroundHeight: 1f, groundHeightUnderFoot: 0.85f), 0.0001f);
         }
 
         [Test]
-        public void RotationAlignsTheFootUpWithTheNormal()
+        public void HigherGroundIsNoDrop()
         {
-            var normal = Quaternion.Euler(14f, 0f, 0f) * Vector3.up;
-            var result = FootPlacement.Rotation(Quaternion.identity, normal);
-            Assert.AreEqual(0f, Vector3.Angle(result * Vector3.up, normal), 0.001f);
-        }
-
-        [Test]
-        public void RotationKeepsTheAnimatedHeading()
-        {
-            var normal = Quaternion.Euler(14f, 0f, 0f) * Vector3.up;
-            var result = FootPlacement.Rotation(Quaternion.Euler(0f, 90f, 0f), normal);
-            Assert.AreEqual(0f, Vector3.Angle(Vector3.ProjectOnPlane(result * Vector3.forward, Vector3.up), Vector3.right), 15f);
+            Assert.AreEqual(0f, FootPlacement.GroundDrop(rootGroundHeight: 1f, groundHeightUnderFoot: 1.2f), 0.0001f);
         }
     }
 

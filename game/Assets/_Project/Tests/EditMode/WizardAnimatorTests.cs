@@ -50,6 +50,14 @@ namespace HexFall.UI.Tests
 
         private AnimatorStateMachine Base => _controller.layers[0].stateMachine;
 
+        // PlayerIKDriver reads the animated (pre-IK) foot goals in OnAnimatorIK; without the IK pass
+        // it would read the feet after the rig moved them and pin them in place.
+        [Test]
+        public void BaseLayerRunsTheIkPassForFootPlacement()
+        {
+            Assert.IsTrue(_controller.layers[0].iKPass);
+        }
+
         [Test]
         public void EverySelectorKeyIsMapped()
         {

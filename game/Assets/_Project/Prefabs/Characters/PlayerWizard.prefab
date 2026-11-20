@@ -54,7 +54,7 @@ MonoBehaviour:
     m_Target: {fileID: 7194259393915228513}
     m_Hint: {fileID: 2596471726312707646}
     m_TargetPositionWeight: 1
-    m_TargetRotationWeight: 1
+    m_TargetRotationWeight: 0
     m_HintWeight: 1
     m_MaintainTargetPositionOffset: 0
     m_MaintainTargetRotationOffset: 0
@@ -483,7 +483,7 @@ MonoBehaviour:
     m_Target: {fileID: 2231410064667586434}
     m_Hint: {fileID: 1905798798666182427}
     m_TargetPositionWeight: 1
-    m_TargetRotationWeight: 1
+    m_TargetRotationWeight: 0
     m_HintWeight: 1
     m_MaintainTargetPositionOffset: 0
     m_MaintainTargetRotationOffset: 0
@@ -1183,8 +1183,6 @@ MonoBehaviour:
   leftFootTarget: {fileID: 2231410064667586434}
   rightFootTarget: {fileID: 7194259393915228513}
   aimTarget: {fileID: 8396099876927135698}
-  leftFootBone: {fileID: 7296231754928572683}
-  rightFootBone: {fileID: 6066335504909130794}
   modelRoot: {fileID: 4984123779757526994}
   blendRate: 6
   footHeight: 0.08
