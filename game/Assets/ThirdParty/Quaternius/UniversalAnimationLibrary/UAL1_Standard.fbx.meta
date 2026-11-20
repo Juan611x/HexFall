@@ -36,7 +36,7 @@ ModelImporter:
       takeName: Armature|Crouch_Fwd_Loop
       internalID: 4366774653929184976
       firstFrame: 0
-      lastFrame: 60
+      lastFrame: 59
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -65,7 +65,7 @@ ModelImporter:
       takeName: Armature|Crouch_Idle_Loop
       internalID: -7993625790543202706
       firstFrame: 0
-      lastFrame: 88
+      lastFrame: 87
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -94,7 +94,7 @@ ModelImporter:
       takeName: Armature|Dance_Loop
       internalID: 8800687838965813479
       firstFrame: 0
-      lastFrame: 30
+      lastFrame: 29
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -152,7 +152,7 @@ ModelImporter:
       takeName: Armature|Driving_Loop
       internalID: -6540212038565268958
       firstFrame: 0
-      lastFrame: 50
+      lastFrame: 49
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -268,7 +268,7 @@ ModelImporter:
       takeName: Armature|Idle_Loop
       internalID: 7994627924475153551
       firstFrame: 0
-      lastFrame: 75
+      lastFrame: 74
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -297,7 +297,7 @@ ModelImporter:
       takeName: Armature|Idle_Talking_Loop
       internalID: 6476497563760123848
       firstFrame: 0
-      lastFrame: 88
+      lastFrame: 87
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -326,7 +326,7 @@ ModelImporter:
       takeName: Armature|Idle_Torch_Loop
       internalID: -7342238307180667810
       firstFrame: 0
-      lastFrame: 38
+      lastFrame: 37
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -384,7 +384,7 @@ ModelImporter:
       takeName: Armature|Jog_Fwd_Loop
       internalID: -8815886378510225334
       firstFrame: 0
-      lastFrame: 28
+      lastFrame: 27
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -442,7 +442,7 @@ ModelImporter:
       takeName: Armature|Jump_Loop
       internalID: -3659967873887649963
       firstFrame: 0
-      lastFrame: 75
+      lastFrame: 74
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -616,7 +616,7 @@ ModelImporter:
       takeName: Armature|Pistol_Idle_Loop
       internalID: -4708846537797790282
       firstFrame: 0
-      lastFrame: 50
+      lastFrame: 49
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -761,7 +761,7 @@ ModelImporter:
       takeName: Armature|Push_Loop
       internalID: 2931362099718132477
       firstFrame: 0
-      lastFrame: 80
+      lastFrame: 79
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -877,7 +877,7 @@ ModelImporter:
       takeName: Armature|Sitting_Idle_Loop
       internalID: -6676812269523803463
       firstFrame: 0
-      lastFrame: 50
+      lastFrame: 49
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -906,7 +906,7 @@ ModelImporter:
       takeName: Armature|Sitting_Talking_Loop
       internalID: 4525242936183261023
       firstFrame: 0
-      lastFrame: 88
+      lastFrame: 87
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -993,7 +993,7 @@ ModelImporter:
       takeName: Armature|Spell_Simple_Idle_Loop
       internalID: 3732886095724451988
       firstFrame: 0
-      lastFrame: 63
+      lastFrame: 62
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1051,7 +1051,7 @@ ModelImporter:
       takeName: Armature|Sprint_Loop
       internalID: -4950333804767787469
       firstFrame: 0
-      lastFrame: 20
+      lastFrame: 19
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1080,7 +1080,7 @@ ModelImporter:
       takeName: Armature|Swim_Fwd_Loop
       internalID: 5539243244057379418
       firstFrame: 0
-      lastFrame: 40
+      lastFrame: 39
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1109,7 +1109,7 @@ ModelImporter:
       takeName: Armature|Swim_Idle_Loop
       internalID: 1532177651469301551
       firstFrame: 0
-      lastFrame: 100
+      lastFrame: 99
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1167,7 +1167,7 @@ ModelImporter:
       takeName: Armature|Sword_Idle
       internalID: 8324860437086164814
       firstFrame: 0
-      lastFrame: 50
+      lastFrame: 49
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1225,7 +1225,7 @@ ModelImporter:
       takeName: Armature|Walk_Loop
       internalID: -7003542030617561338
       firstFrame: 0
-      lastFrame: 40
+      lastFrame: 39
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
