@@ -10,6 +10,13 @@ namespace HexFall.Player
     public class PlayerCombat : MonoBehaviour
     {
         [SerializeField] private float attackCooldownSeconds = 0.5f;
+        [Header("Bolt")]
+        [SerializeField] private Bolt boltPrefab;
+        [SerializeField] private Transform muzzle;
+        [SerializeField] private float boltDelaySeconds = 0.2f;
+        [SerializeField] private float boltSpeed = 30f;
+        [SerializeField] private int boltDamage = 18;
+        [SerializeField] private float aimDistance = 100f;
         [Header("Shield")]
         [SerializeField] private int shieldCharges = 3;
         [SerializeField] private float chargeRechargeSeconds = 6f;
@@ -24,6 +31,7 @@ namespace HexFall.Player
         private Animator _animator;
         private AttackCooldown _attack;
         private ShieldState _shield;
+        private float _fireAt = float.PositiveInfinity;
 
         public int MaxShieldCharges => shieldCharges;
         public int ShieldCharges => _shield?.Charges(Time.time) ?? shieldCharges;
@@ -49,7 +57,41 @@ namespace HexFall.Player
         {
             if (!_attack.TryAttack(Time.time)) return false;
             _animator.SetTrigger(AttackTrigger);
+            _fireAt = Time.time + boltDelaySeconds;
             return true;
+        }
+
+        private void Update()
+        {
+            if (Time.time < _fireAt) return;
+            _fireAt = float.PositiveInfinity;
+            FireBolt();
+        }
+
+        private void FireBolt()
+        {
+            if (boltPrefab == null) return;
+            var origin = muzzle != null ? muzzle.position : transform.position + Vector3.up * 1.3f;
+            var bolt = Instantiate(boltPrefab, origin, Quaternion.identity);
+            bolt.Launch(gameObject, AimPoint() - origin, boltSpeed, boltDamage);
+        }
+
+        // The point under the crosshair: the first thing the camera's centre ray hits that is not the
+        // wizard, or a far point along that ray.
+        private Vector3 AimPoint()
+        {
+            var cam = Camera.main;
+            if (cam == null) return transform.position + transform.forward * aimDistance;
+            var ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            var best = ray.GetPoint(aimDistance);
+            var bestDistance = aimDistance;
+            foreach (var hit in Physics.RaycastAll(ray, aimDistance, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.transform.root == transform.root || hit.distance >= bestDistance) continue;
+                best = hit.point;
+                bestDistance = hit.distance;
+            }
+            return best;
         }
 
         public void Parry()
