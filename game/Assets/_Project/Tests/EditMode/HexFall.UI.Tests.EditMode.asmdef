@@ -4,6 +4,7 @@
     "references": [
         "HexFall.UI",
         "HexFall.Player",
+        "HexFall.World",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
