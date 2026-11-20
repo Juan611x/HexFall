@@ -88,6 +88,13 @@ git lfs pull
 
 Open `game/` with Unity Hub. The EditMode tests run from the Unity Test Runner; the Python and Terraform checks run as in `.github/workflows/ci.yml`.
 
+**Third-person sandbox (work in progress):** the `PlayerWizard` prefab and the `Sandbox` scene use Unity's free **First Person + Third Person | Character Controllers** package (Starter Assets 2.0.2, by Unity Technologies, on the Asset Store). Its Asset Store licence is still under review, so it is not in this repository (`game/Assets/Starter Assets/` is ignored). Before opening `Sandbox`:
+
+1. Add the package to your Unity account from the Asset Store.
+2. In Unity, open **Window > Package Manager > My Assets**, and import it into `game/Assets/Starter Assets/` (the default location).
+
+Without it, the player shows missing scripts and the scene has no camera rig. The main menu does not depend on it.
+
 Git LFS files count against the repository owner's GitHub LFS bandwidth, so clones and forks that pull them use that quota.
 
 ## The lab account
