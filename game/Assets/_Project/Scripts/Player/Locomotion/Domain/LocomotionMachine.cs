@@ -37,9 +37,10 @@ namespace HexFall.Player.Locomotion
             var next = _current.Tick(Context, intent, ground, deltaTime);
             if (next == _current.Id) return;
 
+            var target = Find(next);
             var from = _current.Id;
             _current.Exit(Context);
-            _current = Find(next);
+            _current = target;
             _current.Enter(Context);
             StateChanged?.Invoke(from, next);
         }

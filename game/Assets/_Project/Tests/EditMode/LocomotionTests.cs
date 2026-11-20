@@ -406,6 +406,29 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(LocomotionStateId.Jump, machine.Current);
         }
 
+        [Test]
+        public void ConstructingWithUnregisteredInitialStateThrows()
+        {
+            var log = new List<string>();
+            var states = new ILocomotionState[] { new SpyState(LocomotionStateId.Grounded, LocomotionStateId.Grounded, log) };
+
+            Assert.Throws<System.ArgumentException>(() => new LocomotionMachine(states, LocomotionStateId.Fall));
+        }
+
+        [Test]
+        public void TransitionToUnregisteredStateThrowsWithoutExitingOrChangingCurrent()
+        {
+            var log = new List<string>();
+            var states = new ILocomotionState[] { new SpyState(LocomotionStateId.Grounded, LocomotionStateId.Fall, log) };
+            var machine = new LocomotionMachine(states, LocomotionStateId.Grounded);
+            log.Clear();
+
+            Assert.Throws<System.ArgumentException>(() => machine.Tick(Idle(), OnGround, Dt));
+
+            Assert.AreEqual(LocomotionStateId.Grounded, machine.Current);
+            CollectionAssert.DoesNotContain(log, "Grounded.Exit");
+        }
+
         private sealed class SpyState : ILocomotionState
         {
             private readonly LocomotionStateId _next;
