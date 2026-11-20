@@ -43,6 +43,14 @@ namespace HexFall.Player
             Push();
         }
 
+        // Restores up to `amount` health. False when nothing was healed (already full).
+        public bool Heal(int amount)
+        {
+            if (_health.Heal(amount) == 0) return false;
+            Push();
+            return true;
+        }
+
         private void Update()
         {
             if (_combat.ShieldCharges != _shownCharges) Push();
