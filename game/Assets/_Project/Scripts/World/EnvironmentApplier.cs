@@ -34,8 +34,10 @@ namespace HexFall.World
             RenderSettings.reflectionIntensity = profile.reflectionIntensity;
 
             RenderSettings.fog = profile.fog;
-            RenderSettings.fogMode = FogMode.ExponentialSquared;
+            RenderSettings.fogMode = profile.fogMode;
             RenderSettings.fogColor = profile.fogColor;
+            RenderSettings.fogStartDistance = profile.fogStart;
+            RenderSettings.fogEndDistance = profile.fogEnd;
             RenderSettings.fogDensity = profile.fogDensity;
 
             if (moon == null) return;

@@ -29,9 +29,13 @@ namespace HexFall.World
         public Color ambientGround = new Color(0.015f, 0.015f, 0.025f);
         [Range(0f, 1f)] public float reflectionIntensity = 0.3f;
 
-        [Header("Fog (exponential squared)")]
+        [Header("Fog")]
         public bool fog = true;
+        [Tooltip("Linear is the PS1 look: clear up to Start, fully fogged at End. Exponential modes use Density.")]
+        public FogMode fogMode = FogMode.Linear;
         public Color fogColor = new Color(0.025f, 0.035f, 0.07f);
+        public float fogStart = 8f;
+        public float fogEnd = 45f;
         public float fogDensity = 0.035f;
     }
 }
