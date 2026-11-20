@@ -3,6 +3,7 @@
     "rootNamespace": "HexFall.Editor.Build.Tests",
     "references": [
         "HexFall.Editor.Build",
+        "HexFall.Editor.Import",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
