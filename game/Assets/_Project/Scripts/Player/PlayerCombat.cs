@@ -41,6 +41,10 @@ namespace HexFall.Player
         public int MaxShieldCharges => shieldCharges;
         public int ShieldCharges => _shield?.Charges(Time.time) ?? shieldCharges;
 
+        // True from the attack until the wizard stops facing the crosshair, and while the shield guard
+        // is up. Used by the IK to aim the head and chest harder.
+        public bool IsActing => _shield != null && (Time.time < _faceAimUntil || _shield.IsGuarding(Time.time));
+
         private void Awake()
         {
             _animator = GetComponent<Animator>();
