@@ -21,6 +21,15 @@ namespace HexFall.Player
             return applied;
         }
 
+        // Returns the health actually restored (never above max). The dead are not revived.
+        public int Heal(int amount)
+        {
+            if (amount <= 0 || IsDead) return 0;
+            var applied = amount > Max - Current ? Max - Current : amount;
+            Current += applied;
+            return applied;
+        }
+
         public void Reset() => Current = Max;
     }
 }
