@@ -53,6 +53,10 @@ Code packages from Unity Technologies, declared in `game/Packages/manifest.json`
 | Animation Rigging (`com.unity.animation.rigging`) | 1.4.1 | Runtime IK: head and torso aim at the crosshair, hand locked to the staff | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
 | Splines (`com.unity.splines`) | 2.9.0 | Not used directly; pulled in as a dependency of Cinemachine | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
 
+## Required local import: Starter Assets
+
+The `PlayerWizard` prefab and the `Sandbox` scene use Unity's free **First Person + Third Person | Character Controllers** package (Starter Assets 2.0.2, Unity Technologies, Asset Store). Its Asset Store licence is still under review, so it is not in this repository (`game/Assets/Starter Assets/` is ignored). Before opening `Sandbox`, add the package to your Unity account and import it from **Window > Package Manager > My Assets** into `game/Assets/Starter Assets/`. Without it the player shows missing scripts and the scene has no camera rig; the main menu does not depend on it.
+
 ## Engine template content
 
 | Asset | Location | Note |
