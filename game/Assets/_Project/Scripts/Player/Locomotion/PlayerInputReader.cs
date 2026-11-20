@@ -33,6 +33,12 @@ namespace HexFall.Player.Locomotion
             ApplyCursorLock(lockCursor);
         }
 
+        // Release the cursor when the reader goes away (menus, pause, scene unload).
+        private void OnDisable()
+        {
+            ApplyCursorLock(false);
+        }
+
         private void OnApplicationFocus(bool hasFocus)
         {
             ApplyCursorLock(hasFocus && lockCursor);

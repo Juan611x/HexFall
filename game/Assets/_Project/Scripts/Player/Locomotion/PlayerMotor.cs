@@ -4,7 +4,7 @@ namespace HexFall.Player.Locomotion
 {
     // Feeds the locomotion machine with the intent and ground sensing each frame and applies the
     // resulting velocity and facing to the CharacterController.
-    [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(CharacterController), typeof(PlayerInputReader), typeof(PlayerLook))]
     public sealed class PlayerMotor : MonoBehaviour
     {
         [SerializeField] private LocomotionSettings settings = new LocomotionSettings();
