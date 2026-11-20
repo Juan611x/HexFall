@@ -17,6 +17,8 @@ namespace HexFall.Player
         [SerializeField] private float boltSpeed = 30f;
         [SerializeField] private int boltDamage = 18;
         [SerializeField] private float aimDistance = 100f;
+        [Tooltip("How long after the bolt leaves the wizard keeps facing the crosshair.")]
+        [SerializeField] private float faceAimHoldSeconds = 0.3f;
         [Header("Shield")]
         [SerializeField] private int shieldCharges = 3;
         [SerializeField] private float chargeRechargeSeconds = 6f;
@@ -32,6 +34,7 @@ namespace HexFall.Player
         private AttackCooldown _attack;
         private ShieldState _shield;
         private float _fireAt = float.PositiveInfinity;
+        private float _faceAimUntil = float.NegativeInfinity;
 
         public int MaxShieldCharges => shieldCharges;
         public int ShieldCharges => _shield?.Charges(Time.time) ?? shieldCharges;
@@ -58,6 +61,8 @@ namespace HexFall.Player
             if (!_attack.TryAttack(Time.time)) return false;
             _animator.SetTrigger(AttackTrigger);
             _fireAt = Time.time + boltDelaySeconds;
+            _faceAimUntil = _fireAt + faceAimHoldSeconds;
+            FaceAim();
             return true;
         }
 
@@ -66,6 +71,19 @@ namespace HexFall.Player
             if (Time.time < _fireAt) return;
             _fireAt = float.PositiveInfinity;
             FireBolt();
+        }
+
+        // Runs after the movement controller, which only turns the wizard toward where it walks, so an
+        // attack always faces the crosshair until the bolt is gone.
+        private void LateUpdate()
+        {
+            if (Time.time < _faceAimUntil) FaceAim();
+        }
+
+        private void FaceAim()
+        {
+            var yaw = AimFacing.YawToward(transform.position, AimPoint(), transform.eulerAngles.y);
+            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
         }
 
         private void FireBolt()
