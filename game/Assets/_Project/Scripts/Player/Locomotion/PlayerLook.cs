@@ -4,9 +4,14 @@ namespace HexFall.Player.Locomotion
 {
     // Turns the look input into yaw and pitch and applies them to the camera target in world space, so
     // turning the body does not drag the camera. The Cinemachine camera follows the camera target.
+    // Runs after every script that turns the body (motor, combat aim facing at order 0), so the frame's
+    // body turn never leaks into the child camera target, and before CinemachineBrain (order 100) reads it.
+    [DefaultExecutionOrder(ExecutionOrder)]
     [RequireComponent(typeof(PlayerInputReader))]
     public sealed class PlayerLook : MonoBehaviour
     {
+        public const int ExecutionOrder = 50;
+
         [SerializeField] private Transform cameraTarget;
         [SerializeField] private float topClamp = 70f;
         [SerializeField] private float bottomClamp = -30f;
