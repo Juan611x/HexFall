@@ -46,6 +46,11 @@
 *.unitypackage
 *.app
 
+# Unity Starter Assets (Asset Store, non-standard EULA): kept local until its
+# licence is confirmed for a public repository.
+/game/[Aa]ssets/Starter Assets/
+/game/[Aa]ssets/Starter Assets.meta
+
 # Gradle cache (Android)
 /game/.gradle/
 
