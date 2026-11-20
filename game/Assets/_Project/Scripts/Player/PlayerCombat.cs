@@ -3,14 +3,19 @@ using UnityEngine.InputSystem;
 
 namespace HexFall.Player
 {
-    // Receives the Attack and Parry actions from PlayerInput (Send Messages), applies the timing rules
-    // and drives the animator and the shield. Damage sources call ReceiveHit to learn whether it was parried.
+    // Receives the Attack and Parry actions from PlayerInput (Send Messages), applies the attack cooldown
+    // and the shield rules, and drives the animator and the shield VFX. Incoming damage goes through
+    // ResolveHit, which says how much of it the shield absorbed.
     [RequireComponent(typeof(Animator))]
     public class PlayerCombat : MonoBehaviour
     {
         [SerializeField] private float attackCooldownSeconds = 0.5f;
-        [SerializeField] private float parryWindowSeconds = 0.25f;
-        [SerializeField] private float parryRecoverySeconds = 0.6f;
+        [Header("Shield")]
+        [SerializeField] private int shieldCharges = 3;
+        [SerializeField] private float chargeRechargeSeconds = 6f;
+        [SerializeField] private float perfectParrySeconds = 0.15f;
+        [SerializeField] private float guardSeconds = 0.4f;
+        [SerializeField, Range(0f, 1f)] private float partialBlock = 0.5f;
         [SerializeField] private MagicShield shield;
 
         private static readonly int AttackTrigger = Animator.StringToHash("Attack");
@@ -18,15 +23,16 @@ namespace HexFall.Player
 
         private Animator _animator;
         private AttackCooldown _attack;
-        private ParryWindow _parry;
+        private ShieldState _shield;
 
-        public float ParryWindowSeconds => parryWindowSeconds;
+        public int MaxShieldCharges => shieldCharges;
+        public int ShieldCharges => _shield?.Charges(Time.time) ?? shieldCharges;
 
         private void Awake()
         {
             _animator = GetComponent<Animator>();
             _attack = new AttackCooldown(attackCooldownSeconds);
-            _parry = new ParryWindow(parryWindowSeconds, parryRecoverySeconds);
+            _shield = new ShieldState(shieldCharges, chargeRechargeSeconds, perfectParrySeconds, guardSeconds, partialBlock);
         }
 
         public void OnAttack(InputValue value)
@@ -39,24 +45,25 @@ namespace HexFall.Player
             if (value.isPressed) Parry();
         }
 
-        public void Attack()
+        public bool Attack()
         {
-            if (!_attack.TryAttack(Time.time)) return;
+            if (!_attack.TryAttack(Time.time)) return false;
             _animator.SetTrigger(AttackTrigger);
+            return true;
         }
 
         public void Parry()
         {
-            if (!_parry.TryRaise(Time.time)) return;
+            if (!_shield.TryRaise(Time.time)) return;
             _animator.SetTrigger(ParryTrigger);
-            if (shield != null) shield.Flash(parryWindowSeconds);
+            if (shield != null) shield.Flash(guardSeconds);
         }
 
-        public HitOutcome ReceiveHit()
+        public HitResult ResolveHit(int damage)
         {
-            var outcome = _parry.Resolve(Time.time);
-            if (outcome == HitOutcome.Parried && shield != null) shield.Deflect();
-            return outcome;
+            var hit = _shield.Resolve(damage, Time.time);
+            if (hit.Grade != ParryGrade.None && shield != null) shield.Deflect();
+            return hit;
         }
     }
 }
