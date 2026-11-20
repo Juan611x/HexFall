@@ -12,11 +12,15 @@ brightness so the moonlight still reads. Tune SKY_GAIN, DESATURATION and MOON_GA
 Outputs:
     game/Assets/ThirdParty/StarkCrafts/NightSky/PSX_NIGHTSKY.hdr      (original, unmodified)
     game/Assets/ThirdParty/StarkCrafts/NightSky/T_NightSky_Dark.hdr   (darkened)
+    game/Assets/ThirdParty/StarkCrafts/NightSky/T_NightSky_Dark.hdr.meta
+        (copied from T_NightSky_Dark.hdr.meta.template next to this script: a fixed GUID, so the
+        committed M_NightSky material finds the texture, and the PSX import settings: point filter,
+        1024 max, half-float)
 """
 
 import os
+import shutil
 import sys
-import tempfile
 import zipfile
 
 import bpy
@@ -29,6 +33,7 @@ MOON_FROM = 0.4   # luminance where the moon mask starts
 MOON_TO = 1.0     # luminance where a pixel counts fully as moon
 
 SOURCE_NAME = "PSX_NIGHTSKY.hdr"
+META_TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "T_NightSky_Dark.hdr.meta.template")
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT_DIR = os.path.join(ROOT, "game", "Assets", "ThirdParty", "StarkCrafts", "NightSky")
 LUMA = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
@@ -67,6 +72,7 @@ def main():
     out.filepath_raw = os.path.join(OUT_DIR, "T_NightSky_Dark.hdr")
     out.file_format = "HDR"
     out.save()
+    shutil.copyfile(META_TEMPLATE, out.filepath_raw + ".meta")
     print("NIGHT_SKY_OK", w, h, float((px[..., :3] @ LUMA).mean()))
 
 
