@@ -50,6 +50,10 @@
 # licence is confirmed for a public repository.
 /game/[Aa]ssets/Starter Assets/
 /game/[Aa]ssets/Starter Assets.meta
+# Stark Crafts PSX night sky: no formal licence (credit-only, per the author's comments), so it
+# stays a local import. Regenerate with art/environment/build_night_sky.py (see docs/ASSET_CREDITS.md).
+/game/[Aa]ssets/ThirdParty/StarkCrafts/
+/game/[Aa]ssets/ThirdParty/StarkCrafts.meta
 # Unity template readme (unused by HexFall); Starter Assets overwrites it with its own version.
 /game/[Aa]ssets/TutorialInfo/
 /game/[Aa]ssets/TutorialInfo.meta
