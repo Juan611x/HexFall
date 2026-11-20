@@ -54,7 +54,7 @@ Code packages from Unity Technologies, declared in `game/Packages/manifest.json`
 | Package | Version | Used for | License |
 |---|---|---|---|
 | Cinemachine (`com.unity.cinemachine`) | 3.1.7 | Third-person camera: follow, shoulder aim, wall collision | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
-| Animation Rigging (`com.unity.animation.rigging`) | 1.4.1 | Runtime IK: head and torso aim at the crosshair, hand locked to the staff | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
+| Animation Rigging (`com.unity.animation.rigging`) | 1.4.1 | Runtime IK on PlayerWizard (`Rig` + `PlayerIKDriver`): feet placed on the ground with a hip drop (Two Bone IK per leg) and head and chest aiming at the crosshair (Multi-Aim) | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
 | Splines (`com.unity.splines`) | 2.9.0 | Not used directly; pulled in as a dependency of Cinemachine | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
 
 ## No longer used: Starter Assets
