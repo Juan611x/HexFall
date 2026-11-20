@@ -61,7 +61,7 @@ The `PlayerWizard` prefab and the `Sandbox` scene use Unity's free **First Perso
 
 | Asset | Location | Note |
 |---|---|---|
-| `URP.png` and the `TutorialInfo` scripts | `game/Assets/TutorialInfo/` | Created automatically by Unity's Universal 3D project template; not used by HexFall and safe to delete |
+| `URP.png`, the `TutorialInfo` scripts and `Readme.asset` | `game/Assets/TutorialInfo/`, `game/Assets/Readme.asset` | Created automatically by Unity's Universal 3D project template; not used by HexFall. Removed from the repository and ignored, because the Starter Assets import overwrites them with its own version |
 
 ## Evaluated, not used
 

@@ -50,6 +50,11 @@
 # licence is confirmed for a public repository.
 /game/[Aa]ssets/Starter Assets/
 /game/[Aa]ssets/Starter Assets.meta
+# Unity template readme (unused by HexFall); Starter Assets overwrites it with its own version.
+/game/[Aa]ssets/TutorialInfo/
+/game/[Aa]ssets/TutorialInfo.meta
+/game/[Aa]ssets/Readme.asset
+/game/[Aa]ssets/Readme.asset.meta
 
 # Gradle cache (Android)
 /game/.gradle/
