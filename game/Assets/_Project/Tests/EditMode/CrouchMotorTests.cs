@@ -44,16 +44,17 @@ namespace HexFall.UI.Tests
         private const string PrefabPath = "Assets/_Project/Prefabs/Characters/PlayerWizard.prefab";
 
         [Test]
-        public void StandingShapeMatchesThePrefabController()
+        public void PrefabStandHeightSettingMatchesTheControllerHeight()
         {
             var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             var controller = prefab.GetComponent<CharacterController>();
-            var feetOffset = controller.center.y - controller.height * 0.5f;
+            var settings = new UnityEditor.SerializedObject(prefab.GetComponent<PlayerMotor>()).FindProperty("settings");
 
-            var (height, centerY) = CapsuleShape.For(controller.height, feetOffset);
+            var stand = settings.FindPropertyRelative("standHeight").floatValue;
+            var crouch = settings.FindPropertyRelative("crouchHeight").floatValue;
 
-            Assert.AreEqual(controller.height, height, 1e-5f);
-            Assert.AreEqual(controller.center.y, centerY, 1e-5f);
+            Assert.AreEqual(controller.height, stand, 1e-5f);
+            Assert.Less(crouch, stand);
         }
 
         [Test]
@@ -128,6 +129,22 @@ namespace HexFall.UI.Tests
         public void OpenSpace_CanStand()
         {
             Assert.IsTrue(_clearance.CanStand(_owner.transform.position, 1.1f));
+        }
+
+        [Test]
+        public void PartlyResized_CeilingJustAboveStandingTop_CanStand()
+        {
+            // Standing top is 0.03 + 1.8 = 1.83; the slab starts above it, so it must not count.
+            Slab(1.85f);
+            Assert.IsTrue(_clearance.CanStand(_owner.transform.position, 1.7f));
+        }
+
+        [Test]
+        public void PartlyResized_CeilingInsideTheGap_CannotStand()
+        {
+            // The current top is 1.73; a slab at 1.75 sits inside the 1.73 to 1.83 band.
+            Slab(1.75f);
+            Assert.IsFalse(_clearance.CanStand(_owner.transform.position, 1.7f));
         }
 
         [Test]
