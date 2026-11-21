@@ -5,9 +5,8 @@ using UnityEngine.InputSystem;
 namespace HexFall.Player
 {
     // Receives the Attack and Parry actions from PlayerInput (Send Messages), applies the attack cooldown
-    // and the shield rules, and drives the animator and the shield VFX. Incoming damage goes through
+    // and the shield rules, and drives the shield VFX. Incoming damage goes through
     // ResolveHit, which says how much of it the shield absorbed.
-    [RequireComponent(typeof(Animator))]
     public class PlayerCombat : MonoBehaviour
     {
         [SerializeField] private float attackCooldownSeconds = 0.5f;
@@ -30,10 +29,6 @@ namespace HexFall.Player
         [SerializeField, Range(0f, 1f)] private float partialBlock = 0.5f;
         [SerializeField] private MagicShield shield;
 
-        private static readonly int AttackTrigger = Animator.StringToHash("Attack");
-        private static readonly int ParryTrigger = Animator.StringToHash("Parry");
-
-        private Animator _animator;
         // Counts entries into Attack, so Attack() also reports an attack chained on the tick the last one ended.
         private int _attackStarts;
 
@@ -49,7 +44,6 @@ namespace HexFall.Player
 
         private void Awake()
         {
-            _animator = GetComponent<Animator>();
             Machine = new ActionMachine(new ActionSettings
             {
                 attackCooldownSeconds = attackCooldownSeconds,
@@ -74,17 +68,15 @@ namespace HexFall.Player
             Machine.HitResolved -= OnHitResolved;
         }
 
-        // Animator triggers and the shield flash follow the action state.
+        // The shield flash follows the action state; the animator follows it in ActionAnimatorBridge.
         private void OnActionChanged(ActionStateId from, ActionStateId to)
         {
             if (to == ActionStateId.Attack)
             {
                 _attackStarts++;
-                _animator.SetTrigger(AttackTrigger);
             }
             else if (to == ActionStateId.Parry)
             {
-                _animator.SetTrigger(ParryTrigger);
                 if (shield != null) shield.Flash(guardSeconds);
             }
         }

@@ -940,6 +940,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8739144285261104329}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3149870223712171502}
   m_SourcePrefab: {fileID: 100100000, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
 --- !u!1 &164397724255835422 stripped
 GameObject:
@@ -1109,6 +1112,7 @@ MonoBehaviour:
     sprintSpeed: 6
     acceleration: 12
     deceleration: 16
+    turnAcceleration: 40
     airControl: 0.35
     rotationSmoothSeconds: 0.08
     jumpHeight: 1.2
@@ -1185,7 +1189,6 @@ MonoBehaviour:
   aimTarget: {fileID: 8396099876927135698}
   modelRoot: {fileID: 4984123779757526994}
   blendRate: 6
-  footHeight: 0.08
   rayStartHeight: 0.6
   rayLength: 1.2
   maxHipDrop: 0.35
@@ -1194,6 +1197,26 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   aimDistance: 100
+--- !u!114 &3149870223712171502
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164397724255835422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce7975dfa7934424c962d33ca19d6153, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.Player::HexFall.Player.ActionAnimatorBridge
+  crossFadeSeconds: 0.1
+  stateMappings:
+  - state: 0
+    stateName: Empty
+  - state: 1
+    stateName: Attack
+  - state: 2
+    stateName: Parry
 --- !u!4 &614423777977665907 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8786601893355691716, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
