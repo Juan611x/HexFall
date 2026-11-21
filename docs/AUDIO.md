@@ -62,3 +62,15 @@ Not created yet: `AudioMixerController` is internal and cannot be built from scr
 ## Web
 
 Browsers block audio until the first user gesture, so hover sounds before the first click are silent in WebGL. On WebGL the music starts on the first pointer down, key press or submit and fades in from that moment; in the editor and desktop builds it starts immediately.
+
+## Player surface sounds
+
+The wizard's contact sounds come from the surface under it (`PlayerSurfaceSensor`, textures mapped to `SurfaceDefinition` assets by `SurfaceRegistry`). Each surface lists effects per impact type (`Footstep`, `Landing`, `Slide`) with clips, a volume range and a pitch range.
+
+| Impact | Component | Trigger |
+| --- | --- | --- |
+| Footstep | `PlayerFootsteps` | Foot contacts while walking or running |
+| Landing | `PlayerLandings` | Grounded after a fall or jump; louder with the impact speed |
+| Slide | `PlayerSlideScrape` | Entering the Slide locomotion state |
+
+Slide scrape: one clip, `ThirdParty/OpenGameArt/Scrapes/SlideScrape.wav` (CC0 "Scrapes" by AntumDeluge, derived with `python -I art/audio/derive_slide_scrape.py <scrape-1.wav> <SlideScrape.wav>`: -8 dB, 10 ms fade-in, 150 ms fade-out), shared by every surface and tuned per surface through the Slide effect's volume and pitch ranges (grass and wood quieter and lower, metal higher). `PlayerSlideScrape` plays it once on its own 2D `AudioSource` when the slide starts: volume = Slide volume range lerped by the entry planar speed (`fullSpeed`, 6 m/s) x `scrapeVolume` x the Effects level. When the slide ends it fades out over `fadeOutSeconds` (0.12 s) and stops. A surface without a Slide effect stays silent. The pure maths (`SlideScrapeLevels`) is covered by `SlideScrapeTests`.

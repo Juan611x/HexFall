@@ -32,3 +32,8 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 53860a572dd2b274dae298fc1a181b33, type: 3}
     volumeRange: {x: 0.9, y: 1}
     pitchRange: {x: 0.95, y: 1.05}
+  - impact: 2
+    clips:
+    - {fileID: 8300000, guid: d9f0f59606a44ae45a48748dd3c84a86, type: 3}
+    volumeRange: {x: 0.8, y: 1}
+    pitchRange: {x: 0.95, y: 1.05}

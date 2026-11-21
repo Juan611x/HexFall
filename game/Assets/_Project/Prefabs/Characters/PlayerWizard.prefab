@@ -1009,6 +1009,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4767803926157388452}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3360642748290824832}
   m_SourcePrefab: {fileID: 100100000, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
 --- !u!1 &164397724255835422 stripped
 GameObject:
@@ -1358,6 +1361,21 @@ MonoBehaviour:
   minSpeed: 2
   fullSpeed: 9
   landingVolume: 0.9
+--- !u!114 &3360642748290824832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164397724255835422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de2b97a15b6508d4e8923474e39d4baa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.Player::HexFall.Player.PlayerSlideScrape
+  fullSpeed: 6
+  scrapeVolume: 0.8
+  fadeOutSeconds: 0.12
 --- !u!4 &276115209326657620 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 963086819041503259, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
