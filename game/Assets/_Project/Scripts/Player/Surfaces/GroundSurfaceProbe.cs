@@ -35,7 +35,7 @@ namespace HexFall.Player
             for (int i = 0; i < count; i++)
             {
                 var hitCollider = _hits[i].collider;
-                if (_ignoreRoot != null && hitCollider.transform.root == _ignoreRoot.root) continue;
+                if (_ignoreRoot != null && hitCollider.transform.IsChildOf(_ignoreRoot)) continue;
                 if (_hits[i].distance >= nearestDistance) continue;
                 nearest = i;
                 nearestDistance = _hits[i].distance;

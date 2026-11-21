@@ -67,6 +67,18 @@ namespace HexFall.UI.Tests
             Assert.AreSame(_stone, _probe.SurfaceAt(_owner.transform.position));
         }
 
+        // A level container parenting both the wizard and the ground must not hide the ground.
+        [Test]
+        public void SurfaceAt_OwnerAndFloorUnderSharedRoot_StillFindsTheFloor()
+        {
+            var level = Track(new GameObject("Level"));
+            _floor.transform.SetParent(level.transform, true);
+            _owner.transform.SetParent(level.transform, true);
+            Physics.SyncTransforms();
+
+            Assert.AreSame(_stone, _probe.SurfaceAt(_owner.transform.position));
+        }
+
         [Test]
         public void SurfaceAt_NothingBelow_ReturnsDefault()
         {

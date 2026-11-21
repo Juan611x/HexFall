@@ -17,7 +17,12 @@ namespace HexFall.UI.Tests
         private const string BrickTexturePath = "Assets/_Project/Art/Environment/Textures/T_CastleBrick.png";
         private const string PrefabPath = "Assets/_Project/Prefabs/Characters/PlayerWizard.prefab";
 
-        private static SurfaceRegistry Registry() => AssetDatabase.LoadAssetAtPath<SurfaceRegistry>(RegistryPath);
+        private static SurfaceRegistry Registry()
+        {
+            var registry = AssetDatabase.LoadAssetAtPath<SurfaceRegistry>(RegistryPath);
+            Assert.IsNotNull(registry, "SurfaceRegistry asset not found.");
+            return registry;
+        }
 
         [Test]
         public void RegistryMapsStoneTilesToStone()
