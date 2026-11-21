@@ -30,7 +30,8 @@ namespace HexFall.Player.Locomotion
         public static IkProfile For(LocomotionStateId state, ActionStateId action)
         {
             var acting = action != ActionStateId.Ready;
-            var feet = state == LocomotionStateId.Grounded ? 1f : 0f;
+            var planted = state == LocomotionStateId.Grounded || state == LocomotionStateId.Crouch;
+            var feet = planted ? 1f : 0f;
             return acting
                 ? new IkProfile(feet, ActingHeadAim, ActingChestAim)
                 : new IkProfile(feet, IdleHeadAim, IdleChestAim);
