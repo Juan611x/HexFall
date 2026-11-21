@@ -154,8 +154,6 @@ namespace HexFall.Player.Locomotion
     // faces along the velocity. Ends in Crouch when slow or out of time.
     public sealed class SlideState : ILocomotionState
     {
-        // Entry speed never exceeds sprint speed plus this margin.
-        private const float BoostMargin = 1.5f;
         private readonly LocomotionSettings _settings;
 
         public SlideState(LocomotionSettings settings)
@@ -172,7 +170,7 @@ namespace HexFall.Player.Locomotion
             var planar = new Vector3(ctx.Velocity.x, 0f, ctx.Velocity.z);
             var speed = planar.magnitude;
             if (speed <= 0.0001f) return;
-            var boosted = Mathf.Min(speed + _settings.slideBoost, Mathf.Max(speed, _settings.sprintSpeed + BoostMargin));
+            var boosted = Mathf.Min(speed + _settings.slideBoost, Mathf.Max(speed, _settings.sprintSpeed + _settings.slideBoostCapMargin));
             planar = planar / speed * boosted;
             ctx.Velocity = new Vector3(planar.x, ctx.Velocity.y, planar.z);
             ctx.PlanarSpeed = boosted;
@@ -190,7 +188,9 @@ namespace HexFall.Player.Locomotion
                 var wanted = Quaternion.Euler(0f, intent.CameraYaw, 0f) * local * speed;
                 planar = Vector3.MoveTowards(planar, wanted, _settings.turnAcceleration * _settings.slideSteering * deltaTime);
             }
-            var newSpeed = Mathf.Max(0f, planar.magnitude - _settings.slideFriction * deltaTime);
+            var progress = _settings.slideMaxSeconds > 0f ? Mathf.Clamp01(ctx.SlideElapsed / _settings.slideMaxSeconds) : 1f;
+            var friction = Mathf.Lerp(_settings.slideFrictionStart, _settings.slideFrictionEnd, progress);
+            var newSpeed = Mathf.Max(0f, planar.magnitude - friction * deltaTime);
             planar = planar.sqrMagnitude > 0.0001f ? planar.normalized * newSpeed : Vector3.zero;
 
             ctx.Velocity = new Vector3(planar.x, _settings.groundedStickSpeed, planar.z);

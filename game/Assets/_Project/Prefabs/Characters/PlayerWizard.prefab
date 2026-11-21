@@ -1195,10 +1195,12 @@ MonoBehaviour:
     standHeight: 1.8
     crouchHeight: 1.1
     slideMinEntrySpeed: 4.5
-    slideBoost: 1
-    slideFriction: 7
+    slideBoost: 2
+    slideBoostCapMargin: 2.5
+    slideFrictionStart: 2
+    slideFrictionEnd: 7
     slideEndSpeed: 1.8
-    slideMaxSeconds: 1.1
+    slideMaxSeconds: 1.6
     slideSteering: 0.25
   groundedOffset: -0.14
   groundedRadius: 0.28

@@ -266,7 +266,18 @@ namespace HexFall.UI.Tests
             var entry = Planar(machine);
 
             Assert.Greater(entry, before);
-            Assert.LessOrEqual(entry, settings.sprintSpeed + 1.5f + 0.001f);
+            Assert.LessOrEqual(entry, settings.sprintSpeed + settings.slideBoostCapMargin + 0.001f);
+        }
+
+        [Test]
+        public void SlideFromSprintEntersAtEightMetresPerSecond()
+        {
+            var machine = Sprinting();
+
+            machine.Tick(PressCrouch(Vector2.up, true), OnGround, Dt);
+
+            Assert.AreEqual(6f, Settings().sprintSpeed, 0.0001f);
+            Assert.AreEqual(8f, Planar(machine), 0.05f);
         }
 
         [Test]
@@ -278,7 +289,7 @@ namespace HexFall.UI.Tests
 
             machine.Tick(PressCrouch(Vector2.up, true), OnGround, Dt);
 
-            Assert.AreEqual(settings.sprintSpeed + 1.5f, Planar(machine), 0.3f);
+            Assert.AreEqual(settings.sprintSpeed + settings.slideBoostCapMargin, Planar(machine), 0.3f);
         }
 
         [Test]
@@ -304,7 +315,69 @@ namespace HexFall.UI.Tests
             TickMany(machine, 10, Idle(), OnGround);
 
             Assert.AreEqual(LocomotionStateId.Slide, machine.Current);
-            Assert.AreEqual(start - Settings().slideFriction * 10 * Dt, Planar(machine), 0.05f);
+            Assert.Less(Planar(machine), start);
+        }
+
+        [Test]
+        public void SlideLosesLessSpeedEarlyThanLate()
+        {
+            var machine = Sprinting();
+            machine.Tick(PressCrouch(Vector2.up, true), OnGround, Dt);
+
+            var start = Planar(machine);
+            TickMany(machine, 10, Idle(), OnGround);
+            var afterEarly = Planar(machine);
+            TickMany(machine, 40, Idle(), OnGround);
+            var beforeLate = Planar(machine);
+            TickMany(machine, 10, Idle(), OnGround);
+            var afterLate = Planar(machine);
+
+            Assert.AreEqual(LocomotionStateId.Slide, machine.Current);
+            Assert.Less(start - afterEarly, beforeLate - afterLate);
+        }
+
+        [Test]
+        public void SlideFrictionEasesFromTheStartToTheEndValue()
+        {
+            var settings = Settings();
+
+            Assert.AreEqual(2f, settings.slideFrictionStart, 0.0001f);
+            Assert.AreEqual(7f, settings.slideFrictionEnd, 0.0001f);
+            Assert.Less(settings.slideFrictionStart, settings.slideFrictionEnd);
+        }
+
+        [Test]
+        public void SlideFromSprintLastsBetweenOnePointThreeAndOnePointSixSeconds()
+        {
+            const float frame = 1f / 60f;
+            var machine = Sprinting();
+            machine.Tick(PressCrouch(Vector2.up, true), OnGround, frame);
+            var elapsed = 0f;
+
+            while (machine.Current == LocomotionStateId.Slide && elapsed < 5f)
+            {
+                machine.Tick(Idle(), OnGround, frame);
+                elapsed += frame;
+            }
+
+            Assert.AreEqual(LocomotionStateId.Crouch, machine.Current);
+            Assert.GreaterOrEqual(elapsed, 1.3f);
+            Assert.LessOrEqual(elapsed, 1.6f + frame);
+        }
+
+        [Test]
+        public void ThePlayerPrefabCarriesTheSlideTuning()
+        {
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Characters/PlayerWizard.prefab");
+            Assert.IsNotNull(prefab);
+            var settings = new UnityEditor.SerializedObject(prefab.GetComponent<PlayerMotor>()).FindProperty("settings");
+
+            Assert.AreEqual(2f, settings.FindPropertyRelative("slideBoost").floatValue, 0.0001f);
+            Assert.AreEqual(2.5f, settings.FindPropertyRelative("slideBoostCapMargin").floatValue, 0.0001f);
+            Assert.AreEqual(2f, settings.FindPropertyRelative("slideFrictionStart").floatValue, 0.0001f);
+            Assert.AreEqual(7f, settings.FindPropertyRelative("slideFrictionEnd").floatValue, 0.0001f);
+            Assert.AreEqual(1.6f, settings.FindPropertyRelative("slideMaxSeconds").floatValue, 0.0001f);
+            Assert.AreEqual(1.8f, settings.FindPropertyRelative("slideEndSpeed").floatValue, 0.0001f);
         }
 
         [Test]
@@ -313,7 +386,7 @@ namespace HexFall.UI.Tests
             var machine = Sprinting();
             machine.Tick(PressCrouch(Vector2.up, true), OnGround, Dt);
 
-            TickMany(machine, 70, Idle(), OnGround);
+            TickMany(machine, 90, Idle(), OnGround);
 
             Assert.AreEqual(LocomotionStateId.Crouch, machine.Current);
             Assert.AreEqual(Settings().crouchHeight, machine.Context.BodyHeight, 0.0001f);
@@ -323,11 +396,12 @@ namespace HexFall.UI.Tests
         public void SlideEndsInCrouchAfterTheMaxDuration()
         {
             var settings = Settings();
-            settings.slideFriction = 0f;
+            settings.slideFrictionStart = 0f;
+            settings.slideFrictionEnd = 0f;
             var machine = Sprinting(settings);
             machine.Tick(PressCrouch(Vector2.up, true), OnGround, Dt);
 
-            TickMany(machine, 40, Idle(), OnGround);
+            TickMany(machine, 70, Idle(), OnGround);
             Assert.AreEqual(LocomotionStateId.Slide, machine.Current);
 
             TickMany(machine, 20, Idle(), OnGround);
@@ -338,7 +412,8 @@ namespace HexFall.UI.Tests
         public void SlideSteeringIsLimited()
         {
             var settings = Settings();
-            settings.slideFriction = 0f;
+            settings.slideFrictionStart = 0f;
+            settings.slideFrictionEnd = 0f;
             var machine = Sprinting(settings);
             machine.Tick(PressCrouch(Vector2.up, true), OnGround, Dt);
             TickMany(machine, 10, Move(Vector2.right), OnGround);
@@ -353,7 +428,8 @@ namespace HexFall.UI.Tests
         public void SlideFacingFollowsTheVelocityNotTheInput()
         {
             var settings = Settings();
-            settings.slideFriction = 0f;
+            settings.slideFrictionStart = 0f;
+            settings.slideFrictionEnd = 0f;
             var machine = Sprinting(settings);
             machine.Tick(PressCrouch(Vector2.up, true), OnGround, Dt);
 

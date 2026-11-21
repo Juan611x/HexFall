@@ -67,11 +67,16 @@ namespace HexFall.Player.Locomotion
         public float crouchHeight = 1.1f;
         // A slide needs sprint held and at least this planar speed.
         public float slideMinEntrySpeed = 4.5f;
-        // Speed added on entry, capped at sprintSpeed + 1.5.
-        public float slideBoost = 1f;
-        public float slideFriction = 7f;
+        // Speed added on entry, capped at sprintSpeed + slideBoostCapMargin.
+        public float slideBoost = 2f;
+        public float slideBoostCapMargin = 2.5f;
+        // Friction eases from the start value to the end value over slideMaxSeconds, so the slide
+        // glides at first and brakes toward the end.
+        public float slideFrictionStart = 2f;
+        [UnityEngine.Serialization.FormerlySerializedAs("slideFriction")]
+        public float slideFrictionEnd = 7f;
         public float slideEndSpeed = 1.8f;
-        public float slideMaxSeconds = 1.1f;
+        public float slideMaxSeconds = 1.6f;
         // Fraction of the normal turn authority kept while sliding.
         public float slideSteering = 0.25f;
     }
