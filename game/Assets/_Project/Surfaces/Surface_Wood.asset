@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 085b50203d648994980ffba673764a2d, type: 3}
+  m_Name: Surface_Wood
+  m_EditorClassIdentifier: HexFall.Surfaces::HexFall.Surfaces.SurfaceDefinition
+  displayName: Wood
+  effects:
+  - impact: 0
+    clips:
+    - {fileID: 8300000, guid: 5a3871b7f2b8f7c4d9cb85375bf4980e, type: 3}
+    - {fileID: 8300000, guid: ea9952f5bd2ccbe4181264d760f50060, type: 3}
+    - {fileID: 8300000, guid: c450a8f05fcd5fb4ba3c360acf9502c4, type: 3}
+    - {fileID: 8300000, guid: b57871904a2da234b881ceb22e3f0b07, type: 3}
+    - {fileID: 8300000, guid: 94f0a4520a4989a45a99c6e711f5b764, type: 3}
+    volumeRange: {x: 0.8, y: 1}
+    pitchRange: {x: 0.95, y: 1.05}
+  - impact: 1
+    clips:
+    - {fileID: 8300000, guid: 7cf8eeee32ba0594eb9b04b0791b5f12, type: 3}
+    - {fileID: 8300000, guid: 0e4ba37055d851d49919fae9ae361d9b, type: 3}
+    - {fileID: 8300000, guid: ca024c004d3388b418f2a9beb561aca0, type: 3}
+    - {fileID: 8300000, guid: a6e488522dc5a2043bd87e0d425fd2ee, type: 3}
+    - {fileID: 8300000, guid: 27308f116411dd74786b2aefc569f748, type: 3}
+    volumeRange: {x: 0.9, y: 1}
+    pitchRange: {x: 0.95, y: 1.05}
