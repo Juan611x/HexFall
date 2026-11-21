@@ -71,18 +71,12 @@ namespace HexFall.Player.Locomotion
             transform.rotation = Quaternion.Euler(0f, Machine.Context.FacingYaw, 0f);
         }
 
-        // The ledge only matters when a jump press could start a climb: pressed now or still buffered,
-        // moving, and on the ground or inside the air grab window. Skipping the casts otherwise keeps
-        // the probe off the hot path.
+        // The ledge only matters when a jump press could start a climb (see ClimbEntry.ShouldProbe).
+        // Skipping the casts otherwise keeps the probe off the hot path.
         private LedgeMeasurement SenseLedge(PlayerIntent intent, float deltaTime)
         {
-            var ctx = Machine.Context;
             if (Machine.Current == LocomotionStateId.Climb) return default;
-            if (intent.Move.sqrMagnitude <= 0.0001f) return default;
-            var jumpRelevant = intent.JumpPressed || ctx.TimeSinceJumpPressed + deltaTime <= settings.jumpBufferSeconds;
-            if (!jumpRelevant) return default;
-            var canGrab = IsGrounded || ctx.TimeSinceGrounded + deltaTime <= settings.climb.airGrabWindowSeconds;
-            if (!canGrab) return default;
+            if (!ClimbEntry.ShouldProbe(Machine.Context, intent, settings, deltaTime, IsGrounded)) return default;
 
             var wanted = Quaternion.Euler(0f, _look.Yaw, 0f) * new Vector3(intent.Move.x, 0f, intent.Move.y);
             LastLedge = _ledgeProbe.Measure(transform.position, wanted);
@@ -103,8 +97,8 @@ namespace HexFall.Player.Locomotion
         private void OnDrawGizmosSelected()
         {
             var ledge = LastLedge;
-            if (!ledge.HasLedge) return;
-            var kind = settings != null ? LedgeClassifier.Classify(ledge, settings.climb) : ClimbKind.None;
+            if (!ledge.HasLedge || settings == null || settings.climb == null) return;
+            var kind = LedgeClassifier.Classify(ledge, settings.climb);
             Gizmos.color = kind == ClimbKind.ClimbUp ? Color.green : kind == ClimbKind.ClimbOver ? Color.cyan : Color.red;
             Gizmos.DrawSphere(ledge.TopPoint, 0.05f);
             var depth = float.IsInfinity(ledge.TopDepth) ? settings.climb.standDepth : ledge.TopDepth;

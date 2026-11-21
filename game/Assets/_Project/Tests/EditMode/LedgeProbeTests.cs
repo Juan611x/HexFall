@@ -120,6 +120,32 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void BeamLowOverAThinWallLeavesTooLittleHeadroomToClimbOver()
+        {
+            Block(1f, 0.2f);
+            // Beam from just before the wall to past it, bottom 0.6 m above the top; the landing stays free.
+            Box("Beam", new Vector3(0f, 1.6f + 0.1f, 0.675f), new Vector3(4f, 0.2f, 0.45f));
+
+            var ledge = Measure(Vector3.forward);
+
+            Assert.IsTrue(ledge.HasLedge);
+            Assert.IsTrue(ledge.LandingClear, "the landing itself is free");
+            Assert.AreEqual(0.6f, ledge.Headroom, 0.05f);
+            Assert.AreEqual(ClimbKind.None, LedgeClassifier.Classify(ledge, _climb));
+        }
+
+        [Test]
+        public void ThinWallWithClearSpaceOverItStillClimbsOver()
+        {
+            Block(1f, 0.2f);
+
+            var ledge = Measure(Vector3.forward);
+
+            Assert.GreaterOrEqual(ledge.Headroom, _climb.overMinHeadroom);
+            Assert.AreEqual(ClimbKind.ClimbOver, LedgeClassifier.Classify(ledge, _climb));
+        }
+
+        [Test]
         public void ThinWallWithAWallRightBehindBlocksTheLanding()
         {
             Block(1f, 0.2f);

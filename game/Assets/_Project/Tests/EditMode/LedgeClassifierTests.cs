@@ -98,11 +98,27 @@ namespace HexFall.UI.Tests
         // Climb over: thin top with a free landing
 
         [Test]
-        public void ThinTopWithFreeLandingAndNoHeadroomIsClimbOver()
+        public void ThinTopWithFreeLandingAndNoHeadroomIsNone()
+        {
+            var s = Settings();
+            Assert.AreEqual(ClimbKind.None,
+                LedgeClassifier.Classify(Ledge(depth: s.standDepth - 0.2f, headroom: 0f, landingClear: true), s));
+        }
+
+        [Test]
+        public void ThinTopWithJustEnoughHeadroomIsClimbOver()
         {
             var s = Settings();
             Assert.AreEqual(ClimbKind.ClimbOver,
-                LedgeClassifier.Classify(Ledge(depth: s.standDepth - 0.2f, headroom: 0f, landingClear: true), s));
+                LedgeClassifier.Classify(Ledge(depth: 0.2f, headroom: s.overMinHeadroom, landingClear: true), s), "inclusive");
+            Assert.AreEqual(ClimbKind.None,
+                LedgeClassifier.Classify(Ledge(depth: 0.2f, headroom: s.overMinHeadroom - 0.01f, landingClear: true), s));
+        }
+
+        [Test]
+        public void OverHeadroomDefaultFitsTheCrouchBodyWithAMargin()
+        {
+            Assert.Greater(Settings().overMinHeadroom, new LocomotionSettings().crouchHeight);
         }
 
         [Test]
@@ -114,12 +130,12 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void NoHeadroomButThinWithFreeLandingIsClimbOver()
+        public void StandDepthWithOverHeadroomButNotStandHeadroomIsClimbOver()
         {
             var s = Settings();
-            // Deep enough to stand (>= standDepth) but no headroom, still within the over thickness.
+            // Deep enough to stand (>= standDepth) but not enough headroom to stand, still within the over thickness.
             Assert.AreEqual(ClimbKind.ClimbOver,
-                LedgeClassifier.Classify(Ledge(depth: s.standDepth, headroom: s.minHeadroom - 0.5f, landingClear: true), s));
+                LedgeClassifier.Classify(Ledge(depth: s.standDepth, headroom: s.overMinHeadroom, landingClear: true), s));
         }
 
         [Test]
@@ -127,7 +143,7 @@ namespace HexFall.UI.Tests
         {
             var s = Settings();
             Assert.AreEqual(ClimbKind.ClimbOver,
-                LedgeClassifier.Classify(Ledge(depth: s.overMaxThickness, headroom: 0f, landingClear: true), s));
+                LedgeClassifier.Classify(Ledge(depth: s.overMaxThickness, headroom: s.overMinHeadroom, landingClear: true), s));
         }
 
         [Test]

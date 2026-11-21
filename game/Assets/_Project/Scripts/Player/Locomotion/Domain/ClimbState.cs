@@ -3,15 +3,15 @@ using UnityEngine;
 namespace HexFall.Player.Locomotion
 {
     // Decides whether a jump press becomes a climb. Used by Grounded, Jump and Fall.
-    internal static class ClimbEntry
+    public static class ClimbEntry
     {
         // Needs a (buffered) jump press, move input toward the ledge and a ledge the classifier accepts.
         // On success the ledge and kind are left in the context for ClimbState.Enter.
         public static bool TryStart(LocomotionContext ctx, LocomotionSettings settings, PlayerIntent intent, GroundSense ground)
         {
             if (!ground.Ledge.HasLedge) return false;
-            if (ctx.TimeSinceJumpPressed > settings.jumpBufferSeconds) return false;
-            if (intent.Move.sqrMagnitude <= 0.0001f) return false;
+            if (!JumpBuffered(ctx.TimeSinceJumpPressed, settings)) return false;
+            if (!HasMoveInput(intent)) return false;
 
             var approach = new Vector3(ground.Ledge.ApproachDirection.x, 0f, ground.Ledge.ApproachDirection.z);
             if (approach.sqrMagnitude <= 0.0001f) return false;
@@ -27,6 +27,25 @@ namespace HexFall.Player.Locomotion
             ctx.ClimbLedge = ground.Ledge;
             return true;
         }
+
+        // Cheap pre-check for the motor, run before the machine ticks: whether a ledge measurement could
+        // matter this frame. It applies the same jump-buffer and move-input rules as TryStart (using the
+        // timers as the machine will have updated them) plus the air grab window, so the motor never
+        // probes in a situation where TryStart would refuse anyway, and never skips one it would accept.
+        public static bool ShouldProbe(LocomotionContext ctx, PlayerIntent intent, LocomotionSettings settings,
+            float deltaTime, bool grounded)
+        {
+            if (!HasMoveInput(intent)) return false;
+            var sinceJump = intent.JumpPressed ? 0f : ctx.TimeSinceJumpPressed + deltaTime;
+            if (!JumpBuffered(sinceJump, settings)) return false;
+            var sinceGrounded = grounded ? 0f : ctx.TimeSinceGrounded + deltaTime;
+            return sinceGrounded <= settings.climb.airGrabWindowSeconds;
+        }
+
+        private static bool JumpBuffered(float timeSinceJumpPressed, LocomotionSettings settings) =>
+            timeSinceJumpPressed <= settings.jumpBufferSeconds;
+
+        private static bool HasMoveInput(PlayerIntent intent) => intent.Move.sqrMagnitude > 0.0001f;
     }
 
     // Scripted climb: the domain owns the path, the motor only follows it. Each tick sets

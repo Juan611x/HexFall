@@ -20,6 +20,11 @@ namespace HexFall.Player.Locomotion
         public float overMaxThickness = 0.6f;
         // Free height above the top needed to stand up on it. Inclusive.
         public float minHeadroom = 1.8f;
+        // Free height above a thin top needed to carry the body over it. The over path places the
+        // crouched body (LocomotionSettings.crouchHeight, 1.1) with the controller off, so this must
+        // stay above that height: default is the crouch height plus a 0.1 margin. Inclusive. Keep it
+        // in step with crouchHeight (the classifier only sees ClimbSettings).
+        public float overMinHeadroom = 1.2f;
 
         [Header("Sensing (used by the ledge probe)")]
         // How far ahead of the capsule a ledge is looked for.
@@ -101,7 +106,8 @@ namespace HexFall.Player.Locomotion
             if (ledge.TopHeight < settings.climbMinHeight || ledge.TopHeight > settings.climbMaxHeight) return ClimbKind.None;
 
             if (ledge.TopDepth >= settings.standDepth && ledge.Headroom >= settings.minHeadroom) return ClimbKind.ClimbUp;
-            if (ledge.TopDepth <= settings.overMaxThickness && ledge.LandingClear) return ClimbKind.ClimbOver;
+            if (ledge.TopDepth <= settings.overMaxThickness && ledge.LandingClear && ledge.Headroom >= settings.overMinHeadroom)
+                return ClimbKind.ClimbOver;
             return ClimbKind.None;
         }
 

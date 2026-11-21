@@ -575,5 +575,59 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(LocomotionStateId.Grounded, machine.Current);
             Assert.AreEqual(ledge.TopPoint.z + settings.climb.forwardOntoTop, machine.Context.Position.z, 0.001f);
         }
+
+        // The motor only probes when ClimbEntry could accept the press: the probe gate must never skip a
+        // situation in which the machine actually starts a climb, and must skip the clear negatives.
+
+        private static bool ClimbsWithProbeGate(LocomotionStateId initial, bool grounded, float sinceJump, float sinceGrounded,
+            bool pressed, PlayerIntent baseIntent, out bool probed)
+        {
+            var settings = Settings();
+            var machine = new LocomotionMachine(settings, initial);
+            machine.Context.Position = Vector3.zero;
+            machine.Context.TimeSinceJumpPressed = sinceJump;
+            machine.Context.TimeSinceGrounded = sinceGrounded;
+            var intent = new PlayerIntent(baseIntent.Move, false, pressed, 0f);
+            probed = ClimbEntry.ShouldProbe(machine.Context, intent, settings, Dt, grounded);
+            machine.Tick(intent, new GroundSense(grounded, true, ClimbUpLedge()), Dt);
+            return machine.Current == LocomotionStateId.Climb;
+        }
+
+        [Test]
+        public void ProbeGateAcceptsEverySituationTheClimbEntryAccepts()
+        {
+            var states = new[] { LocomotionStateId.Grounded, LocomotionStateId.Jump, LocomotionStateId.Fall };
+            var sinceJumps = new[] { 0f, 0.05f, 0.1f, 0.13f, 0.14f, 0.15f, 0.2f, 1f, float.PositiveInfinity };
+            var sinceGroundeds = new[] { 0f, 0.1f, 0.4f, 0.48f, 0.49f, 0.5f, 0.52f, 1f };
+            var climbs = 0;
+            foreach (var state in states)
+            foreach (var grounded in new[] { true, false })
+            foreach (var pressed in new[] { true, false })
+            foreach (var sinceJump in sinceJumps)
+            foreach (var sinceGrounded in sinceGroundeds)
+            {
+                var climbed = ClimbsWithProbeGate(state, grounded, sinceJump, sinceGrounded, pressed, Forward(), out var probed);
+                if (!climbed) continue;
+                climbs++;
+                Assert.IsTrue(probed, $"{state} grounded={grounded} pressed={pressed} sinceJump={sinceJump} sinceGrounded={sinceGrounded}");
+            }
+            Assert.Greater(climbs, 0, "the grid must contain accepted situations");
+        }
+
+        [Test]
+        public void ProbeGateSkipsTheClearNegatives()
+        {
+            var settings = Settings();
+            var ctx = new LocomotionContext { TimeSinceJumpPressed = 0f, TimeSinceGrounded = 0f };
+            var move = new PlayerIntent(Vector2.up, false, true, 0f);
+            Assert.IsTrue(ClimbEntry.ShouldProbe(ctx, move, settings, Dt, true), "control");
+            Assert.IsFalse(ClimbEntry.ShouldProbe(ctx, new PlayerIntent(Vector2.zero, false, true, 0f), settings, Dt, true), "no move input");
+
+            var stale = new LocomotionContext { TimeSinceJumpPressed = 5f, TimeSinceGrounded = 0f };
+            Assert.IsFalse(ClimbEntry.ShouldProbe(stale, new PlayerIntent(Vector2.up, false, false, 0f), settings, Dt, true), "no press, buffer expired");
+
+            var late = new LocomotionContext { TimeSinceJumpPressed = 0f, TimeSinceGrounded = 5f };
+            Assert.IsFalse(ClimbEntry.ShouldProbe(late, move, settings, Dt, false), "airborne past the grab window");
+        }
     }
 }
