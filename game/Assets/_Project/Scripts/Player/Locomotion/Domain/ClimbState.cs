@@ -36,7 +36,8 @@ namespace HexFall.Player.Locomotion
     //
     // Path: phase 1 (reachSeconds) goes straight from the start to the hang point at the wall face,
     // below the top; phase 2 (pullUpSeconds) rises first and moves forward later (eased) onto the top.
-    // The body ends on the first tick after the path is complete, so the last step is always applied.
+    // Climbing over then adds phase 3 (overSeconds): a straight move from the top to past the far
+    // edge at top height. The body ends on the first tick after the path is complete, so the last step is always applied.
     // The capsule is kept at the crouch height: it fits under low ceilings over the top and the
     // Grounded state grows it back (headroom is guaranteed for a climb up).
     public sealed class ClimbState : ILocomotionState
@@ -47,8 +48,10 @@ namespace HexFall.Player.Locomotion
         private Vector3 _start;
         private Vector3 _hang;
         private Vector3 _top;
+        private Vector3 _far;
         private Vector3 _approach;
         private float _total;
+        private float _pullEnd;
 
         public ClimbState(LocomotionSettings settings)
         {
@@ -76,7 +79,12 @@ namespace HexFall.Player.Locomotion
             _hang = new Vector3(hang.x, hangY, hang.z);
             var forward = Mathf.Min(climb.forwardOntoTop, ledge.TopDepth * 0.5f);
             _top = edge + _approach * Mathf.Max(0f, forward);
-            _total = Mathf.Max(0f, climb.reachSeconds) + Mathf.Max(0f, climb.pullUpSeconds);
+            // Climbing over adds a third phase that carries the body from the top to past the far edge
+            // at top height, so the fall starts with nothing under the body.
+            var over = ctx.ClimbKind == ClimbKind.ClimbOver;
+            _far = edge + _approach * (ledge.TopDepth + Mathf.Max(0f, climb.overClearDistance));
+            _pullEnd = Mathf.Max(0f, climb.reachSeconds) + Mathf.Max(0f, climb.pullUpSeconds);
+            _total = _pullEnd + (over ? Mathf.Max(0f, climb.overSeconds) : 0f);
             ctx.ClimbTarget = _start;
         }
 
@@ -113,7 +121,13 @@ namespace HexFall.Player.Locomotion
             var reach = Mathf.Max(0f, _settings.climb.reachSeconds);
             if (elapsed < reach) return Vector3.Lerp(_start, _hang, elapsed / reach);
 
-            var pull = _total - reach;
+            if (elapsed > _pullEnd)
+            {
+                var o = _total > _pullEnd ? Mathf.Clamp01((elapsed - _pullEnd) / (_total - _pullEnd)) : 1f;
+                return Vector3.Lerp(_top, _far, o);
+            }
+
+            var pull = _pullEnd - reach;
             var u = pull > 0f ? Mathf.Clamp01((elapsed - reach) / pull) : 1f;
             var horizontal = u * u;
             var vertical = 1f - (1f - u) * (1f - u);

@@ -497,5 +497,83 @@ namespace HexFall.UI.Tests
 
             CollectionAssert.AreEqual(new[] { LocomotionStateId.Climb, LocomotionStateId.Fall }, changes);
         }
+
+        // Climbing over: the path carries the body past the far edge before the fall
+
+        private const float ControllerRadius = 0.28f;
+
+        [Test]
+        public void ClimbOverEndsPastTheFarEdgeByAtLeastTheBodyRadiusAtTopHeight()
+        {
+            var settings = Settings();
+            var machine = StandingAtOrigin(settings);
+            var ledge = ClimbOverLedge();
+            machine.Tick(Forward(jump: true), Ground(ledge), Dt);
+
+            RunClimb(machine, Ground(ledge));
+
+            var farEdge = ledge.TopPoint.z + ledge.TopDepth;
+            Assert.GreaterOrEqual(machine.Context.Position.z, farEdge + ControllerRadius);
+            Assert.AreEqual(farEdge + settings.climb.overClearDistance, machine.Context.Position.z, 0.001f);
+            Assert.AreEqual(ledge.TopPoint.y, machine.Context.Position.y, 0.001f);
+        }
+
+        [Test]
+        public void TheOverPhaseNeverDipsBelowTheTop()
+        {
+            var settings = Settings();
+            var machine = StandingAtOrigin(settings);
+            var ledge = ClimbOverLedge();
+            machine.Tick(Forward(jump: true), Ground(ledge), Dt);
+            var pullUpEnd = settings.climb.reachSeconds + settings.climb.pullUpSeconds;
+
+            var lowest = float.MaxValue;
+            while (machine.Current == LocomotionStateId.Climb)
+            {
+                machine.Tick(Idle(), Ground(ledge), Dt);
+                machine.Context.Position = machine.Context.ClimbTarget;
+                if (machine.Context.ClimbElapsed >= pullUpEnd - 0.0001f) lowest = Mathf.Min(lowest, machine.Context.Position.y);
+            }
+
+            Assert.GreaterOrEqual(lowest, ledge.TopPoint.y - 0.001f);
+        }
+
+        [Test]
+        public void ClimbOverTakesTheOverTimeLongerAndClimbUpDoesNot()
+        {
+            var settings = Settings();
+            settings.climb.reachSeconds = 0.1f;
+            settings.climb.pullUpSeconds = 0.2f;
+            settings.climb.overSeconds = 0.4f;
+
+            var over = StandingAtOrigin(settings);
+            var overLedge = ClimbOverLedge();
+            over.Tick(Forward(jump: true), Ground(overLedge), Dt);
+            var overTicks = RunClimb(over, Ground(overLedge));
+
+            var up = StandingAtOrigin(settings);
+            var upLedge = ClimbUpLedge();
+            up.Tick(Forward(jump: true), Ground(upLedge), Dt);
+            var upTicks = RunClimb(up, Ground(upLedge));
+
+            Assert.AreEqual(Mathf.RoundToInt(0.7f / Dt) + 1, overTicks);
+            Assert.AreEqual(Mathf.RoundToInt(0.3f / Dt) + 1, upTicks);
+        }
+
+        [Test]
+        public void ClimbUpIsUnchangedByTheOverSettings()
+        {
+            var settings = Settings();
+            settings.climb.overClearDistance = 3f;
+            settings.climb.overSeconds = 2f;
+            var machine = StandingAtOrigin(settings);
+            var ledge = ClimbUpLedge();
+            machine.Tick(Forward(jump: true), Ground(ledge), Dt);
+
+            RunClimb(machine, Ground(ledge));
+
+            Assert.AreEqual(LocomotionStateId.Grounded, machine.Current);
+            Assert.AreEqual(ledge.TopPoint.z + settings.climb.forwardOntoTop, machine.Context.Position.z, 0.001f);
+        }
     }
 }

@@ -50,6 +50,11 @@ namespace HexFall.Player.Locomotion
         public float wallStandoff = 0.3f;
         // How far past the edge the body ends on the top; never more than half the top depth.
         public float forwardOntoTop = 0.4f;
+        // Climb over, phase 3 (after the pull-up): carries the body from the top to past the far edge.
+        public float overSeconds = 0.3f;
+        // How far past the far edge the body centre ends, at top height. Keep it above the controller
+        // radius so the body is clear of the top before the fall starts.
+        public float overClearDistance = 0.4f;
         // Planar speed handed to the Fall state after climbing over.
         public float overPushSpeed = 2.5f;
     }
