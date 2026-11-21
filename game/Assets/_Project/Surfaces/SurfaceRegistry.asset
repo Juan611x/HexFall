@@ -23,4 +23,6 @@ MonoBehaviour:
     surface: {fileID: 11400000, guid: ac1da52702c2b5a498b0e755432aad43, type: 2}
   - texture: {fileID: 2800000, guid: ca3255d3906743e498649e31d0b491dc, type: 3}
     surface: {fileID: 11400000, guid: abe3443c06c3a064dabfd07e9b0ef024, type: 2}
+  - texture: {fileID: 2800000, guid: f474299ca8e535d47b005e91690bb793, type: 3}
+    surface: {fileID: 11400000, guid: dafb6cb7381e7164eb72c824393f1646, type: 2}
   defaultSurface: {fileID: 11400000, guid: 6cda3665ed15ddc44a9d0fd7b1768d29, type: 2}
