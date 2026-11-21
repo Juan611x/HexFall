@@ -12,10 +12,16 @@ namespace HexFall.Player.Locomotion
         [SerializeField] private float groundedOffset = -0.14f;
         [SerializeField] private float groundedRadius = 0.28f;
         [SerializeField] private LayerMask groundLayers = 1;
+        [Header("Capsule")]
+        [Tooltip("Height change per second when crouching or standing up.")]
+        [SerializeField] private float capsuleResizeSpeed = 8f;
 
         private CharacterController _controller;
         private PlayerInputReader _input;
         private PlayerLook _look;
+        private StandClearance _clearance;
+        private float _feetOffset;
+        private float _height;
 
         public LocomotionMachine Machine { get; private set; }
         public bool IsGrounded { get; private set; }
@@ -28,6 +34,11 @@ namespace HexFall.Player.Locomotion
             _input = GetComponent<PlayerInputReader>();
             _look = GetComponent<PlayerLook>();
             Machine = new LocomotionMachine(settings, LocomotionStateId.Grounded);
+
+            // Keep the capsule bottom where the prefab put it, whatever the height.
+            _height = _controller.height;
+            _feetOffset = _controller.center.y - _height * 0.5f;
+            _clearance = new StandClearance(groundLayers, _controller.radius, settings.standHeight, _feetOffset, transform);
         }
 
         private void Update()
@@ -39,11 +50,25 @@ namespace HexFall.Player.Locomotion
             // Other systems (e.g. attack facing) may have turned the body since the last frame.
             Machine.Context.FacingYaw = transform.eulerAngles.y;
 
-            var intent = new PlayerIntent(_input.Move, _input.Sprint, _input.ConsumeJumpPressed(), _look.Yaw);
-            Machine.Tick(intent, new GroundSense(IsGrounded), deltaTime);
+            var canStand = _clearance.CanStand(transform.position, _height);
+            var intent = new PlayerIntent(_input.Move, _input.Sprint, _input.ConsumeJumpPressed(), _look.Yaw,
+                _input.ConsumeCrouchPressed());
+            Machine.Tick(intent, new GroundSense(IsGrounded, canStand), deltaTime);
+            ApplyCapsule(deltaTime);
 
             _controller.Move(Machine.Context.Velocity * deltaTime);
             transform.rotation = Quaternion.Euler(0f, Machine.Context.FacingYaw, 0f);
+        }
+
+        private void ApplyCapsule(float deltaTime)
+        {
+            var target = Machine.Context.BodyHeight;
+            if (Mathf.Approximately(_height, target)) return;
+
+            _height = CapsuleShape.Step(_height, target, capsuleResizeSpeed, deltaTime);
+            var (height, centerY) = CapsuleShape.For(_height, _feetOffset);
+            _controller.height = height;
+            _controller.center = new Vector3(_controller.center.x, centerY, _controller.center.z);
         }
 
         private bool CheckGround()

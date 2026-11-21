@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace HexFall.Player.Locomotion
 {
-    // Receives Move, Look, Jump and Sprint from PlayerInput (Send Messages) and exposes them as plain
+    // Receives Move, Look, Jump, Sprint and Crouch from PlayerInput (Send Messages) and exposes them as plain
     // values. IsMouseLook is true while the active control scheme is KeyboardMouse, which is how the
     // look delta is told apart (a mouse delta is per frame, a stick value is a rate). Also locks the
     // cursor while the game has focus.
@@ -16,6 +16,7 @@ namespace HexFall.Player.Locomotion
 
         private PlayerInput _playerInput;
         private bool _jumpPressed;
+        private bool _crouchPressed;
 
         public Vector2 Move { get; private set; }
         public Vector2 Look { get; private set; }
@@ -55,11 +56,24 @@ namespace HexFall.Player.Locomotion
 
         public void OnSprint(InputValue value) => Sprint = value.isPressed;
 
+        public void OnCrouch(InputValue value)
+        {
+            if (value.isPressed) _crouchPressed = true;
+        }
+
         // True once per press.
         public bool ConsumeJumpPressed()
         {
             var pressed = _jumpPressed;
             _jumpPressed = false;
+            return pressed;
+        }
+
+        // True once per press.
+        public bool ConsumeCrouchPressed()
+        {
+            var pressed = _crouchPressed;
+            _crouchPressed = false;
             return pressed;
         }
 

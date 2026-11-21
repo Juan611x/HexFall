@@ -10,7 +10,8 @@
                 { "name": "Jump", "type": "Button", "id": "5199035a-bec7-48c8-88cd-8d07e79e17ff", "expectedControlType": "Button", "processors": "", "interactions": "" },
                 { "name": "Sprint", "type": "PassThrough", "id": "12052940-7311-4414-a1a3-e00cab67513c", "expectedControlType": "", "processors": "", "interactions": "" },
                 { "name": "Attack", "type": "Button", "id": "8f5e4653-1640-4a48-8b74-8bcec9bae437", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "Parry", "type": "Button", "id": "08a90b0f-2358-45b6-8965-113ce66cfcac", "expectedControlType": "Button", "processors": "", "interactions": "" }
+                { "name": "Parry", "type": "Button", "id": "08a90b0f-2358-45b6-8965-113ce66cfcac", "expectedControlType": "Button", "processors": "", "interactions": "" },
+                { "name": "Crouch", "type": "Button", "id": "3e945424-f9b1-4787-9324-d7358e02f33d", "expectedControlType": "Button", "processors": "", "interactions": "" }
             ],
             "bindings": [
                 { "name": "WASD", "id": "c54b6d29-2374-42e3-8b9f-ab6fbeb3344c", "path": "2DVector(mode=1)", "interactions": "", "processors": "", "groups": "", "action": "Move", "isComposite": true, "isPartOfComposite": false },
@@ -28,7 +29,9 @@
                 { "name": "", "id": "fd6ffdb0-f306-42ff-9c0a-4733359c3cc7", "path": "<Mouse>/leftButton", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Attack", "isComposite": false, "isPartOfComposite": false },
                 { "name": "", "id": "692bf88d-1ec9-4d60-880d-de59bf881908", "path": "<Gamepad>/rightTrigger", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Attack", "isComposite": false, "isPartOfComposite": false },
                 { "name": "", "id": "1b71ed7c-b31e-4e18-9119-c62a77bf3c02", "path": "<Mouse>/rightButton", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Parry", "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "d792b9e5-69f7-4513-bdf0-c1876397d950", "path": "<Gamepad>/leftTrigger", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Parry", "isComposite": false, "isPartOfComposite": false }
+                { "name": "", "id": "d792b9e5-69f7-4513-bdf0-c1876397d950", "path": "<Gamepad>/leftTrigger", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Parry", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "34da75d2-9f82-41e7-913c-506a63b4865e", "path": "<Keyboard>/c", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Crouch", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "b20d86fd-16ca-4378-9dfd-e41486ab5d9f", "path": "<Gamepad>/buttonEast", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Crouch", "isComposite": false, "isPartOfComposite": false }
             ]
         }
     ],
