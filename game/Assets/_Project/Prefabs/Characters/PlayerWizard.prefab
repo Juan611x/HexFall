@@ -1158,8 +1158,8 @@ MonoBehaviour:
       landingClearDepth: 0.6
       approachMinDot: 0.5
       airGrabWindowSeconds: 0.5
-      reachSeconds: 0.35
-      pullUpSeconds: 0.9
+      reachSeconds: 0.3333
+      pullUpSeconds: 0.3333
       reachRiseFraction: 0.6
       wallStandoff: 0.3
       forwardOntoTop: 0.4
@@ -1198,6 +1198,8 @@ MonoBehaviour:
     stateName: Crouch
   - key: Slide
     stateName: Slide
+  - key: Climb
+    stateName: Climb
 --- !u!114 &8727903132480738405
 MonoBehaviour:
   m_ObjectHideFlags: 0

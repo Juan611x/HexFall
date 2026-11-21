@@ -40,6 +40,7 @@ namespace HexFall.Player.Locomotion
             new StateMapping(AnimatorStateSelector.JumpLand, "JumpLand"),
             new StateMapping(AnimatorStateSelector.Crouch, "Crouch"),
             new StateMapping(AnimatorStateSelector.Slide, "Slide"),
+            new StateMapping(AnimatorStateSelector.Climb, "Climb"),
         };
 
         private Animator _animator;

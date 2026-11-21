@@ -45,10 +45,14 @@ namespace HexFall.Player.Locomotion
         public float airGrabWindowSeconds = 0.5f;
 
         [Header("Scripted path")]
+        // The scripted path plays once alongside the ClimbUp_1m clip (0.667 s at animator speed 1):
+        // reachSeconds + pullUpSeconds should equal the clip length, split at frame 10 (30 fps) where
+        // the hands are highest and the body starts to come upright. Longer paths freeze the clip on
+        // its last pose (it ends where it began), so change both together or the animator state speed.
         // Phase 1: reach the wall face below the top.
-        public float reachSeconds = 0.35f;
-        // Phase 2: pull up onto the top; match to the ClimbUp_1m clip length.
-        public float pullUpSeconds = 0.9f;
+        public float reachSeconds = 0.3333f;
+        // Phase 2: pull up onto the top.
+        public float pullUpSeconds = 0.3333f;
         // Height of the hang point as a fraction of the way from the start up to the top.
         public float reachRiseFraction = 0.6f;
         // Distance from the wall face (the edge) at the hang point.

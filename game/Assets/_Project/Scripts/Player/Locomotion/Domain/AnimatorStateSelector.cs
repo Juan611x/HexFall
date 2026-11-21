@@ -10,6 +10,7 @@ namespace HexFall.Player.Locomotion
         public const string JumpLand = "JumpLand";
         public const string Crouch = "Crouch";
         public const string Slide = "Slide";
+        public const string Climb = "Climb";
 
         private const float StandingPlanarSpeed = 0.5f;
 
@@ -27,6 +28,8 @@ namespace HexFall.Player.Locomotion
                     return Crouch;
                 case LocomotionStateId.Slide:
                     return Slide;
+                case LocomotionStateId.Climb:
+                    return Climb;
                 default:
                     var hardStandingLanding = from == LocomotionStateId.Fall
                         && landingSpeed >= hardLandingSpeed

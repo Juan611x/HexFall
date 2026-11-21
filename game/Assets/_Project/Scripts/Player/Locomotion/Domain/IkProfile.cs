@@ -21,7 +21,8 @@ namespace HexFall.Player.Locomotion
     // The IK profile each locomotion state asks for: feet are planted only on the ground, and the
     // head and chest follow the crosshair, more strongly while the wizard attacks or parries. The
     // slide clip already holds the torso and the head, so the chest aim is dropped while sliding (it
-    // would twist the clip toward the crosshair) and the head follows the crosshair only lightly.
+    // would twist the clip toward the crosshair) and the head follows the crosshair only lightly. The
+    // climb clip owns the whole body (hands on the ledge, head looking at it), so all IK is off.
     public static class IkProfiles
     {
         public const float IdleHeadAim = 0.35f;
@@ -30,6 +31,8 @@ namespace HexFall.Player.Locomotion
         public const float ActingChestAim = 0.6f;
         public const float SlideHeadAim = 0.3f;
         public const float SlideChestAim = 0f;
+        public const float ClimbHeadAim = 0f;
+        public const float ClimbChestAim = 0f;
 
         public static IkProfile For(LocomotionStateId state, ActionStateId action)
         {
@@ -38,6 +41,8 @@ namespace HexFall.Player.Locomotion
             var feet = planted ? 1f : 0f;
             if (state == LocomotionStateId.Slide)
                 return new IkProfile(feet, SlideHeadAim, SlideChestAim);
+            if (state == LocomotionStateId.Climb)
+                return new IkProfile(feet, ClimbHeadAim, ClimbChestAim);
             return acting
                 ? new IkProfile(feet, ActingHeadAim, ActingChestAim)
                 : new IkProfile(feet, IdleHeadAim, IdleChestAim);

@@ -61,7 +61,7 @@ namespace HexFall.UI.Tests
         [Test]
         public void EverySelectorKeyIsMapped()
         {
-            foreach (var key in new[] { AnimatorStateSelector.Locomotion, AnimatorStateSelector.JumpStart, AnimatorStateSelector.InAir, AnimatorStateSelector.JumpLand, AnimatorStateSelector.Crouch, AnimatorStateSelector.Slide })
+            foreach (var key in new[] { AnimatorStateSelector.Locomotion, AnimatorStateSelector.JumpStart, AnimatorStateSelector.InAir, AnimatorStateSelector.JumpLand, AnimatorStateSelector.Crouch, AnimatorStateSelector.Slide, AnimatorStateSelector.Climb })
                 Assert.IsNotNull(_bridge.StateNameFor(key), key);
         }
 
@@ -126,6 +126,18 @@ namespace HexFall.UI.Tests
             Assert.IsNotNull(loop);
             Assert.AreEqual("Slide_Loop", loop.name);
             Assert.AreEqual(Ual2Path, AssetDatabase.GetAssetPath(loop));
+        }
+
+        [Test]
+        public void ClimbPlaysTheUal2ClimbUpClipOnceAndOnlyTheBridgeLeavesIt()
+        {
+            var state = StateFor(AnimatorStateSelector.Climb);
+            var clip = state.motion as AnimationClip;
+            Assert.IsNotNull(clip);
+            Assert.AreEqual("ClimbUp_1m", clip.name);
+            Assert.AreEqual(Ual2Path, AssetDatabase.GetAssetPath(clip));
+            Assert.IsFalse(clip.isLooping);
+            Assert.IsEmpty(state.transitions, "Only the bridge may leave the climb state.");
         }
 
         [Test]
