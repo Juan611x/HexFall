@@ -1,5 +1,6 @@
 using HexFall.Player;
 using HexFall.Player.Actions;
+using HexFall.Player.Locomotion;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -32,6 +33,22 @@ namespace HexFall.UI.Tests
         {
             Assert.AreEqual(WizardSfxCue.Huff, WizardSfxCues.ForAttackPress());
             Assert.AreEqual(WizardSfxCue.Snap, WizardSfxCues.ForParryPress());
+        }
+
+        [TestCase(LocomotionStateId.Grounded)]
+        [TestCase(LocomotionStateId.Fall)]
+        public void EnteringJumpPlaysJump(LocomotionStateId from)
+        {
+            Assert.AreEqual(WizardSfxCue.Jump, WizardSfxCues.ForLocomotionChange(from, LocomotionStateId.Jump));
+        }
+
+        [TestCase(LocomotionStateId.Jump, LocomotionStateId.Fall)]
+        [TestCase(LocomotionStateId.Jump, LocomotionStateId.Grounded)]
+        [TestCase(LocomotionStateId.Grounded, LocomotionStateId.Fall)]
+        [TestCase(LocomotionStateId.Fall, LocomotionStateId.Grounded)]
+        public void OtherLocomotionChangesAreSilent(LocomotionStateId from, LocomotionStateId to)
+        {
+            Assert.AreEqual(WizardSfxCue.None, WizardSfxCues.ForLocomotionChange(from, to));
         }
 
         [Test]
@@ -73,7 +90,7 @@ namespace HexFall.UI.Tests
             var sfx = player.GetComponent<WizardSfx>();
             Assert.IsNotNull(sfx, "PlayerWizard needs a WizardSfx.");
             Assert.IsNotNull(sfx.Library, "WizardSfx needs a library.");
-            foreach (var cue in new[] { WizardSfxCue.Cast, WizardSfxCue.ShieldRaise, WizardSfxCue.ParryDeflect, WizardSfxCue.ParryPerfect, WizardSfxCue.BoltImpact, WizardSfxCue.Snap, WizardSfxCue.Huff })
+            foreach (var cue in new[] { WizardSfxCue.Cast, WizardSfxCue.ShieldRaise, WizardSfxCue.ParryDeflect, WizardSfxCue.ParryPerfect, WizardSfxCue.BoltImpact, WizardSfxCue.Snap, WizardSfxCue.Huff, WizardSfxCue.Jump })
             {
                 Assert.IsTrue(sfx.Library.TryGet(cue, out var clip, out var volume), $"{cue} missing from the library.");
                 Assert.IsNotNull(clip, $"{cue} has no clip.");

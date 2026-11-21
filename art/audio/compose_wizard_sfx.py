@@ -13,6 +13,7 @@ seed), normalized to about -3 dBFS peak with short fades to avoid clicks:
     ParryPerfect.wav  brighter two-tone ping with a little sparkle
     Snap.wav          short bright finger snap (the wizard's body sound on a parry press)
     Huff.wav          breathy exhale (the wizard's body sound on an attack press)
+    Jump.wav          light breathy hop with a faint upward whoosh (the wizard's body sound on a jump)
 """
 
 import math
@@ -198,6 +199,37 @@ def huff(rng):
     return finish(highpass(out, 0.03))
 
 
+def jump(rng):
+    """Light body hop: a soft breathy "hup" layered with a faint cloth whoosh sweeping upward."""
+    n = n_samples(0.22)
+    hup = []
+    y1 = 0.0
+    y2 = 0.0
+    for i in range(n):
+        t = i / (n - 1)
+        raw = rng.uniform(-1, 1)
+        y1 += 0.35 * (raw - y1)
+        y2 += 0.35 * (y1 - y2)
+        env = min(1.0, t / 0.05) * math.exp(-14.0 * max(0.0, t - 0.05))
+        hup.append(y2 * env)
+    whoosh = []
+    lo1 = 0.0
+    lo2 = 0.0
+    hp = 0.0
+    for i in range(n):
+        t = i / (n - 1)
+        alpha = 0.10 + 0.40 * t  # the band opens upward as the body rises
+        raw = rng.uniform(-1, 1)
+        lo1 += alpha * (raw - lo1)
+        lo2 += alpha * (lo1 - lo2)
+        hp += 0.08 * (lo2 - hp)
+        env = math.sin(math.pi * min(1.0, t * 1.15)) ** 1.5
+        whoosh.append((lo2 - hp) * env)
+    hup = shaped(hup, 0.004, 0.06)
+    whoosh = shaped(whoosh, 0.02, 0.08)
+    return finish(mix(0.22, (0.0, [s * 1.0 for s in hup]), (0.01, [s * 0.45 for s in whoosh])))
+
+
 def write_wav(path, samples):
     with wave.open(path, "wb") as w:
         w.setnchannels(1)
@@ -219,6 +251,7 @@ def main(argv):
         "ParryPerfect": parry_perfect(),
         "Snap": snap(random.Random(11)),
         "Huff": huff(random.Random(13)),
+        "Jump": jump(random.Random(17)),
     }
     for name, samples in clips.items():
         write_wav(os.path.join(out_dir, name + ".wav"), samples)

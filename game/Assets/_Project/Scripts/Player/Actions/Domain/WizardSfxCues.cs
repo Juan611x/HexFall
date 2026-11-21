@@ -1,6 +1,8 @@
+using HexFall.Player.Locomotion;
+
 namespace HexFall.Player.Actions
 {
-    public enum WizardSfxCue { None, Cast, ShieldRaise, ParryDeflect, ParryPerfect, BoltImpact, Snap, Huff }
+    public enum WizardSfxCue { None, Cast, ShieldRaise, ParryDeflect, ParryPerfect, BoltImpact, Snap, Huff, Jump }
 
     // Which wizard sound, if any, a machine event calls for.
     public static class WizardSfxCues
@@ -21,6 +23,12 @@ namespace HexFall.Player.Actions
 
         // Effect sound: the bolt leaves the staff.
         public static WizardSfxCue ForBoltFired() => WizardSfxCue.Cast;
+
+        // Body sound: the wizard hops off the ground.
+        public static WizardSfxCue ForLocomotionChange(LocomotionStateId from, LocomotionStateId to)
+        {
+            return to == LocomotionStateId.Jump ? WizardSfxCue.Jump : WizardSfxCue.None;
+        }
 
         public static WizardSfxCue ForHit(HitResult hit)
         {
