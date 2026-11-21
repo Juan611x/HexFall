@@ -85,7 +85,7 @@ namespace HexFall.Player.Locomotion
             var machine = _motor.Machine;
             if (machine == null) return;
 
-            var action = _combat != null ? _combat.Machine.Current : ActionStateId.Ready;
+            var action = _combat != null && _combat.Machine != null ? _combat.Machine.Current : ActionStateId.Ready;
             var target = IkProfiles.For(machine.Current, action);
             _profile = IkBlend.Toward(_profile, target, blendRate, Time.deltaTime);
 

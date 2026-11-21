@@ -34,6 +34,8 @@ namespace HexFall.Player
         private static readonly int ParryTrigger = Animator.StringToHash("Parry");
 
         private Animator _animator;
+        // Counts entries into Attack, so Attack() also reports an attack chained on the tick the last one ended.
+        private int _attackStarts;
 
         // The action state machine; the IK, animator and audio adapters read it. Null before Awake.
         public ActionMachine Machine { get; private set; }
@@ -77,6 +79,7 @@ namespace HexFall.Player
         {
             if (to == ActionStateId.Attack)
             {
+                _attackStarts++;
                 _animator.SetTrigger(AttackTrigger);
             }
             else if (to == ActionStateId.Parry)
@@ -103,9 +106,9 @@ namespace HexFall.Player
 
         public bool Attack()
         {
-            var before = Machine.Current;
+            var before = _attackStarts;
             Machine.Tick(new ActionIntent(true, false), Time.time);
-            return before != ActionStateId.Attack && Machine.Current == ActionStateId.Attack;
+            return _attackStarts != before;
         }
 
         private void Update()
