@@ -10,7 +10,7 @@ namespace HexFall.Player.Locomotion
         private ILocomotionState _current;
 
         public LocomotionMachine(LocomotionSettings settings, LocomotionStateId initial)
-            : this(new ILocomotionState[] { new GroundedState(settings), new JumpState(settings), new FallState(settings), new CrouchState(settings), new SlideState(settings) }, initial)
+            : this(new ILocomotionState[] { new GroundedState(settings), new JumpState(settings), new FallState(settings), new CrouchState(settings), new SlideState(settings), new ClimbState(settings) }, initial)
         {
         }
 
