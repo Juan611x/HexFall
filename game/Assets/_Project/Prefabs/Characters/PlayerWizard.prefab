@@ -946,6 +946,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6622073613239534261}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5575266291112155893}
   m_SourcePrefab: {fileID: 100100000, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
 --- !u!1 &164397724255835422 stripped
 GameObject:
@@ -1233,6 +1236,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HexFall.Player::HexFall.Player.WizardSfx
   library: {fileID: 11400000, guid: c7c47cb1abc63ee4f8a8d7e419e59751, type: 2}
+--- !u!114 &5575266291112155893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164397724255835422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9490b80e45fdaaf41a8c19ff45163b52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.Player::HexFall.Player.PlayerSurfaceSensor
+  registry: {fileID: 0}
+  probeStartHeight: 0.3
+  probeLength: 0.6
 --- !u!4 &614423777977665907 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8786601893355691716, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
