@@ -16,9 +16,22 @@ namespace HexFall.UI.Tests
         };
 
         [Test]
-        public void EnteringAttackPlaysCast()
+        public void EnteringAttackIsSilentBecauseTheCastWaitsForTheBolt()
         {
-            Assert.AreEqual(WizardSfxCue.Cast, WizardSfxCues.ForStateChange(ActionStateId.Ready, ActionStateId.Attack));
+            Assert.AreEqual(WizardSfxCue.None, WizardSfxCues.ForStateChange(ActionStateId.Ready, ActionStateId.Attack));
+        }
+
+        [Test]
+        public void TheBoltLeavingPlaysCast()
+        {
+            Assert.AreEqual(WizardSfxCue.Cast, WizardSfxCues.ForBoltFired());
+        }
+
+        [Test]
+        public void PressesPlayTheBodySounds()
+        {
+            Assert.AreEqual(WizardSfxCue.Huff, WizardSfxCues.ForAttackPress());
+            Assert.AreEqual(WizardSfxCue.Snap, WizardSfxCues.ForParryPress());
         }
 
         [Test]
@@ -60,7 +73,7 @@ namespace HexFall.UI.Tests
             var sfx = player.GetComponent<WizardSfx>();
             Assert.IsNotNull(sfx, "PlayerWizard needs a WizardSfx.");
             Assert.IsNotNull(sfx.Library, "WizardSfx needs a library.");
-            foreach (var cue in new[] { WizardSfxCue.Cast, WizardSfxCue.ShieldRaise, WizardSfxCue.ParryDeflect, WizardSfxCue.ParryPerfect, WizardSfxCue.BoltImpact })
+            foreach (var cue in new[] { WizardSfxCue.Cast, WizardSfxCue.ShieldRaise, WizardSfxCue.ParryDeflect, WizardSfxCue.ParryPerfect, WizardSfxCue.BoltImpact, WizardSfxCue.Snap, WizardSfxCue.Huff })
             {
                 Assert.IsTrue(sfx.Library.TryGet(cue, out var clip, out var volume), $"{cue} missing from the library.");
                 Assert.IsNotNull(clip, $"{cue} has no clip.");

@@ -36,6 +36,11 @@ namespace HexFall.Player.Actions
 
         public event Action BoltFired;
 
+        // Raised for every press the tick sees, whether or not the press is accepted.
+        public event Action AttackPressed;
+
+        public event Action ParryPressed;
+
         public event Action<HitResult> HitResolved;
 
         public int ShieldCharges(float now) => _shield.Charges(now);
@@ -45,6 +50,8 @@ namespace HexFall.Player.Actions
         public void Tick(ActionIntent intent, float now)
         {
             Expire(now);
+            if (intent.ParryPressed) ParryPressed?.Invoke();
+            if (intent.AttackPressed) AttackPressed?.Invoke();
             if (intent.ParryPressed && Current != ActionStateId.Parry && _shield.TryRaise(now))
                 Enter(ActionStateId.Parry, now);
             else if (intent.AttackPressed && Current == ActionStateId.Ready && _cooldown.TryAttack(now))

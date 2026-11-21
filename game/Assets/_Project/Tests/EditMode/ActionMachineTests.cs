@@ -213,6 +213,67 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void PressEventsFireOnEveryPressSeen()
+        {
+            var machine = Create();
+            int attacks = 0, parries = 0;
+            machine.AttackPressed += () => attacks++;
+            machine.ParryPressed += () => parries++;
+            machine.Tick(None, 1f);
+            Assert.AreEqual(0, attacks + parries);
+            machine.Tick(Attack, 2f);
+            Assert.AreEqual(1, attacks);
+            Assert.AreEqual(0, parries);
+            machine.Tick(Parry, 3f);
+            Assert.AreEqual(1, attacks);
+            Assert.AreEqual(1, parries);
+        }
+
+        [Test]
+        public void PressEventsFireTogetherWhenBothArePressed()
+        {
+            var machine = Create();
+            int attacks = 0, parries = 0;
+            machine.AttackPressed += () => attacks++;
+            machine.ParryPressed += () => parries++;
+            machine.Tick(new ActionIntent(true, true), 1f);
+            Assert.AreEqual(1, attacks);
+            Assert.AreEqual(1, parries);
+        }
+
+        [Test]
+        public void AttackPressEventFiresWhenRefusedByTheCooldownOrTheGuard()
+        {
+            var machine = Create();
+            int attacks = 0;
+            machine.AttackPressed += () => attacks++;
+            machine.Tick(Attack, 1f);
+            machine.Tick(Attack, 1.1f);
+            Assert.AreEqual(2, attacks);
+            machine.Tick(None, 3f);
+            machine.Tick(Parry, 4f);
+            machine.Tick(Attack, 4.1f);
+            Assert.AreEqual(ActionStateId.Parry, machine.Current);
+            Assert.AreEqual(3, attacks);
+        }
+
+        [Test]
+        public void ParryPressEventFiresWhenRefusedByNoCharges()
+        {
+            var machine = Create();
+            int parries = 0;
+            machine.ParryPressed += () => parries++;
+            machine.Tick(Parry, 1f);
+            machine.Tick(Parry, 1.5f);
+            machine.Tick(Parry, 2f);
+            machine.Tick(Parry, 2.5f);
+            Assert.AreEqual(0, machine.ShieldCharges(2.5f));
+            machine.Tick(Parry, 3f);
+            machine.Tick(Parry, 3.5f);
+            Assert.AreEqual(6, parries);
+        }
+
+        [Test]
         public void ResolveHitGradesAgainstTheGuardAndRaisesTheEvent()
         {
             var machine = Create();

@@ -11,6 +11,8 @@ seed), normalized to about -3 dBFS peak with short fades to avoid clicks:
     ShieldRaise.wav   shimmering swell
     ParryDeflect.wav  bright metallic ping
     ParryPerfect.wav  brighter two-tone ping with a little sparkle
+    Snap.wav          short bright finger snap (the wizard's body sound on a parry press)
+    Huff.wav          breathy exhale (the wizard's body sound on an attack press)
 """
 
 import math
@@ -160,6 +162,42 @@ def parry_perfect():
     return finish(mix(0.45, (0.0, low), (0.09, high), *sparkle))
 
 
+def highpass(samples, alpha):
+    out = []
+    y = 0.0
+    for s in samples:
+        y += alpha * (s - y)
+        out.append(s - y)
+    return out
+
+
+def snap(rng):
+    """Finger snap: a very short bright click, a quick band-passed pop and a tiny low knock."""
+    click = shaped(highpass(noise(0.03, 1.0, rng, 180), 0.35), 0.0003, 0.012)
+    pop = shaped(highpass(lowpass(noise(0.09, 0.8, rng, 55), 0.6), 0.12), 0.0005, 0.03)
+    knock = shaped(thump(420, 160, 0.05, 0.35, 70), 0.0005, 0.02)
+    return finish(mix(0.12, (0.0, click), (0.0, pop), (0.001, knock)))
+
+
+def huff(rng):
+    """Breathy exhale: noise through a lowpass whose cutoff falls (a downward formant feel)."""
+    n = n_samples(0.3)
+    out = []
+    y1 = 0.0
+    y2 = 0.0
+    for i in range(n):
+        t = i / (n - 1)
+        alpha = 0.55 - 0.40 * t  # darker as the breath runs out
+        raw = rng.uniform(-1, 1)
+        y1 += alpha * (raw - y1)
+        y2 += alpha * (y1 - y2)
+        attack = min(1.0, t / 0.08)
+        env = attack * math.exp(-5.0 * max(0.0, t - 0.08))
+        flutter = 1 + 0.12 * math.sin(2 * math.pi * 23 * i / RATE)
+        out.append(y2 * env * flutter)
+    return finish(highpass(out, 0.03))
+
+
 def write_wav(path, samples):
     with wave.open(path, "wb") as w:
         w.setnchannels(1)
@@ -179,6 +217,8 @@ def main(argv):
         "ShieldRaise": shield_raise(),
         "ParryDeflect": parry_deflect(),
         "ParryPerfect": parry_perfect(),
+        "Snap": snap(random.Random(11)),
+        "Huff": huff(random.Random(13)),
     }
     for name, samples in clips.items():
         write_wav(os.path.join(out_dir, name + ".wav"), samples)

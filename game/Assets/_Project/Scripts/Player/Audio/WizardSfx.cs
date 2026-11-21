@@ -38,6 +38,9 @@ namespace HexFall.Player
             _subscribed = _combat.Machine;
             _subscribed.StateChanged += OnStateChanged;
             _subscribed.HitResolved += OnHitResolved;
+            _subscribed.BoltFired += OnBoltFired;
+            _subscribed.AttackPressed += OnAttackPressed;
+            _subscribed.ParryPressed += OnParryPressed;
         }
 
         private void Unsubscribe()
@@ -45,12 +48,21 @@ namespace HexFall.Player
             if (_subscribed == null) return;
             _subscribed.StateChanged -= OnStateChanged;
             _subscribed.HitResolved -= OnHitResolved;
+            _subscribed.BoltFired -= OnBoltFired;
+            _subscribed.AttackPressed -= OnAttackPressed;
+            _subscribed.ParryPressed -= OnParryPressed;
             _subscribed = null;
         }
 
         private void OnStateChanged(ActionStateId from, ActionStateId to) => Play(WizardSfxCues.ForStateChange(from, to));
 
         private void OnHitResolved(HitResult hit) => Play(WizardSfxCues.ForHit(hit));
+
+        private void OnBoltFired() => Play(WizardSfxCues.ForBoltFired());
+
+        private void OnAttackPressed() => Play(WizardSfxCues.ForAttackPress());
+
+        private void OnParryPressed() => Play(WizardSfxCues.ForParryPress());
 
         private void Play(WizardSfxCue cue)
         {
