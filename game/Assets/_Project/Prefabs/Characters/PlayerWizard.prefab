@@ -1248,7 +1248,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9490b80e45fdaaf41a8c19ff45163b52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HexFall.Player::HexFall.Player.PlayerSurfaceSensor
-  registry: {fileID: 0}
+  registry: {fileID: 11400000, guid: 3713a0952fc028b4680dd5f8d057fc9b, type: 2}
   probeStartHeight: 0.3
   probeLength: 0.6
 --- !u!4 &614423777977665907 stripped
