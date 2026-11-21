@@ -107,7 +107,7 @@ MonoBehaviour:
     m_ConstrainedObject: {fileID: 614423777977665907}
     m_OverrideSource: {fileID: 0}
     m_OverridePosition: {x: 0, y: 0, z: 0}
-    m_OverrideRotation: {x: -20, y: 0, z: 0}
+    m_OverrideRotation: {x: -55, y: 0, z: 0}
     m_PositionWeight: 0
     m_RotationWeight: 1
     m_Space: 2
@@ -651,7 +651,7 @@ MonoBehaviour:
     m_ConstrainedObject: {fileID: 276115209326657620}
     m_OverrideSource: {fileID: 0}
     m_OverridePosition: {x: 0, y: 0, z: 0}
-    m_OverrideRotation: {x: -30, y: 0, z: 0}
+    m_OverrideRotation: {x: -65, y: 0, z: 0}
     m_PositionWeight: 0
     m_RotationWeight: 1
     m_Space: 2

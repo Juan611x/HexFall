@@ -22,23 +22,27 @@ namespace HexFall.Player.Locomotion
 
     // The IK profile each locomotion state asks for: feet are planted only on the ground, and the
     // head and chest follow the crosshair, more strongly while the wizard attacks or parries. The
-    // torso leans back only while sliding.
+    // torso leans back only while sliding, and then the chest aim is dropped so it cannot cancel the
+    // lean while the head keeps looking along the slide.
     public static class IkProfiles
     {
         public const float IdleHeadAim = 0.35f;
         public const float IdleChestAim = 0.15f;
         public const float ActingHeadAim = 0.8f;
         public const float ActingChestAim = 0.6f;
+        public const float SlideHeadAim = 1f;
+        public const float SlideChestAim = 0f;
 
         public static IkProfile For(LocomotionStateId state, ActionStateId action)
         {
             var acting = action != ActionStateId.Ready;
             var planted = state == LocomotionStateId.Grounded || state == LocomotionStateId.Crouch;
             var feet = planted ? 1f : 0f;
-            var lean = state == LocomotionStateId.Slide ? 1f : 0f;
+            if (state == LocomotionStateId.Slide)
+                return new IkProfile(feet, SlideHeadAim, SlideChestAim, 1f);
             return acting
-                ? new IkProfile(feet, ActingHeadAim, ActingChestAim, lean)
-                : new IkProfile(feet, IdleHeadAim, IdleChestAim, lean);
+                ? new IkProfile(feet, ActingHeadAim, ActingChestAim)
+                : new IkProfile(feet, IdleHeadAim, IdleChestAim);
         }
     }
 

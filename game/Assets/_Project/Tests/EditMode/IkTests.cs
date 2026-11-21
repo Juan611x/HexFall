@@ -79,6 +79,17 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void SlideDropsTheChestAimAndFullyAimsTheHead()
+        {
+            foreach (ActionStateId action in System.Enum.GetValues(typeof(ActionStateId)))
+            {
+                var profile = IkProfiles.For(LocomotionStateId.Slide, action);
+                Assert.AreEqual(0f, profile.ChestAimWeight, 0.0001f, $"chest {action}");
+                Assert.AreEqual(1f, profile.HeadAimWeight, 0.0001f, $"head {action}");
+            }
+        }
+
+        [Test]
         public void LeanBlendsLikeTheOtherWeights()
         {
             var off = new IkProfile(0f, 0f, 0f);

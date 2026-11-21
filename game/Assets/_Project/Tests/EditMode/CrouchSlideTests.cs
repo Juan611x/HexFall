@@ -509,15 +509,12 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void CrouchAndSlideAimLikeGrounded()
+        public void CrouchAimsLikeGrounded()
         {
-            foreach (var state in new[] { LocomotionStateId.Crouch, LocomotionStateId.Slide })
-            {
-                var idle = IkProfiles.For(state, ActionStateId.Ready);
-                var acting = IkProfiles.For(state, ActionStateId.Attack);
-                Assert.AreEqual(IkProfiles.IdleHeadAim, idle.HeadAimWeight, 0.0001f);
-                Assert.AreEqual(IkProfiles.ActingChestAim, acting.ChestAimWeight, 0.0001f);
-            }
+            var idle = IkProfiles.For(LocomotionStateId.Crouch, ActionStateId.Ready);
+            var acting = IkProfiles.For(LocomotionStateId.Crouch, ActionStateId.Attack);
+            Assert.AreEqual(IkProfiles.IdleHeadAim, idle.HeadAimWeight, 0.0001f);
+            Assert.AreEqual(IkProfiles.ActingChestAim, acting.ChestAimWeight, 0.0001f);
         }
     }
 }

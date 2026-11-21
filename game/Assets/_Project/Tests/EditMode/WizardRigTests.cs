@@ -39,9 +39,9 @@ namespace HexFall.UI.Tests
             prefab.GetComponentsInChildren<MonoBehaviour>(true)
                 .FirstOrDefault(c => c != null && c.GetType().Name == "OverrideTransform" && c.name == name);
 
-        // The slide lean is split across the spine for a natural curve: about -50 degrees in total.
-        [TestCase("SlideLean", "Abdomen", -30f)]
-        [TestCase("SlideLeanChest", "Torso", -20f)]
+        // The slide lean is split across the spine for a natural curve: about -120 degrees in total, enough to cancel the forward hunch of the crouch pose.
+        [TestCase("SlideLean", "Abdomen", -65f)]
+        [TestCase("SlideLeanChest", "Torso", -55f)]
         public void SlideLeanConstrainsASpineBoneWithAFixedBackwardTilt(string constraint, string boneName, float pitch)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
