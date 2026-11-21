@@ -16,11 +16,11 @@ MonoBehaviour:
   effects:
   - impact: 0
     clips:
-    - {fileID: 8300000, guid: a118f894fe6357144ba157cd7fd023c5, type: 3}
-    - {fileID: 8300000, guid: 4492227f569d98c419f42a8d849e477e, type: 3}
-    - {fileID: 8300000, guid: 5bb0a7727f06c1843a94f48f20d986c8, type: 3}
-    - {fileID: 8300000, guid: df6fe9533171b5140b59df1cf445e349, type: 3}
-    - {fileID: 8300000, guid: 5d1b5fdd54e71e14abb65487a7b89002, type: 3}
+    - {fileID: 8300000, guid: 0f85915f0ae489e4c9c612e4cf25d357, type: 3}
+    - {fileID: 8300000, guid: 9a48560d2e5a9984997dae0fa819fc1b, type: 3}
+    - {fileID: 8300000, guid: 6a0dcdccbf59a5e40bf1e8a30e97d6ae, type: 3}
+    - {fileID: 8300000, guid: ac7aef7096da1fa489bdbaf8e64677eb, type: 3}
+    - {fileID: 8300000, guid: cf73c89cf7d4def469a5d33a3fb3236d, type: 3}
     volumeRange: {x: 0.8, y: 1}
     pitchRange: {x: 0.95, y: 1.05}
   - impact: 1
