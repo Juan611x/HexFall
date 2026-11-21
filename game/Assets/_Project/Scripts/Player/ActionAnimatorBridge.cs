@@ -25,7 +25,8 @@ namespace HexFall.Player
             }
         }
 
-        private const int UpperBodyLayer = 1;
+        // Resolved by name so a reordered controller still targets the right layer.
+        public const string UpperBodyLayerName = "UpperBody";
 
         [SerializeField] private float crossFadeSeconds = 0.1f;
         [SerializeField] private StateMapping[] stateMappings =
@@ -38,11 +39,14 @@ namespace HexFall.Player
         private Animator _animator;
         private PlayerCombat _combat;
         private ActionMachine _subscribed;
+        private int _upperBodyLayer;
 
         private void Awake()
         {
             _animator = GetComponent<Animator>();
             _combat = GetComponent<PlayerCombat>();
+            _upperBodyLayer = _animator.GetLayerIndex(UpperBodyLayerName);
+            if (_upperBodyLayer < 0) Debug.LogWarning($"{name}: animator has no '{UpperBodyLayerName}' layer.", this);
         }
 
         // The combat component creates its machine in Awake; subscribe here, and again in Start in case
@@ -86,6 +90,7 @@ namespace HexFall.Player
 
         private void OnStateChanged(ActionStateId from, ActionStateId to)
         {
+            if (_upperBodyLayer < 0) return;
             var stateName = StateNameFor(to);
             if (stateName == null)
             {
@@ -93,7 +98,7 @@ namespace HexFall.Player
                 return;
             }
 
-            _animator.CrossFadeInFixedTime(Animator.StringToHash(stateName), crossFadeSeconds, UpperBodyLayer);
+            _animator.CrossFadeInFixedTime(Animator.StringToHash(stateName), crossFadeSeconds, _upperBodyLayer);
         }
     }
 }

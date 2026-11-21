@@ -31,7 +31,7 @@ namespace HexFall.UI.Tests
         }
 
         private AnimatorStateMachine UpperBody =>
-            _controller.layers.First(l => l.name == "UpperBody").stateMachine;
+            _controller.layers.First(l => l.name == ActionAnimatorBridge.UpperBodyLayerName).stateMachine;
 
         [Test]
         public void PlayerPrefabHasTheActionBridge()
