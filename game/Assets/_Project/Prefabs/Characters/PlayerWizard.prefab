@@ -58,59 +58,6 @@ MonoBehaviour:
     m_HintWeight: 1
     m_MaintainTargetPositionOffset: 0
     m_MaintainTargetRotationOffset: 0
---- !u!1 &1670668039457274501
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8031363046973612576}
-  - component: {fileID: 5328061326897278693}
-  m_Layer: 0
-  m_Name: SlideLeanChest
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8031363046973612576
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1670668039457274501}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8843920336741585122}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5328061326897278693
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1670668039457274501}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf219326d2292de48a0c671da18d402b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Animation.Rigging::UnityEngine.Animations.Rigging.OverrideTransform
-  m_Weight: 0
-  m_Data:
-    m_ConstrainedObject: {fileID: 614423777977665907}
-    m_OverrideSource: {fileID: 0}
-    m_OverridePosition: {x: 0, y: 0, z: 0}
-    m_OverrideRotation: {x: -55, y: 0, z: 0}
-    m_PositionWeight: 0
-    m_RotationWeight: 1
-    m_Space: 2
 --- !u!1 &2062100857298967728
 GameObject:
   m_ObjectHideFlags: 0
@@ -602,59 +549,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 649607375809318820}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7618271052009664505
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4399066903942760477}
-  - component: {fileID: 2124193695649677336}
-  m_Layer: 0
-  m_Name: SlideLean
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4399066903942760477
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7618271052009664505}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8843920336741585122}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2124193695649677336
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7618271052009664505}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf219326d2292de48a0c671da18d402b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Animation.Rigging::UnityEngine.Animations.Rigging.OverrideTransform
-  m_Weight: 0
-  m_Data:
-    m_ConstrainedObject: {fileID: 276115209326657620}
-    m_OverrideSource: {fileID: 0}
-    m_OverridePosition: {x: 0, y: 0, z: 0}
-    m_OverrideRotation: {x: -65, y: 0, z: 0}
-    m_PositionWeight: 0
-    m_RotationWeight: 1
-    m_Space: 2
 --- !u!1 &8046128129209732299
 GameObject:
   m_ObjectHideFlags: 0
@@ -688,8 +582,6 @@ Transform:
   - {fileID: 228684823785975689}
   - {fileID: 8128040264514651515}
   - {fileID: 8396099876927135698}
-  - {fileID: 4399066903942760477}
-  - {fileID: 8031363046973612576}
   - {fileID: 6037116428556697347}
   - {fileID: 3364687598174609902}
   m_Father: {fileID: 649607375809318820}
@@ -1323,8 +1215,6 @@ MonoBehaviour:
   rightFoot: {fileID: 4680956173716755538}
   headAim: {fileID: 3680235461088413982}
   chestAim: {fileID: 6123369226072227628}
-  slideLean: {fileID: 2124193695649677336}
-  slideLeanChest: {fileID: 5328061326897278693}
   leftFootTarget: {fileID: 2231410064667586434}
   rightFootTarget: {fileID: 7194259393915228513}
   aimTarget: {fileID: 8396099876927135698}
@@ -1433,11 +1323,6 @@ MonoBehaviour:
   fullSpeed: 6
   scrapeVolume: 0.8
   fadeOutSeconds: 0.12
---- !u!4 &276115209326657620 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 963086819041503259, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
-  m_PrefabInstance: {fileID: 1047481681258997839}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &614423777977665907 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8786601893355691716, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}

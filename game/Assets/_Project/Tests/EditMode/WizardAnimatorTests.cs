@@ -101,12 +101,39 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(crouchSpeed, ordered[1].threshold, 1e-5f);
         }
 
+        private const string Ual2Path = SlideAnimationImportTests.FbxPath;
+
         [Test]
-        public void SlideHoldsTheCrouchPose()
+        public void SlideStartsWithTheUal2StartClip()
         {
             var clip = StateFor(AnimatorStateSelector.Slide).motion;
             Assert.IsNotNull(clip);
-            Assert.AreEqual("Crouch_Idle_Loop", clip.name);
+            Assert.AreEqual("Slide_Start", clip.name);
+            Assert.AreEqual(Ual2Path, AssetDatabase.GetAssetPath(clip));
+        }
+
+        // The bridge only enters the "Slide" state; the clip chain runs inside the animator by itself.
+        [Test]
+        public void SlideStartHandsOverToTheLoopWithoutParameters()
+        {
+            var start = StateFor(AnimatorStateSelector.Slide);
+            Assert.AreEqual(1, start.transitions.Length);
+            var transition = start.transitions[0];
+            Assert.IsTrue(transition.hasExitTime);
+            Assert.IsEmpty(transition.conditions);
+            Assert.IsNotNull(transition.destinationState);
+            var loop = transition.destinationState.motion as AnimationClip;
+            Assert.IsNotNull(loop);
+            Assert.AreEqual("Slide_Loop", loop.name);
+            Assert.AreEqual(Ual2Path, AssetDatabase.GetAssetPath(loop));
+        }
+
+        [Test]
+        public void SlideLoopRepeatsUntilTheLocomotionStateLeaves()
+        {
+            var loopState = StateFor(AnimatorStateSelector.Slide).transitions[0].destinationState;
+            Assert.IsTrue(((AnimationClip)loopState.motion).isLooping);
+            Assert.IsEmpty(loopState.transitions, "Only the bridge may leave the slide loop.");
         }
 
         [Test]

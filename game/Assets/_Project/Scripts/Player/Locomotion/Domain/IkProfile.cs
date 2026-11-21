@@ -9,28 +9,26 @@ namespace HexFall.Player.Locomotion
         public readonly float FeetWeight;
         public readonly float HeadAimWeight;
         public readonly float ChestAimWeight;
-        public readonly float SlideLeanWeight;
 
-        public IkProfile(float feetWeight, float headAimWeight, float chestAimWeight, float slideLeanWeight = 0f)
+        public IkProfile(float feetWeight, float headAimWeight, float chestAimWeight)
         {
             FeetWeight = feetWeight;
             HeadAimWeight = headAimWeight;
             ChestAimWeight = chestAimWeight;
-            SlideLeanWeight = slideLeanWeight;
         }
     }
 
     // The IK profile each locomotion state asks for: feet are planted only on the ground, and the
     // head and chest follow the crosshair, more strongly while the wizard attacks or parries. The
-    // torso leans back only while sliding, and then the chest aim is dropped so it cannot cancel the
-    // lean while the head keeps looking along the slide.
+    // slide clip already holds the torso and the head, so the chest aim is dropped while sliding (it
+    // would twist the clip toward the crosshair) and the head follows the crosshair only lightly.
     public static class IkProfiles
     {
         public const float IdleHeadAim = 0.35f;
         public const float IdleChestAim = 0.15f;
         public const float ActingHeadAim = 0.8f;
         public const float ActingChestAim = 0.6f;
-        public const float SlideHeadAim = 1f;
+        public const float SlideHeadAim = 0.3f;
         public const float SlideChestAim = 0f;
 
         public static IkProfile For(LocomotionStateId state, ActionStateId action)
@@ -39,47 +37,10 @@ namespace HexFall.Player.Locomotion
             var planted = state == LocomotionStateId.Grounded || state == LocomotionStateId.Crouch;
             var feet = planted ? 1f : 0f;
             if (state == LocomotionStateId.Slide)
-                return new IkProfile(feet, SlideHeadAim, SlideChestAim, 1f);
+                return new IkProfile(feet, SlideHeadAim, SlideChestAim);
             return acting
                 ? new IkProfile(feet, ActingHeadAim, ActingChestAim)
                 : new IkProfile(feet, IdleHeadAim, IdleChestAim);
-        }
-    }
-
-    // The low feet-first slide pose, blended by the slide weight: the body sinks until the seat is
-    // near the floor and both feet are placed ahead of the hips by leg IK. The left leg leads and is
-    // nearly straight, the right one trails slightly bent. Offsets are in the body's local space.
-    public static class SlidePose
-    {
-        // How far the whole model is lowered at full weight: the crouch pelvis sits about 0.28 m up, so this settles it near 0.16 m.
-        public const float HipDrop = 0.12f;
-        private const float LeadReach = 0.42f;
-        private const float TrailReach = 0.3f;
-        private const float HalfStance = 0.14f;
-        private const float FootHeight = 0.06f;
-
-        public static float HipOffset(float slideWeight)
-        {
-            return -HipDrop * Mathf.Clamp01(slideWeight);
-        }
-
-        // The foot goal relative to the body: left leads, right trails; y is above the ground.
-        public static Vector3 FootLocal(bool left)
-        {
-            return new Vector3(left ? -HalfStance : HalfStance, FootHeight, left ? LeadReach : TrailReach);
-        }
-
-        public static Vector3 FootWorld(Vector3 rootPosition, Quaternion rootRotation, float groundHeight, bool left)
-        {
-            var local = FootLocal(left);
-            var flat = rootRotation * new Vector3(local.x, 0f, local.z);
-            return new Vector3(rootPosition.x + flat.x, groundHeight + local.y, rootPosition.z + flat.z);
-        }
-
-        // The leg IK stays on while either the grounded planting or the slide pose needs it.
-        public static float FeetWeight(float groundedFeetWeight, float slideWeight)
-        {
-            return Mathf.Max(groundedFeetWeight, slideWeight);
         }
     }
 
@@ -92,8 +53,7 @@ namespace HexFall.Player.Locomotion
             return new IkProfile(
                 Step(current.FeetWeight, target.FeetWeight, step),
                 Step(current.HeadAimWeight, target.HeadAimWeight, step),
-                Step(current.ChestAimWeight, target.ChestAimWeight, step),
-                Step(current.SlideLeanWeight, target.SlideLeanWeight, step));
+                Step(current.ChestAimWeight, target.ChestAimWeight, step));
         }
 
         private static float Step(float current, float target, float step)

@@ -35,58 +35,31 @@ namespace HexFall.UI.Tests
             }
         }
 
-        private static MonoBehaviour FindLean(GameObject prefab, string name) =>
-            prefab.GetComponentsInChildren<MonoBehaviour>(true)
-                .FirstOrDefault(c => c != null && c.GetType().Name == "OverrideTransform" && c.name == name);
-
-        // The slide lean is split across the spine for a natural curve: about -120 degrees in total, enough to cancel the forward hunch of the crouch pose.
-        [TestCase("SlideLean", "Abdomen", -65f)]
-        [TestCase("SlideLeanChest", "Torso", -55f)]
-        public void SlideLeanConstrainsASpineBoneWithAFixedBackwardTilt(string constraint, string boneName, float pitch)
+        // The real UAL2 slide clip carries the lean, the low seat and the stretched legs, so the IK
+        // stand-ins built before it are gone from the prefab and from the driver.
+        [TestCase("SlideLean")]
+        [TestCase("SlideLeanChest")]
+        public void TheSlideLeanStandInsAreGone(string constraint)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-            var lean = FindLean(prefab, constraint);
-            Assert.IsNotNull(lean, $"No {constraint} override constraint on the wizard.");
-
-            var data = new SerializedObject(lean).FindProperty("m_Data");
-            var bone = (Transform)data.FindPropertyRelative("m_ConstrainedObject").objectReferenceValue;
-            Assert.IsNotNull(bone, $"{constraint} has no constrained bone.");
-            Assert.IsTrue(bone.IsChildOf(prefab.transform), "The constrained bone is not part of the wizard.");
-            Assert.AreEqual(boneName, bone.name);
-
-            // Pivot space = the override is an offset on top of the animated pose.
-            Assert.AreEqual(2, data.FindPropertyRelative("m_Space").intValue);
-            Assert.AreEqual(0f, data.FindPropertyRelative("m_PositionWeight").floatValue, 1e-5f);
-            Assert.AreEqual(1f, data.FindPropertyRelative("m_RotationWeight").floatValue, 1e-5f);
-            var euler = data.FindPropertyRelative("m_OverrideRotation").vector3Value;
-            Assert.AreEqual(pitch, euler.x, 1e-3f);
-            Assert.AreEqual(0f, euler.y, 1e-3f);
-            Assert.AreEqual(0f, euler.z, 1e-3f);
+            Assert.IsFalse(prefab.GetComponentsInChildren<Transform>(true).Any(t => t.name == constraint),
+                $"{constraint} is still on the wizard.");
         }
 
-        [TestCase("SlideLean", "slideLean")]
-        [TestCase("SlideLeanChest", "slideLeanChest")]
-        public void SlideLeanIsEvaluatedBeforeTheChestAimAndWiredToTheDriver(string constraint, string field)
+        [TestCase("slideLean")]
+        [TestCase("slideLeanChest")]
+        public void TheDriverHasNoSlideLeanReferences(string field)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-            var lean = FindLean(prefab, constraint);
-            Assert.IsNotNull(lean);
-            var chestAim = prefab.GetComponentsInChildren<MonoBehaviour>(true)
-                .First(c => c != null && c.GetType().Name == "MultiAimConstraint" && c.name == "ChestAim");
-            Assert.Less(lean.transform.GetSiblingIndex(), chestAim.transform.GetSiblingIndex());
-
             var driver = prefab.GetComponent<HexFall.Player.Locomotion.PlayerIKDriver>();
-            var prop = new SerializedObject(driver).FindProperty(field);
-            Assert.IsNotNull(prop, $"PlayerIKDriver has no {field} field.");
-            Assert.AreSame(lean, prop.objectReferenceValue);
+            Assert.IsNull(new SerializedObject(driver).FindProperty(field), $"PlayerIKDriver still has {field}.");
         }
 
         [Test]
-        public void TheAbdomenLeanIsEvaluatedBeforeTheChestLean()
+        public void TheHandmadeSlidePoseIsGone()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-            Assert.Less(FindLean(prefab, "SlideLean").transform.GetSiblingIndex(),
-                FindLean(prefab, "SlideLeanChest").transform.GetSiblingIndex());
+            var assembly = typeof(HexFall.Player.Locomotion.PlayerIKDriver).Assembly;
+            Assert.IsNull(assembly.GetType("HexFall.Player.Locomotion.SlidePose"));
         }
     }
 }
