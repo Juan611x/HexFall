@@ -949,6 +949,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5575266291112155893}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6667972536868465235}
   m_SourcePrefab: {fileID: 100100000, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
 --- !u!1 &164397724255835422 stripped
 GameObject:
@@ -1251,6 +1254,23 @@ MonoBehaviour:
   registry: {fileID: 11400000, guid: 3713a0952fc028b4680dd5f8d057fc9b, type: 2}
   probeStartHeight: 0.3
   probeLength: 0.6
+--- !u!114 &6667972536868465235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164397724255835422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f8c5a1e7b3d4c9a8e6d0b1a2f3c4e5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.Player::HexFall.Player.PlayerFootsteps
+  liftHeight: 0.12
+  contactHeight: 0.08
+  minStepInterval: 0.18
+  minSpeed: 0.2
+  stepVolume: 0.7
 --- !u!4 &614423777977665907 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8786601893355691716, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}

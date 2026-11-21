@@ -54,6 +54,15 @@ namespace HexFall.Player.Locomotion
             _animator = GetComponent<Animator>();
         }
 
+        // The animation's own foot positions of this frame in world space (before any IK correction);
+        // false until the humanoid IK pass has reported once.
+        public bool TryGetAnimatedFeet(out Vector3 left, out Vector3 right)
+        {
+            left = _animatedLeftFoot;
+            right = _animatedRightFoot;
+            return _hasAnimatedFeet;
+        }
+
         // Humanoid IK pass of the base layer: the foot goals here are still the animation's own.
         private void OnAnimatorIK(int layerIndex)
         {
