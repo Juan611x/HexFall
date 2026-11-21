@@ -65,6 +65,29 @@ namespace HexFall.UI.Tests
         }
     }
 
+    public class SlideLeanProfileTests
+    {
+        [Test]
+        public void OnlySlideLeansTheTorsoBack()
+        {
+            foreach (LocomotionStateId state in System.Enum.GetValues(typeof(LocomotionStateId)))
+            foreach (ActionStateId action in System.Enum.GetValues(typeof(ActionStateId)))
+            {
+                var expected = state == LocomotionStateId.Slide ? 1f : 0f;
+                Assert.AreEqual(expected, IkProfiles.For(state, action).SlideLeanWeight, 0.0001f, $"{state}/{action}");
+            }
+        }
+
+        [Test]
+        public void LeanBlendsLikeTheOtherWeights()
+        {
+            var off = new IkProfile(0f, 0f, 0f);
+            var lean = new IkProfile(0f, 0f, 0f, 1f);
+            Assert.AreEqual(0.3f, IkBlend.Toward(off, lean, 6f, 0.05f).SlideLeanWeight, 0.0001f);
+            Assert.AreEqual(0f, IkBlend.Toward(lean, off, 6f, 1f).SlideLeanWeight, 0.0001f);
+        }
+    }
+
     public class IkBlendTests
     {
         private static readonly IkProfile Off = new IkProfile(0f, 0f, 0f);

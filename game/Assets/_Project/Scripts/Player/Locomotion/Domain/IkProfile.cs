@@ -9,17 +9,20 @@ namespace HexFall.Player.Locomotion
         public readonly float FeetWeight;
         public readonly float HeadAimWeight;
         public readonly float ChestAimWeight;
+        public readonly float SlideLeanWeight;
 
-        public IkProfile(float feetWeight, float headAimWeight, float chestAimWeight)
+        public IkProfile(float feetWeight, float headAimWeight, float chestAimWeight, float slideLeanWeight = 0f)
         {
             FeetWeight = feetWeight;
             HeadAimWeight = headAimWeight;
             ChestAimWeight = chestAimWeight;
+            SlideLeanWeight = slideLeanWeight;
         }
     }
 
     // The IK profile each locomotion state asks for: feet are planted only on the ground, and the
-    // head and chest follow the crosshair, more strongly while the wizard attacks or parries.
+    // head and chest follow the crosshair, more strongly while the wizard attacks or parries. The
+    // torso leans back only while sliding.
     public static class IkProfiles
     {
         public const float IdleHeadAim = 0.35f;
@@ -32,9 +35,10 @@ namespace HexFall.Player.Locomotion
             var acting = action != ActionStateId.Ready;
             var planted = state == LocomotionStateId.Grounded || state == LocomotionStateId.Crouch;
             var feet = planted ? 1f : 0f;
+            var lean = state == LocomotionStateId.Slide ? 1f : 0f;
             return acting
-                ? new IkProfile(feet, ActingHeadAim, ActingChestAim)
-                : new IkProfile(feet, IdleHeadAim, IdleChestAim);
+                ? new IkProfile(feet, ActingHeadAim, ActingChestAim, lean)
+                : new IkProfile(feet, IdleHeadAim, IdleChestAim, lean);
         }
     }
 
@@ -47,7 +51,8 @@ namespace HexFall.Player.Locomotion
             return new IkProfile(
                 Step(current.FeetWeight, target.FeetWeight, step),
                 Step(current.HeadAimWeight, target.HeadAimWeight, step),
-                Step(current.ChestAimWeight, target.ChestAimWeight, step));
+                Step(current.ChestAimWeight, target.ChestAimWeight, step),
+                Step(current.SlideLeanWeight, target.SlideLeanWeight, step));
         }
 
         private static float Step(float current, float target, float step)

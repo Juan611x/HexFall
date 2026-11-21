@@ -23,6 +23,8 @@ namespace HexFall.Player.Locomotion
         [SerializeField] private TwoBoneIKConstraint rightFoot;
         [SerializeField] private MultiAimConstraint headAim;
         [SerializeField] private MultiAimConstraint chestAim;
+        [Tooltip("Leans the torso back while sliding; evaluated before the chest aim.")]
+        [SerializeField] private OverrideTransform slideLean;
         [Header("Targets and bones")]
         [SerializeField] private Transform leftFootTarget;
         [SerializeField] private Transform rightFootTarget;
@@ -80,6 +82,7 @@ namespace HexFall.Player.Locomotion
             if (rightFoot == null) missing.Add(nameof(rightFoot));
             if (headAim == null) missing.Add(nameof(headAim));
             if (chestAim == null) missing.Add(nameof(chestAim));
+            if (slideLean == null) missing.Add(nameof(slideLean));
             if (leftFootTarget == null) missing.Add(nameof(leftFootTarget));
             if (rightFootTarget == null) missing.Add(nameof(rightFootTarget));
             if (aimTarget == null) missing.Add(nameof(aimTarget));
@@ -103,6 +106,7 @@ namespace HexFall.Player.Locomotion
             if (rightFoot != null) rightFoot.weight = feetWeight;
             if (headAim != null) headAim.weight = _profile.HeadAimWeight;
             if (chestAim != null) chestAim.weight = _profile.ChestAimWeight;
+            if (slideLean != null) slideLean.weight = _profile.SlideLeanWeight;
 
             var leftDrop = _hasAnimatedFeet ? PlaceFoot(_animatedLeftFoot, leftFootTarget) : 0f;
             var rightDrop = _hasAnimatedFeet ? PlaceFoot(_animatedRightFoot, rightFootTarget) : 0f;

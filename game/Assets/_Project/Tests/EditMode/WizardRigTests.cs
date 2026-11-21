@@ -34,5 +34,44 @@ namespace HexFall.UI.Tests
                 }
             }
         }
+
+        private static MonoBehaviour FindLean(GameObject prefab) =>
+            prefab.GetComponentsInChildren<MonoBehaviour>(true)
+                .FirstOrDefault(c => c != null && c.GetType().Name == "OverrideTransform" && c.name == "SlideLean");
+
+        [Test]
+        public void SlideLeanConstrainsTheAbdomenBoneWithAFixedBackwardTilt()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            var lean = FindLean(prefab);
+            Assert.IsNotNull(lean, "No SlideLean override constraint on the wizard.");
+
+            var data = new SerializedObject(lean).FindProperty("m_Data");
+            var bone = (Transform)data.FindPropertyRelative("m_ConstrainedObject").objectReferenceValue;
+            Assert.IsNotNull(bone, "SlideLean has no constrained bone.");
+            Assert.IsTrue(bone.IsChildOf(prefab.transform), "The constrained bone is not part of the wizard.");
+            Assert.AreEqual("Abdomen", bone.name);
+
+            // Pivot space = the override is an offset on top of the animated pose.
+            Assert.AreEqual(2, data.FindPropertyRelative("m_Space").intValue);
+            Assert.AreEqual(0f, data.FindPropertyRelative("m_PositionWeight").floatValue, 1e-5f);
+            var tilt = Quaternion.Euler(data.FindPropertyRelative("m_OverrideRotation").vector3Value);
+            Assert.That(Quaternion.Angle(Quaternion.identity, tilt), Is.InRange(15f, 40f));
+        }
+
+        [Test]
+        public void SlideLeanIsEvaluatedBeforeTheChestAimAndWiredToTheDriver()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            var lean = FindLean(prefab);
+            Assert.IsNotNull(lean);
+            var chestAim = prefab.GetComponentsInChildren<MonoBehaviour>(true)
+                .First(c => c != null && c.GetType().Name == "MultiAimConstraint" && c.name == "ChestAim");
+            Assert.Less(lean.transform.GetSiblingIndex(), chestAim.transform.GetSiblingIndex());
+
+            var driver = prefab.GetComponent<HexFall.Player.Locomotion.PlayerIKDriver>();
+            var wired = new SerializedObject(driver).FindProperty("slideLean").objectReferenceValue;
+            Assert.AreSame(lean, wired);
+        }
     }
 }

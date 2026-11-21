@@ -13,6 +13,7 @@ namespace HexFall.Editor.Build.Tests
         [TestCase("Jog_Fwd_Loop")]
         [TestCase("Sprint_Loop")]
         [TestCase("Run_Loop")]
+        [TestCase("Crouch_Fwd_Loop")]
         public void TravellingClipsFaceTheirAuthoredDirectionTurnedToUnityForward(string name)
         {
             var clip = Clip(name);
@@ -25,6 +26,7 @@ namespace HexFall.Editor.Build.Tests
         }
 
         [TestCase("Idle_Loop")]
+        [TestCase("Crouch_Idle_Loop")]
         [TestCase("Jump_Start")]
         [TestCase("Spell_Simple_Shoot")]
         public void InPlaceClipsKeepUnitysBodyOrientation(string name)
