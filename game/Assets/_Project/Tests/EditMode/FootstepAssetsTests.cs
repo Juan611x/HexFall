@@ -40,6 +40,30 @@ namespace HexFall.UI.Tests
             AssertClips(FootstepOf("Assets/_Project/Surfaces/Surface_Stone.asset"), "footstep_grass");
         }
 
+        private static void AssertLandingClips(string surfacePath)
+        {
+            var surface = AssetDatabase.LoadAssetAtPath<SurfaceDefinition>(surfacePath);
+            Assert.IsNotNull(surface, $"{surfacePath} not found.");
+            Assert.IsTrue(surface.TryGetEffect(SurfaceImpact.Landing, out var effect), $"{surface.name} has no landing effect.");
+            AssertClips(effect, "impactSoft_heavy");
+            Assert.AreEqual(0.9f, effect.volumeRange.x, 1e-4f);
+            Assert.AreEqual(1f, effect.volumeRange.y, 1e-4f);
+            Assert.AreEqual(0.95f, effect.pitchRange.x, 1e-4f);
+            Assert.AreEqual(1.05f, effect.pitchRange.y, 1e-4f);
+        }
+
+        [Test]
+        public void BrickLandingsUseTheSoftHeavyImpacts()
+        {
+            AssertLandingClips("Assets/_Project/Surfaces/Surface_Brick.asset");
+        }
+
+        [Test]
+        public void StoneLandingsUseTheSoftHeavyImpacts()
+        {
+            AssertLandingClips("Assets/_Project/Surfaces/Surface_Stone.asset");
+        }
+
         [Test]
         public void TheWholePackIsImported()
         {

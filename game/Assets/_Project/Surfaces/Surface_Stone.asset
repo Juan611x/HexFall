@@ -23,3 +23,12 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 5d1b5fdd54e71e14abb65487a7b89002, type: 3}
     volumeRange: {x: 0.8, y: 1}
     pitchRange: {x: 0.95, y: 1.05}
+  - impact: 1
+    clips:
+    - {fileID: 8300000, guid: 1cdc670325b5b754197d54434985fe0c, type: 3}
+    - {fileID: 8300000, guid: 5bbfa6be7c5aea34f82b0350410388a3, type: 3}
+    - {fileID: 8300000, guid: f8248926fdd47cf4a91d7757352c02b0, type: 3}
+    - {fileID: 8300000, guid: 6f68dc69f03d2954799a1c9b648d5a8e, type: 3}
+    - {fileID: 8300000, guid: 53860a572dd2b274dae298fc1a181b33, type: 3}
+    volumeRange: {x: 0.9, y: 1}
+    pitchRange: {x: 0.95, y: 1.05}
