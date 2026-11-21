@@ -46,6 +46,43 @@ namespace HexFall.Player.Locomotion
         }
     }
 
+    // The low feet-first slide pose, blended by the slide weight: the body sinks until the seat is
+    // near the floor and both feet are placed ahead of the hips by leg IK. The left leg leads and is
+    // nearly straight, the right one trails slightly bent. Offsets are in the body's local space.
+    public static class SlidePose
+    {
+        // How far the whole model is lowered at full weight: the crouch pelvis sits about 0.28 m up, so this settles it near 0.16 m.
+        public const float HipDrop = 0.12f;
+        private const float LeadReach = 0.42f;
+        private const float TrailReach = 0.3f;
+        private const float HalfStance = 0.14f;
+        private const float FootHeight = 0.06f;
+
+        public static float HipOffset(float slideWeight)
+        {
+            return -HipDrop * Mathf.Clamp01(slideWeight);
+        }
+
+        // The foot goal relative to the body: left leads, right trails; y is above the ground.
+        public static Vector3 FootLocal(bool left)
+        {
+            return new Vector3(left ? -HalfStance : HalfStance, FootHeight, left ? LeadReach : TrailReach);
+        }
+
+        public static Vector3 FootWorld(Vector3 rootPosition, Quaternion rootRotation, float groundHeight, bool left)
+        {
+            var local = FootLocal(left);
+            var flat = rootRotation * new Vector3(local.x, 0f, local.z);
+            return new Vector3(rootPosition.x + flat.x, groundHeight + local.y, rootPosition.z + flat.z);
+        }
+
+        // The leg IK stays on while either the grounded planting or the slide pose needs it.
+        public static float FeetWeight(float groundedFeetWeight, float slideWeight)
+        {
+            return Mathf.Max(groundedFeetWeight, slideWeight);
+        }
+    }
+
     // Moves a profile toward a target at a limited speed so IK fades in and out instead of popping.
     public static class IkBlend
     {

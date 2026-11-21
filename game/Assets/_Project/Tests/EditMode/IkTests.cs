@@ -99,6 +99,64 @@ namespace HexFall.UI.Tests
         }
     }
 
+    public class SlidePoseTests
+    {
+        [Test]
+        public void TheHipsSinkInProportionToTheSlideWeight()
+        {
+            Assert.AreEqual(0f, SlidePose.HipOffset(0f), 0.0001f);
+            Assert.AreEqual(-SlidePose.HipDrop, SlidePose.HipOffset(1f), 0.0001f);
+            Assert.AreEqual(-SlidePose.HipDrop * 0.5f, SlidePose.HipOffset(0.5f), 0.0001f);
+        }
+
+        [Test]
+        public void TheSeatEndsUpCloseToTheFloor()
+        {
+            // The crouch pose already holds the pelvis about 0.28 m up (measured); the slide settles it near 0.15 m.
+            Assert.That(SlidePose.HipDrop, Is.InRange(0.1f, 0.14f));
+        }
+
+        [Test]
+        public void BothFeetSitWellAheadOfTheHipsNearTheFloorAndApart()
+        {
+            var left = SlidePose.FootLocal(true);
+            var right = SlidePose.FootLocal(false);
+            Assert.Greater(left.z, 0.4f);
+            Assert.Greater(right.z, 0.25f);
+            Assert.Less(left.x, 0f);
+            Assert.Greater(right.x, 0f);
+            Assert.That(left.y, Is.InRange(0f, 0.15f));
+            Assert.That(right.y, Is.InRange(0f, 0.15f));
+        }
+
+        [Test]
+        public void TheLeadLegReachesFartherThanTheBentOne()
+        {
+            Assert.Greater(SlidePose.FootLocal(true).z, SlidePose.FootLocal(false).z);
+        }
+
+        [Test]
+        public void FootWorldFollowsTheBodyFacingAndTheGround()
+        {
+            var root = new Vector3(2f, 5f, 3f);
+            var world = SlidePose.FootWorld(root, Quaternion.Euler(0f, 90f, 0f), 4f, true);
+            var local = SlidePose.FootLocal(true);
+            // Facing +X: local forward becomes world +X, local right becomes world -Z.
+            Assert.AreEqual(2f + local.z, world.x, 0.0001f);
+            Assert.AreEqual(3f - local.x, world.z, 0.0001f);
+            Assert.AreEqual(4f + local.y, world.y, 0.0001f);
+        }
+
+        [Test]
+        public void SlideKeepsTheFeetIkOnEvenThoughTheGroundedPlantingIsOff()
+        {
+            Assert.AreEqual(1f, SlidePose.FeetWeight(0f, 1f), 0.0001f);
+            Assert.AreEqual(1f, SlidePose.FeetWeight(1f, 0f), 0.0001f);
+            Assert.AreEqual(0f, SlidePose.FeetWeight(0f, 0f), 0.0001f);
+            Assert.AreEqual(0.4f, SlidePose.FeetWeight(0.4f, 0.2f), 0.0001f);
+        }
+    }
+
     public class IkBlendTests
     {
         private static readonly IkProfile Off = new IkProfile(0f, 0f, 0f);

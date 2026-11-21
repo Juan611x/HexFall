@@ -104,7 +104,8 @@ namespace HexFall.Player.Locomotion
             var target = IkProfiles.For(machine.Current, action);
             _profile = IkBlend.Toward(_profile, target, blendRate, Time.deltaTime);
 
-            var feetWeight = _hasAnimatedFeet ? _profile.FeetWeight : 0f;
+            var slideWeight = _profile.SlideLeanWeight;
+            var feetWeight = _hasAnimatedFeet ? SlidePose.FeetWeight(_profile.FeetWeight, slideWeight) : 0f;
             if (leftFoot != null) leftFoot.weight = feetWeight;
             if (rightFoot != null) rightFoot.weight = feetWeight;
             if (headAim != null) headAim.weight = _profile.HeadAimWeight;
@@ -112,34 +113,58 @@ namespace HexFall.Player.Locomotion
             if (slideLean != null) slideLean.weight = _profile.SlideLeanWeight;
             if (slideLeanChest != null) slideLeanChest.weight = _profile.SlideLeanWeight;
 
-            var leftDrop = _hasAnimatedFeet ? PlaceFoot(_animatedLeftFoot, leftFootTarget) : 0f;
-            var rightDrop = _hasAnimatedFeet ? PlaceFoot(_animatedRightFoot, rightFootTarget) : 0f;
-            ApplyHipOffset(leftDrop, rightDrop, feetWeight);
+            var leftDrop = _hasAnimatedFeet ? PlaceFoot(_animatedLeftFoot, leftFootTarget, true, slideWeight) : 0f;
+            var rightDrop = _hasAnimatedFeet ? PlaceFoot(_animatedRightFoot, rightFootTarget, false, slideWeight) : 0f;
+            ApplyHipOffset(leftDrop, rightDrop, _profile.FeetWeight, slideWeight);
             PlaceAimTarget();
         }
 
         // Moves the target to the animated foot shifted by how much the ground under it differs from
         // the ground under the body, and returns how much lower that ground is (for the hip drop).
-        private float PlaceFoot(Vector3 animatedPosition, Transform target)
+        // While sliding the goal blends toward the slide pose: the foot stretched out ahead of the hips.
+        private float PlaceFoot(Vector3 animatedPosition, Transform target, bool left, float slideWeight)
         {
             if (target == null) return 0f;
 
             var rootGround = transform.position.y;
+            var grounded = animatedPosition;
+            var drop = 0f;
             var origin = new Vector3(animatedPosition.x, rootGround + rayStartHeight, animatedPosition.z);
-            if (!Physics.Raycast(origin, Vector3.down, out var hit, rayLength, groundLayers, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(origin, Vector3.down, out var hit, rayLength, groundLayers, QueryTriggerInteraction.Ignore))
             {
-                target.position = animatedPosition;
-                return 0f;
+                grounded = FootPlacement.Follow(animatedPosition, rootGround, hit.point.y);
+                drop = FootPlacement.GroundDrop(rootGround, hit.point.y);
             }
 
-            target.position = FootPlacement.Follow(animatedPosition, rootGround, hit.point.y);
-            return FootPlacement.GroundDrop(rootGround, hit.point.y);
+            if (slideWeight > 0f)
+            {
+                var slideGoal = SlidePose.FootWorld(transform.position, transform.rotation, SlideGround(left, rootGround), left);
+                // The animator solves the legs with the model at its rest height and the hip drop is applied
+                // afterwards, so aim higher by that drop and the foot lands on the floor once it is applied.
+                slideGoal.y -= SlidePose.HipOffset(1f);
+                grounded = Vector3.Lerp(grounded, slideGoal, slideWeight);
+            }
+
+            target.position = grounded;
+            return drop;
         }
 
-        private void ApplyHipOffset(float leftDrop, float rightDrop, float feetWeight)
+        // The ground height under the slide foot goal, so the foot rests on the floor ahead of the body.
+        private float SlideGround(bool left, float fallback)
+        {
+            var local = SlidePose.FootLocal(left);
+            var ahead = transform.TransformPoint(new Vector3(local.x, 0f, local.z));
+            var origin = new Vector3(ahead.x, fallback + rayStartHeight, ahead.z);
+            return Physics.Raycast(origin, Vector3.down, out var hit, rayLength, groundLayers, QueryTriggerInteraction.Ignore)
+                ? hit.point.y
+                : fallback;
+        }
+
+        private void ApplyHipOffset(float leftDrop, float rightDrop, float groundedFeetWeight, float slideWeight)
         {
             if (modelRoot == null) return;
-            var wanted = FootPlacement.HipOffset(leftDrop, rightDrop, maxHipDrop) * feetWeight;
+            var wanted = FootPlacement.HipOffset(leftDrop, rightDrop, maxHipDrop) * groundedFeetWeight
+                + SlidePose.HipOffset(slideWeight);
             _hipY = Mathf.Lerp(_hipY, wanted, 1f - Mathf.Exp(-hipSmoothing * Time.deltaTime));
             var local = modelRoot.localPosition;
             local.y = _hipY;
