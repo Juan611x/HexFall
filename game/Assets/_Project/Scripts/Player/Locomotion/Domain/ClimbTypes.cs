@@ -26,6 +26,12 @@ namespace HexFall.Player.Locomotion
         public float detectionDistance = 0.8f;
         // Free space needed behind a thin top to climb over it.
         public float landingClearDepth = 0.6f;
+        // A ledge top counts as one flat surface while its height varies by no more than this.
+        public float topSurfaceTolerance = 0.1f;
+        // Spacing of the samples that measure how deep a top is; the end is refined below this.
+        public float probeStep = 0.05f;
+        // Lowest ground behind a thin top that still counts as a landing, below the top of the ledge.
+        public float maxLandingDrop = 3f;
 
         [Header("Trigger")]
         // Minimum dot between the wanted direction and the approach direction.
