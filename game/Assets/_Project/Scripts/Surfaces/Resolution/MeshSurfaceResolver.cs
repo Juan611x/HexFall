@@ -13,7 +13,14 @@ namespace HexFall.Surfaces
 
         public MeshSurfaceResolver(SurfaceRegistry registry)
         {
-            this.registry = registry;
+            this.registry = registry ?? throw new System.ArgumentNullException(nameof(registry));
+        }
+
+        // Call after rebuilding meshes or swapping material textures at runtime.
+        public void Clear()
+        {
+            rangesByMesh.Clear();
+            textureByMaterial.Clear();
         }
 
         public SurfaceDefinition Resolve(Collider collider, int triangleIndex)

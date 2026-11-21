@@ -20,6 +20,19 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void PickIndex_NaNRandom_TreatedAsZero()
+        {
+            Assert.AreEqual(0, SurfaceEffectPicker.PickIndex(4, float.NaN));
+            Assert.AreEqual(-1, SurfaceEffectPicker.PickIndex(0, float.NaN));
+        }
+
+        [Test]
+        public void Lerp_NaNRandom_ReturnsRangeStart()
+        {
+            Assert.AreEqual(0.8f, SurfaceEffectPicker.Lerp(new Vector2(0.8f, 1f), float.NaN), 1e-5f);
+        }
+
+        [Test]
         public void Lerp_InterpolatesAndClampsRandom()
         {
             var range = new Vector2(0.8f, 1f);

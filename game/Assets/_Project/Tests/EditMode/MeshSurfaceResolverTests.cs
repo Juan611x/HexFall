@@ -159,6 +159,38 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void Constructor_NullRegistry_Throws()
+        {
+            Assert.Throws<System.ArgumentNullException>(() => new MeshSurfaceResolver(null));
+        }
+
+        [Test]
+        public void Clear_DropsCachedTextures()
+        {
+            var material = MakeMaterial(stoneTex);
+            var cube = MakeCube(material);
+            var collider = cube.GetComponent<Collider>();
+            Assert.AreSame(stone, resolver.Resolve(collider, -1));
+
+            material.mainTexture = brickTex;
+            Assert.AreSame(stone, resolver.Resolve(collider, -1), "cached until cleared");
+
+            resolver.Clear();
+            Assert.AreSame(brick, resolver.Resolve(collider, -1));
+        }
+
+        [Test]
+        public void Resolve_RaycastHit_ReturnsMappedSurface()
+        {
+            var cube = MakeCube(MakeMaterial(brickTex));
+            cube.transform.position = new Vector3(500f, 0f, 500f);
+            Physics.SyncTransforms();
+
+            Assert.IsTrue(Physics.Raycast(cube.transform.position + Vector3.up * 3f, Vector3.down, out var hit, 10f));
+            Assert.AreSame(brick, resolver.Resolve(hit));
+        }
+
+        [Test]
         public void Resolve_NullCollider_ReturnsDefault()
         {
             Assert.AreSame(fallback, resolver.Resolve(null, 0));
