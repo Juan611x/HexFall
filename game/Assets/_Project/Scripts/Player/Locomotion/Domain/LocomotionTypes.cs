@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace HexFall.Player.Locomotion
 {
-    public enum LocomotionStateId { Grounded, Jump, Fall, Crouch, Slide }
+    public enum LocomotionStateId { Grounded, Jump, Fall, Crouch, Slide, Climb }
 
     // What the player wants this frame. Move is x right / y forward (magnitude 0..1) and is read
     // relative to the camera yaw, given in degrees.
@@ -31,11 +31,14 @@ namespace HexFall.Player.Locomotion
         public readonly bool Grounded;
         // False when a ceiling leaves no room to stand up from a crouch.
         public readonly bool CanStand;
+        // The ledge in front of the body; HasLedge is false when there is none.
+        public readonly LedgeMeasurement Ledge;
 
-        public GroundSense(bool grounded, bool canStand = true)
+        public GroundSense(bool grounded, bool canStand = true, LedgeMeasurement ledge = default)
         {
             Grounded = grounded;
             CanStand = canStand;
+            Ledge = ledge;
         }
     }
 
@@ -79,6 +82,8 @@ namespace HexFall.Player.Locomotion
         public float slideMaxSeconds = 1.6f;
         // Fraction of the normal turn authority kept while sliding.
         public float slideSteering = 0.25f;
+
+        public ClimbSettings climb = new ClimbSettings();
     }
 
     // Mutable body state shared by the states.
@@ -95,6 +100,24 @@ namespace HexFall.Player.Locomotion
         // Target capsule height the motor applies; set by the states on enter.
         public float BodyHeight;
         public float SlideElapsed;
+        // Body position (the transform, at the feet); the motor writes it before each tick.
+        public Vector3 Position;
+        // Climb: what is being climbed, the ledge it was classified from, time into it and 0..1 progress.
+        // The kind and progress are kept after the climb ends for the animator.
+        public ClimbKind ClimbKind;
+        public LedgeMeasurement ClimbLedge;
+        public float ClimbElapsed;
+        public float ClimbProgress;
+        // True from the moment the over phase of a ClimbOver starts (after the pull-up), so the animator
+        // can leave the climb clip for the in-air pose. Reset when a climb starts, kept after it ends.
+        public bool ClimbOverPhase;
+        // The current fall started from a climb over, so the animator plays the hop instead of the
+        // generic in-air pose. Set when the over climb ends; cleared on landing or when a climb starts.
+        public bool ClimbOverDrop;
+        // The last landing ended a climb-over drop; read by the animator on the landing change.
+        public bool LandedFromClimbOver;
+        // World position the body must reach by the end of this tick; Velocity carries it there.
+        public Vector3 ClimbTarget;
     }
 
     public interface ILocomotionState

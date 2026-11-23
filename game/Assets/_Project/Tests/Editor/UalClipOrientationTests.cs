@@ -32,6 +32,7 @@ namespace HexFall.Editor.Build.Tests
         [TestCase("Crouch_Idle_Loop")]
         [TestCase("Jump_Start")]
         [TestCase("Spell_Simple_Shoot")]
+        [TestCase("ClimbUp_1m")]
         public void InPlaceClipsKeepUnitysBodyOrientation(string name)
         {
             var clip = Clip(name);

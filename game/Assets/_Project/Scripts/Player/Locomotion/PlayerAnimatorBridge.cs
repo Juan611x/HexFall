@@ -40,11 +40,16 @@ namespace HexFall.Player.Locomotion
             new StateMapping(AnimatorStateSelector.JumpLand, "JumpLand"),
             new StateMapping(AnimatorStateSelector.Crouch, "Crouch"),
             new StateMapping(AnimatorStateSelector.Slide, "Slide"),
+            new StateMapping(AnimatorStateSelector.Climb, "Climb"),
+            new StateMapping(AnimatorStateSelector.Hop, "Hop"),
+            new StateMapping(AnimatorStateSelector.HopLand, "HopLand"),
         };
 
         private Animator _animator;
         private PlayerMotor _motor;
         private LocomotionMachine _subscribed;
+        // Remembers the hop fade shown during the over phase of a climb over.
+        private readonly ClimbOverFade _overFade = new ClimbOverFade();
 
         private void Awake()
         {
@@ -70,6 +75,13 @@ namespace HexFall.Player.Locomotion
             _animator.SetBool(GroundedId, _motor.IsGrounded);
             _animator.SetBool(FreeFallId, machine.Current == LocomotionStateId.Fall);
             _animator.SetBool(JumpId, machine.Current == LocomotionStateId.Jump);
+
+            // The climb clip ends before the over phase: hop over instead of holding the last climb frame.
+            if (_overFade.ShouldFadeNow(machine.Current, machine.Context.ClimbOverPhase))
+            {
+                var overState = StateNameFor(AnimatorStateSelector.ForClimb(true));
+                if (overState != null) _animator.CrossFadeInFixedTime(Animator.StringToHash(overState), crossFadeSeconds, 0);
+            }
         }
 
         // Animator state names the controller must contain for the mapping to work.
@@ -95,8 +107,11 @@ namespace HexFall.Player.Locomotion
 
         private void OnStateChanged(LocomotionStateId from, LocomotionStateId to)
         {
+            if (_overFade.SkipsStateFade(from, to)) return;
+
             var context = _motor.Machine.Context;
-            var key = AnimatorStateSelector.For(to, from, context.LastLandingSpeed, context.PlanarSpeed, hardLandingSpeed);
+            var fromClimbOver = to == LocomotionStateId.Fall ? context.ClimbOverDrop : context.LandedFromClimbOver;
+            var key = AnimatorStateSelector.For(to, from, context.LastLandingSpeed, context.PlanarSpeed, hardLandingSpeed, fromClimbOver);
             var stateName = StateNameFor(key);
             if (stateName == null)
             {

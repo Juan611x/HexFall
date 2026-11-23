@@ -499,6 +499,9 @@ namespace HexFall.UI.Tests
                 AnimatorStateSelector.For(LocomotionStateId.Slide, LocomotionStateId.Grounded, 0f, 6f, 5f));
             Assert.AreEqual("Crouch", AnimatorStateSelector.Crouch);
             Assert.AreEqual("Slide", AnimatorStateSelector.Slide);
+            Assert.AreEqual(AnimatorStateSelector.Climb,
+                AnimatorStateSelector.For(LocomotionStateId.Climb, LocomotionStateId.Grounded, 0f, 0f, 5f));
+            Assert.AreEqual("Climb", AnimatorStateSelector.Climb);
         }
 
         [Test]

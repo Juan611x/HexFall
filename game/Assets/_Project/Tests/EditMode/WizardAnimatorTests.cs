@@ -61,7 +61,7 @@ namespace HexFall.UI.Tests
         [Test]
         public void EverySelectorKeyIsMapped()
         {
-            foreach (var key in new[] { AnimatorStateSelector.Locomotion, AnimatorStateSelector.JumpStart, AnimatorStateSelector.InAir, AnimatorStateSelector.JumpLand, AnimatorStateSelector.Crouch, AnimatorStateSelector.Slide })
+            foreach (var key in new[] { AnimatorStateSelector.Locomotion, AnimatorStateSelector.JumpStart, AnimatorStateSelector.InAir, AnimatorStateSelector.JumpLand, AnimatorStateSelector.Crouch, AnimatorStateSelector.Slide, AnimatorStateSelector.Climb, AnimatorStateSelector.Hop, AnimatorStateSelector.HopLand })
                 Assert.IsNotNull(_bridge.StateNameFor(key), key);
         }
 
@@ -126,6 +126,54 @@ namespace HexFall.UI.Tests
             Assert.IsNotNull(loop);
             Assert.AreEqual("Slide_Loop", loop.name);
             Assert.AreEqual(Ual2Path, AssetDatabase.GetAssetPath(loop));
+        }
+
+        [Test]
+        public void ClimbPlaysTheUal2ClimbUpClipOnceAndOnlyTheBridgeLeavesIt()
+        {
+            var state = StateFor(AnimatorStateSelector.Climb);
+            var clip = state.motion as AnimationClip;
+            Assert.IsNotNull(clip);
+            Assert.AreEqual("ClimbUp_1m", clip.name);
+            Assert.AreEqual(Ual2Path, AssetDatabase.GetAssetPath(clip));
+            Assert.IsFalse(clip.isLooping);
+            Assert.IsEmpty(state.transitions, "Only the bridge may leave the climb state.");
+        }
+
+        // The bridge only enters "Hop"; the ninja jump start hands over to its loop inside the animator.
+        [Test]
+        public void HopStartsWithTheNinjaJumpStartThenLoopsTheIdleLoop()
+        {
+            var start = StateFor(AnimatorStateSelector.Hop);
+            Assert.AreEqual("NinjaJump_Start", start.motion.name);
+            Assert.AreEqual(Ual2Path, AssetDatabase.GetAssetPath(start.motion));
+            Assert.AreEqual(1, start.transitions.Length);
+            var transition = start.transitions[0];
+            Assert.IsTrue(transition.hasExitTime);
+            Assert.IsEmpty(transition.conditions);
+
+            var loop = transition.destinationState.motion as AnimationClip;
+            Assert.IsNotNull(loop);
+            Assert.AreEqual("NinjaJump_Idle_Loop", loop.name);
+            Assert.IsTrue(loop.isLooping);
+            Assert.IsEmpty(transition.destinationState.transitions, "Only the bridge may leave the hop loop.");
+        }
+
+        [Test]
+        public void HopLandPlaysTheNinjaLandClipAndReturnsToLocomotion()
+        {
+            var land = StateFor(AnimatorStateSelector.HopLand);
+            Assert.AreEqual("NinjaJump_Land", land.motion.name);
+            Assert.AreEqual(Ual2Path, AssetDatabase.GetAssetPath(land.motion));
+            Assert.IsFalse(((AnimationClip)land.motion).isLooping);
+
+            var locomotion = StateFor(AnimatorStateSelector.Locomotion);
+            Assert.IsNotEmpty(land.transitions);
+            foreach (var transition in land.transitions)
+                Assert.AreSame(locomotion, transition.destinationState);
+            Assert.IsTrue(land.transitions.Any(t => t.hasExitTime && t.conditions.Length == 0), "ends by itself");
+            // Walking or running cuts the land short; the slide to a stop after a hop (about 1 m/s) must not.
+            Assert.IsTrue(land.transitions.Any(t => !t.hasExitTime && t.conditions.Any(c => c.parameter == "Speed" && c.mode == AnimatorConditionMode.Greater && c.threshold >= 1f)), "moving cuts it short");
         }
 
         [Test]

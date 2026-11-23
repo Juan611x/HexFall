@@ -1148,6 +1148,22 @@ MonoBehaviour:
     slideEndSpeed: 1.8
     slideMaxSeconds: 1.6
     slideSteering: 0.25
+    climb:
+      climbMinHeight: 0.5
+      climbMaxHeight: 1.2
+      standDepth: 0.5
+      overMaxThickness: 0.6
+      minHeadroom: 1.8
+      detectionDistance: 0.8
+      landingClearDepth: 0.6
+      approachMinDot: 0.5
+      airGrabWindowSeconds: 0.5
+      reachSeconds: 0.3333
+      pullUpSeconds: 0.3333
+      reachRiseFraction: 0.6
+      wallStandoff: 0.3
+      forwardOntoTop: 0.4
+      overPushSpeed: 2.5
   groundedOffset: -0.14
   groundedRadius: 0.28
   groundLayers:
@@ -1182,6 +1198,12 @@ MonoBehaviour:
     stateName: Crouch
   - key: Slide
     stateName: Slide
+  - key: Climb
+    stateName: Climb
+  - key: Hop
+    stateName: Hop
+  - key: HopLand
+    stateName: HopLand
 --- !u!114 &8727903132480738405
 MonoBehaviour:
   m_ObjectHideFlags: 0

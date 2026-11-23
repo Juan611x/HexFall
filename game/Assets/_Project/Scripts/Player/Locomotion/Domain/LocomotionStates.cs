@@ -3,7 +3,8 @@ using UnityEngine;
 namespace HexFall.Player.Locomotion
 {
     // On the ground: accelerates toward the target speed, holds a small downward speed, and jumps on
-    // a press, a buffered press or within the coyote window after leaving the ground.
+    // a press, a buffered press or within the coyote window after leaving the ground; a press toward a
+    // climbable ledge climbs instead.
     public sealed class GroundedState : ILocomotionState
     {
         private readonly LocomotionSettings _settings;
@@ -28,6 +29,8 @@ namespace HexFall.Player.Locomotion
             var canJump = ctx.JumpCooldown <= 0f
                 && ctx.TimeSinceJumpPressed <= _settings.jumpBufferSeconds
                 && ctx.TimeSinceGrounded <= _settings.coyoteSeconds;
+            // A climb takes priority over the jump it would otherwise become.
+            if (canJump && ClimbEntry.TryStart(ctx, _settings, intent, ground)) return LocomotionStateId.Climb;
             if (canJump) return LocomotionStateId.Jump;
             if (intent.CrouchPressed && ground.Grounded)
             {
@@ -64,6 +67,8 @@ namespace HexFall.Player.Locomotion
 
         public LocomotionStateId Tick(LocomotionContext ctx, PlayerIntent intent, GroundSense ground, float deltaTime)
         {
+            if (ctx.TimeSinceGrounded <= _settings.climb.airGrabWindowSeconds && ClimbEntry.TryStart(ctx, _settings, intent, ground))
+                return LocomotionStateId.Climb;
             LocomotionMath.ApplyPlanar(ctx, _settings, intent, deltaTime, _settings.airControl);
             LocomotionMath.ApplyGravity(ctx, _settings, deltaTime);
             return ctx.Velocity.y <= 0f ? LocomotionStateId.Fall : Id;
@@ -93,10 +98,14 @@ namespace HexFall.Player.Locomotion
 
         public LocomotionStateId Tick(LocomotionContext ctx, PlayerIntent intent, GroundSense ground, float deltaTime)
         {
+            if (!ground.Grounded && ctx.TimeSinceGrounded <= _settings.climb.airGrabWindowSeconds && ClimbEntry.TryStart(ctx, _settings, intent, ground))
+                return LocomotionStateId.Climb;
             LocomotionMath.ApplyPlanar(ctx, _settings, intent, deltaTime, _settings.airControl);
             if (ground.Grounded)
             {
                 ctx.LastLandingSpeed = Mathf.Abs(ctx.Velocity.y);
+                ctx.LandedFromClimbOver = ctx.ClimbOverDrop;
+                ctx.ClimbOverDrop = false;
                 return LocomotionStateId.Grounded;
             }
             LocomotionMath.ApplyGravity(ctx, _settings, deltaTime);

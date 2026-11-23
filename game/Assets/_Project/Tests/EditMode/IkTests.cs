@@ -89,6 +89,24 @@ namespace HexFall.UI.Tests
         }
     }
 
+    public class ClimbAimProfileTests
+    {
+        // The climb clip owns the whole body: no foot planting, no chest twist, and the head is left to
+        // the clip (it looks at the ledge) unless the wizard is acting.
+        [Test]
+        public void ClimbLeavesTheBodyToTheClip()
+        {
+            foreach (ActionStateId action in System.Enum.GetValues(typeof(ActionStateId)))
+            {
+                var profile = IkProfiles.For(LocomotionStateId.Climb, action);
+                Assert.AreEqual(0f, profile.FeetWeight, 0.0001f, $"feet {action}");
+                Assert.AreEqual(0f, profile.ChestAimWeight, 0.0001f, $"chest {action}");
+                Assert.AreEqual(IkProfiles.ClimbHeadAim, profile.HeadAimWeight, 0.0001f, $"head {action}");
+            }
+            Assert.AreEqual(0f, IkProfiles.ClimbHeadAim, 0.0001f);
+        }
+    }
+
     public class IkBlendTests
     {
         private static readonly IkProfile Off = new IkProfile(0f, 0f, 0f);
