@@ -108,6 +108,9 @@ namespace HexFall.Player.Locomotion
         public LedgeMeasurement ClimbLedge;
         public float ClimbElapsed;
         public float ClimbProgress;
+        // True from the moment the over phase of a ClimbOver starts (after the pull-up), so the animator
+        // can leave the climb clip for the in-air pose. Reset when a climb starts, kept after it ends.
+        public bool ClimbOverPhase;
         // World position the body must reach by the end of this tick; Velocity carries it there.
         public Vector3 ClimbTarget;
     }

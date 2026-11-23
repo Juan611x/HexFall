@@ -47,8 +47,9 @@ namespace HexFall.Player.Locomotion
         [Header("Scripted path")]
         // The scripted path plays once alongside the ClimbUp_1m clip (0.667 s at animator speed 1):
         // reachSeconds + pullUpSeconds should equal the clip length, split at frame 10 (30 fps) where
-        // the hands are highest and the body starts to come upright. Longer paths freeze the clip on
-        // its last pose (it ends where it began), so change both together or the animator state speed.
+        // the hands are highest and the body starts to come upright. Longer paths would hold the clip
+        // on its last pose, so change both together or the animator state speed. The over phase
+        // (overSeconds) is past the clip: the animator cross-fades to the in-air pose when it starts.
         // Phase 1: reach the wall face below the top.
         public float reachSeconds = 0.3333f;
         // Phase 2: pull up onto the top.

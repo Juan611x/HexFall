@@ -629,5 +629,86 @@ namespace HexFall.UI.Tests
             var late = new LocomotionContext { TimeSinceJumpPressed = 0f, TimeSinceGrounded = 5f };
             Assert.IsFalse(ClimbEntry.ShouldProbe(late, move, settings, Dt, false), "airborne past the grab window");
         }
+
+        // Climb over: the animator hops into the in-air pose when the over phase starts
+
+        // Ticks until the over phase flag turns on (or the climb ends); returns the elapsed time then.
+        private static float TickUntilOverPhase(LocomotionMachine machine, GroundSense ground)
+        {
+            for (var i = 0; i < 1000 && machine.Current == LocomotionStateId.Climb; i++)
+            {
+                machine.Tick(Idle(), ground, Dt);
+                machine.Context.Position = machine.Context.ClimbTarget;
+                if (machine.Context.ClimbOverPhase) return machine.Context.ClimbElapsed;
+            }
+            return -1f;
+        }
+
+        [Test]
+        public void ClimbOverPhaseStartsOnlyAfterThePullUpEnds()
+        {
+            var settings = Settings();
+            var machine = StandingAtOrigin(settings);
+            var ledge = ClimbOverLedge();
+            machine.Tick(Forward(jump: true), Ground(ledge), Dt);
+            Assert.IsFalse(machine.Context.ClimbOverPhase, "not on enter");
+
+            var elapsed = TickUntilOverPhase(machine, Ground(ledge));
+
+            var pullEnd = settings.climb.reachSeconds + settings.climb.pullUpSeconds;
+            Assert.Greater(elapsed, pullEnd);
+            Assert.LessOrEqual(elapsed, pullEnd + Dt + 0.0001f);
+        }
+
+        [Test]
+        public void ClimbUpNeverRaisesTheOverPhase()
+        {
+            var machine = StandingAtOrigin();
+            var ledge = ClimbUpLedge();
+            machine.Tick(Forward(jump: true), Ground(ledge), Dt);
+
+            var sawOver = false;
+            while (machine.Current == LocomotionStateId.Climb)
+            {
+                machine.Tick(Idle(), Ground(ledge), Dt);
+                machine.Context.Position = machine.Context.ClimbTarget;
+                sawOver |= machine.Context.ClimbOverPhase;
+            }
+
+            Assert.IsFalse(sawOver);
+        }
+
+        [Test]
+        public void TheOverPhaseFlagResetsWhenAnotherClimbStarts()
+        {
+            var machine = StandingAtOrigin();
+            var over = ClimbOverLedge();
+            machine.Tick(Forward(jump: true), Ground(over), Dt);
+            RunClimb(machine, Ground(over));
+            Assert.IsTrue(machine.Context.ClimbOverPhase, "kept after the over climb ends");
+
+            var up = ClimbUpLedge();
+            machine.Context.Position = Vector3.zero;
+            machine.Tick(Forward(jump: true), Air(up), Dt);
+
+            Assert.AreEqual(LocomotionStateId.Climb, machine.Current);
+            Assert.IsFalse(machine.Context.ClimbOverPhase);
+        }
+
+        [Test]
+        public void ClimbShowsTheClimbClipUntilTheOverPhaseThenTheInAirPose()
+        {
+            Assert.AreEqual(AnimatorStateSelector.Climb, AnimatorStateSelector.ForClimb(false));
+            Assert.AreEqual(AnimatorStateSelector.InAir, AnimatorStateSelector.ForClimb(true));
+        }
+
+        [Test]
+        public void TheFallAfterAnOverClimbDoesNotRestartTheInAirFade()
+        {
+            Assert.IsTrue(AnimatorStateSelector.FadeAlreadyShown(LocomotionStateId.Climb, LocomotionStateId.Fall, true));
+            Assert.IsFalse(AnimatorStateSelector.FadeAlreadyShown(LocomotionStateId.Climb, LocomotionStateId.Fall, false));
+            Assert.IsFalse(AnimatorStateSelector.FadeAlreadyShown(LocomotionStateId.Climb, LocomotionStateId.Grounded, true));
+            Assert.IsFalse(AnimatorStateSelector.FadeAlreadyShown(LocomotionStateId.Jump, LocomotionStateId.Fall, true));
+        }
     }
 }

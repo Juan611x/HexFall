@@ -46,6 +46,8 @@ namespace HexFall.Player.Locomotion
         private Animator _animator;
         private PlayerMotor _motor;
         private LocomotionMachine _subscribed;
+        // The in-air pose was already faded to during the over phase of a climb over.
+        private bool _overPoseShown;
 
         private void Awake()
         {
@@ -71,6 +73,18 @@ namespace HexFall.Player.Locomotion
             _animator.SetBool(GroundedId, _motor.IsGrounded);
             _animator.SetBool(FreeFallId, machine.Current == LocomotionStateId.Fall);
             _animator.SetBool(JumpId, machine.Current == LocomotionStateId.Jump);
+
+            // The climb clip ends before the over phase: hop over in the in-air pose instead of
+            // holding the last climb frame.
+            if (machine.Current == LocomotionStateId.Climb && !_overPoseShown && machine.Context.ClimbOverPhase)
+            {
+                var overState = StateNameFor(AnimatorStateSelector.ForClimb(true));
+                if (overState != null)
+                {
+                    _overPoseShown = true;
+                    _animator.CrossFadeInFixedTime(Animator.StringToHash(overState), crossFadeSeconds, 0);
+                }
+            }
         }
 
         // Animator state names the controller must contain for the mapping to work.
@@ -96,6 +110,10 @@ namespace HexFall.Player.Locomotion
 
         private void OnStateChanged(LocomotionStateId from, LocomotionStateId to)
         {
+            var overPoseShown = _overPoseShown;
+            _overPoseShown = false;
+            if (AnimatorStateSelector.FadeAlreadyShown(from, to, overPoseShown)) return;
+
             var context = _motor.Machine.Context;
             var key = AnimatorStateSelector.For(to, from, context.LastLandingSpeed, context.PlanarSpeed, hardLandingSpeed);
             var stateName = StateNameFor(key);

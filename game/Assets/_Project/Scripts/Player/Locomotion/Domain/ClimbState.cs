@@ -87,6 +87,7 @@ namespace HexFall.Player.Locomotion
             ctx.TimeSinceJumpPressed = float.PositiveInfinity;
             ctx.ClimbElapsed = 0f;
             ctx.ClimbProgress = 0f;
+            ctx.ClimbOverPhase = false;
             ctx.Velocity = Vector3.zero;
 
             _approach = new Vector3(ledge.ApproachDirection.x, 0f, ledge.ApproachDirection.z);
@@ -116,6 +117,7 @@ namespace HexFall.Player.Locomotion
             if (ctx.ClimbElapsed >= _total - Epsilon) ctx.ClimbElapsed = _total;
             ctx.ClimbProgress = _total > 0f ? ctx.ClimbElapsed / _total : 1f;
 
+            ctx.ClimbOverPhase = ctx.ClimbKind == ClimbKind.ClimbOver && ctx.ClimbElapsed > _pullEnd;
             ctx.ClimbTarget = Evaluate(ctx.ClimbElapsed);
             ctx.Velocity = deltaTime > 0f ? (ctx.ClimbTarget - ctx.Position) / deltaTime : Vector3.zero;
             ctx.PlanarSpeed = new Vector2(ctx.Velocity.x, ctx.Velocity.z).magnitude;

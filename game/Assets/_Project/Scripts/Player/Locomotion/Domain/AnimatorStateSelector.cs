@@ -14,6 +14,15 @@ namespace HexFall.Player.Locomotion
 
         private const float StandingPlanarSpeed = 0.5f;
 
+        // Animator state shown while climbing: the climb clip, or the in-air pose once a climb over
+        // reaches its over phase (the clip has ended there and would otherwise hold its last frame).
+        public static string ForClimb(bool overPhase) => overPhase ? InAir : Climb;
+
+        // True when the Climb to Fall change needs no cross-fade because the animator already shows
+        // the in-air pose from the over phase; restarting it would replay the fade.
+        public static bool FadeAlreadyShown(LocomotionStateId from, LocomotionStateId to, bool inAirShown) =>
+            inAirShown && from == LocomotionStateId.Climb && to == LocomotionStateId.Fall;
+
         // A standing hard landing plays the land clip; moving landings blend straight into locomotion
         // so the run is not interrupted.
         public static string For(LocomotionStateId to, LocomotionStateId from, float landingSpeed, float planarSpeed, float hardLandingSpeed)
