@@ -1,3 +1,4 @@
+using HexFall.UI;
 using UnityEngine;
 
 namespace HexFall.Player
@@ -9,6 +10,8 @@ namespace HexFall.Player
         [SerializeField] private int maxHealth = 100;
         [SerializeField] private float resetSeconds = 3f;
         [SerializeField] private TextMesh label;
+        [Tooltip("Height above the feet where damage numbers appear.")]
+        [SerializeField] private float damagePopupHeight = 1.6f;
 
         private static readonly int HitTrigger = Animator.StringToHash("Hit");
         private static readonly int DeadBool = Animator.StringToHash("Dead");
@@ -31,6 +34,7 @@ namespace HexFall.Player
         {
             if (_health.IsDead) return;
             _lastDamage = _health.TakeDamage(damage);
+            DamageFeed.Report(transform.position + Vector3.up * damagePopupHeight, _lastDamage);
             if (_health.IsDead)
             {
                 _animator.SetBool(DeadBool, true);

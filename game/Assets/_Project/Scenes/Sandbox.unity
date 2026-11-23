@@ -382,6 +382,7 @@ GameObject:
   - component: {fileID: 763703234}
   - component: {fileID: 763703233}
   - component: {fileID: 763703235}
+  - component: {fileID: 763703236}
   m_Layer: 0
   m_Name: Hud
   m_TagString: Untagged
@@ -444,6 +445,24 @@ MonoBehaviour:
   maxHealth: 100
   shieldCharges: 3
   maxShieldCharges: 3
+--- !u!114 &763703236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763703232}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af3c4da983e233c49bc0f29e2b69ae24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.UI::HexFall.UI.DamagePopupLayer
+  lifetimeSeconds: 0.9
+  riseHeight: 0.8
+  popScale: 1.6
+  popSeconds: 0.15
+  fadeSeconds: 0.3
+  driftSpacing: 0.35
 --- !u!1001 &1111271095
 PrefabInstance:
   m_ObjectHideFlags: 0
