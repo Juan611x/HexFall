@@ -9,3 +9,46 @@
     height: 48px;
     color: #5eead4;
 }
+
+/* Player cluster, "ink and runes": a 400x130 design space; label offsets match InkPlayerHudElement. */
+.hud-player {
+    position: absolute;
+    left: 16px;
+    bottom: 14px;
+    width: 400px;
+    height: 130px;
+}
+
+.hud-player > Label {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    -unity-font-definition: url("project://database/Assets/_Project/UI/Fonts/CinzelDecorative-Bold.ttf");
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
+}
+
+.hud-player__portrait {
+    left: 22px;
+    top: 59px;
+    width: 72px;
+    -unity-text-align: middle-center;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: #a39fc0;
+}
+
+.hud-player__name {
+    left: 124px;
+    top: 34px;
+    font-size: 15px;
+    color: #f5dca6;
+}
+
+.hud-player__health {
+    left: 276px;
+    top: 37px;
+    width: 100px;
+    -unity-text-align: upper-right;
+    font-size: 12px;
+    color: #fda4af;
+}
