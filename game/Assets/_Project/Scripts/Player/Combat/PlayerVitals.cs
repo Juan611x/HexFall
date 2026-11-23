@@ -5,7 +5,7 @@ namespace HexFall.Player
 {
     // The player's health. Incoming hits go through the shield first (PlayerCombat), the rest is taken
     // from health, and the HUD is kept in sync. Until there is a death flow the wizard is simply
-    // restored to full health when defeated.
+    // restored to full health and shield charges when defeated.
     [RequireComponent(typeof(PlayerCombat))]
     public class PlayerVitals : MonoBehaviour, IDamageable
     {
@@ -36,8 +36,9 @@ namespace HexFall.Player
             Debug.Log($"[Player] hit {damage}: {hit.Grade}, took {hit.Taken}, health {_health.Current}/{_health.Max}");
             if (_health.IsDead)
             {
-                Debug.Log("[Player] defeated; restoring health for testing");
+                Debug.Log("[Player] defeated; restoring health and shield for testing");
                 _health.Reset();
+                _combat.RefillShield();
             }
             Push();
         }

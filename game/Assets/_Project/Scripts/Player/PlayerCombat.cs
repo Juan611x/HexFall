@@ -119,6 +119,9 @@ namespace HexFall.Player
             if (shield != null) shield.Flash(guardSeconds);
         }
 
+        // Restores every shield charge. False when the shield was already full.
+        public bool RefillShield() => _shield.Refill(Time.time);
+
         public HitResult ResolveHit(int damage)
         {
             var hit = _shield.Resolve(damage, Time.time);

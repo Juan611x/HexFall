@@ -67,6 +67,14 @@ namespace HexFall.Player
             return true;
         }
 
+        // Restores every charge at once (pickups, respawn). False when nothing was missing.
+        public bool Refill(float now)
+        {
+            if (Charges(now) == _maxCharges) return false;
+            _charges = _maxCharges;
+            return true;
+        }
+
         public bool IsGuarding(float now) => now >= _raisedAt && now < _raisedAt + _guardSeconds;
 
         public ParryGrade GradeAt(float hitTime)
