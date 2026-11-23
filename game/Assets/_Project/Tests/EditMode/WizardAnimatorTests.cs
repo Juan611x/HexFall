@@ -61,7 +61,7 @@ namespace HexFall.UI.Tests
         [Test]
         public void EverySelectorKeyIsMapped()
         {
-            foreach (var key in new[] { AnimatorStateSelector.Locomotion, AnimatorStateSelector.JumpStart, AnimatorStateSelector.InAir, AnimatorStateSelector.JumpLand })
+            foreach (var key in new[] { AnimatorStateSelector.Locomotion, AnimatorStateSelector.JumpStart, AnimatorStateSelector.InAir, AnimatorStateSelector.JumpLand, AnimatorStateSelector.Crouch, AnimatorStateSelector.Slide })
                 Assert.IsNotNull(_bridge.StateNameFor(key), key);
         }
 
@@ -83,6 +83,57 @@ namespace HexFall.UI.Tests
             var speeds = PrefabSpeeds();
             var thresholds = tree.children.OrderBy(c => c.threshold).Select(c => c.threshold).ToArray();
             CollectionAssert.AreEqual(new[] { 0f, speeds[0], speeds[1], speeds[2] }, thresholds);
+        }
+
+        private AnimatorState StateFor(string key) =>
+            Base.states.First(s => s.state.name == _bridge.StateNameFor(key)).state;
+
+        [Test]
+        public void CrouchBlendTreeGoesIdleToForwardAtTheCrouchSpeed()
+        {
+            var tree = (BlendTree)StateFor(AnimatorStateSelector.Crouch).motion;
+            Assert.AreEqual("Speed", tree.blendParameter);
+            var ordered = tree.children.OrderBy(c => c.threshold).ToArray();
+            CollectionAssert.AreEqual(new[] { "Crouch_Idle_Loop", "Crouch_Fwd_Loop" }, ordered.Select(c => c.motion.name).ToArray());
+            var crouchSpeed = new SerializedObject(_player.GetComponent<PlayerMotor>())
+                .FindProperty("settings").FindPropertyRelative("crouchSpeed").floatValue;
+            Assert.AreEqual(0f, ordered[0].threshold, 1e-5f);
+            Assert.AreEqual(crouchSpeed, ordered[1].threshold, 1e-5f);
+        }
+
+        private const string Ual2Path = SlideAnimationImportTests.FbxPath;
+
+        [Test]
+        public void SlideStartsWithTheUal2StartClip()
+        {
+            var clip = StateFor(AnimatorStateSelector.Slide).motion;
+            Assert.IsNotNull(clip);
+            Assert.AreEqual("Slide_Start", clip.name);
+            Assert.AreEqual(Ual2Path, AssetDatabase.GetAssetPath(clip));
+        }
+
+        // The bridge only enters the "Slide" state; the clip chain runs inside the animator by itself.
+        [Test]
+        public void SlideStartHandsOverToTheLoopWithoutParameters()
+        {
+            var start = StateFor(AnimatorStateSelector.Slide);
+            Assert.AreEqual(1, start.transitions.Length);
+            var transition = start.transitions[0];
+            Assert.IsTrue(transition.hasExitTime);
+            Assert.IsEmpty(transition.conditions);
+            Assert.IsNotNull(transition.destinationState);
+            var loop = transition.destinationState.motion as AnimationClip;
+            Assert.IsNotNull(loop);
+            Assert.AreEqual("Slide_Loop", loop.name);
+            Assert.AreEqual(Ual2Path, AssetDatabase.GetAssetPath(loop));
+        }
+
+        [Test]
+        public void SlideLoopRepeatsUntilTheLocomotionStateLeaves()
+        {
+            var loopState = StateFor(AnimatorStateSelector.Slide).transitions[0].destinationState;
+            Assert.IsTrue(((AnimationClip)loopState.motion).isLooping);
+            Assert.IsEmpty(loopState.transitions, "Only the bridge may leave the slide loop.");
         }
 
         [Test]

@@ -13,6 +13,10 @@ namespace HexFall.Editor.Build.Tests
         [TestCase("Jog_Fwd_Loop")]
         [TestCase("Sprint_Loop")]
         [TestCase("Run_Loop")]
+        [TestCase("Crouch_Fwd_Loop")]
+        [TestCase("Slide_Start")]
+        [TestCase("Slide_Loop")]
+        [TestCase("Slide_Exit")]
         public void TravellingClipsFaceTheirAuthoredDirectionTurnedToUnityForward(string name)
         {
             var clip = Clip(name);
@@ -25,6 +29,7 @@ namespace HexFall.Editor.Build.Tests
         }
 
         [TestCase("Idle_Loop")]
+        [TestCase("Crouch_Idle_Loop")]
         [TestCase("Jump_Start")]
         [TestCase("Spell_Simple_Shoot")]
         public void InPlaceClipsKeepUnitysBodyOrientation(string name)
@@ -42,6 +47,7 @@ namespace HexFall.Editor.Build.Tests
         public void OnlyTheUniversalAnimationLibraryIsAffected()
         {
             Assert.IsTrue(UalClipOrientation.AppliesTo("Assets/ThirdParty/Quaternius/UniversalAnimationLibrary/UAL1_Standard.fbx"));
+            Assert.IsTrue(UalClipOrientation.AppliesTo("Assets/ThirdParty/Quaternius/UniversalAnimationLibrary2/UAL2_Standard.fbx"));
             Assert.IsFalse(UalClipOrientation.AppliesTo("Assets/_Project/Art/Characters/Wizard/WizardHumanoid.fbx"));
         }
     }

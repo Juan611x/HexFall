@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace HexFall.UI.Tests
 {
-    // The shipped surfaces carry the imported Kenney footsteps: concrete on brick, grass on stone.
+    // The shipped surfaces carry the imported Kenney footsteps: concrete on brick and on stone.
     public class FootstepAssetsTests
     {
         private const string PackPath = "Assets/ThirdParty/Kenney/ImpactSounds";
@@ -35,9 +35,9 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void StoneStepsUseTheGrassFootsteps()
+        public void StoneStepsUseTheConcreteFootsteps()
         {
-            AssertClips(FootstepOf("Assets/_Project/Surfaces/Surface_Stone.asset"), "footstep_grass");
+            AssertClips(FootstepOf("Assets/_Project/Surfaces/Surface_Stone.asset"), "footstep_concrete");
         }
 
         private static void AssertLandingClips(string surfacePath)

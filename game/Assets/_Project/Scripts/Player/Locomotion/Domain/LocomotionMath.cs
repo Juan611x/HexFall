@@ -23,6 +23,20 @@ namespace HexFall.Player.Locomotion
         // accelerationScale lowers the control while airborne.
         public static void ApplyPlanar(LocomotionContext ctx, LocomotionSettings settings, PlayerIntent intent, float deltaTime, float accelerationScale)
         {
+            ApplyPlanar(ctx, settings, intent, deltaTime, accelerationScale, TargetSpeed(settings, intent));
+        }
+
+        // Crouch walking: same stick scaling as walking, against the crouch speed.
+        public static float CrouchTargetSpeed(LocomotionSettings settings, PlayerIntent intent)
+        {
+            var magnitude = Mathf.Clamp01(intent.Move.magnitude);
+            if (magnitude <= 0.0001f) return 0f;
+            if (magnitude < WalkThreshold) return settings.crouchSpeed * magnitude / WalkThreshold;
+            return settings.crouchSpeed;
+        }
+
+        public static void ApplyPlanar(LocomotionContext ctx, LocomotionSettings settings, PlayerIntent intent, float deltaTime, float accelerationScale, float targetSpeed)
+        {
             var hasInput = intent.Move.sqrMagnitude > 0.0001f;
             var direction = Vector3.zero;
             if (hasInput)
@@ -31,7 +45,7 @@ namespace HexFall.Player.Locomotion
                 direction = Quaternion.Euler(0f, intent.CameraYaw, 0f) * local;
             }
 
-            var target = direction * TargetSpeed(settings, intent);
+            var target = direction * targetSpeed;
             var planar = new Vector3(ctx.Velocity.x, 0f, ctx.Velocity.z);
             var rate = target.sqrMagnitude > planar.sqrMagnitude ? settings.acceleration : settings.deceleration;
             // A direction change while moving uses the sharper turn rate; starts and stops do not.

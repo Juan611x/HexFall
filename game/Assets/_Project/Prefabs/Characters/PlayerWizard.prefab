@@ -955,6 +955,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4767803926157388452}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3360642748290824832}
   m_SourcePrefab: {fileID: 100100000, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
 --- !u!1 &164397724255835422 stripped
 GameObject:
@@ -1134,11 +1137,23 @@ MonoBehaviour:
     coyoteSeconds: 0.12
     jumpBufferSeconds: 0.1
     jumpCooldownSeconds: 0.2
+    crouchSpeed: 1.6
+    standHeight: 1.8
+    crouchHeight: 1.1
+    slideMinEntrySpeed: 4.5
+    slideBoost: 2
+    slideBoostCapMargin: 2.5
+    slideFrictionStart: 2
+    slideFrictionEnd: 7
+    slideEndSpeed: 1.8
+    slideMaxSeconds: 1.6
+    slideSteering: 0.25
   groundedOffset: -0.14
   groundedRadius: 0.28
   groundLayers:
     serializedVersion: 2
     m_Bits: 1
+  capsuleResizeSpeed: 8
 --- !u!114 &7711523911463705737
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1163,6 +1178,10 @@ MonoBehaviour:
     stateName: InAir
   - key: JumpLand
     stateName: JumpLand
+  - key: Crouch
+    stateName: Crouch
+  - key: Slide
+    stateName: Slide
 --- !u!114 &8727903132480738405
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1289,6 +1308,21 @@ MonoBehaviour:
   minSpeed: 2
   fullSpeed: 9
   landingVolume: 0.9
+--- !u!114 &3360642748290824832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164397724255835422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de2b97a15b6508d4e8923474e39d4baa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.Player::HexFall.Player.PlayerSlideScrape
+  fullSpeed: 6
+  scrapeVolume: 0.8
+  fadeOutSeconds: 0.12
 --- !u!4 &614423777977665907 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8786601893355691716, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}

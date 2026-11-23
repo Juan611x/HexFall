@@ -106,7 +106,7 @@ namespace HexFall.Player.Locomotion
 
             var leftDrop = _hasAnimatedFeet ? PlaceFoot(_animatedLeftFoot, leftFootTarget) : 0f;
             var rightDrop = _hasAnimatedFeet ? PlaceFoot(_animatedRightFoot, rightFootTarget) : 0f;
-            ApplyHipOffset(leftDrop, rightDrop, feetWeight);
+            ApplyHipOffset(leftDrop, rightDrop, _profile.FeetWeight);
             PlaceAimTarget();
         }
 
@@ -117,15 +117,17 @@ namespace HexFall.Player.Locomotion
             if (target == null) return 0f;
 
             var rootGround = transform.position.y;
+            var grounded = animatedPosition;
+            var drop = 0f;
             var origin = new Vector3(animatedPosition.x, rootGround + rayStartHeight, animatedPosition.z);
-            if (!Physics.Raycast(origin, Vector3.down, out var hit, rayLength, groundLayers, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(origin, Vector3.down, out var hit, rayLength, groundLayers, QueryTriggerInteraction.Ignore))
             {
-                target.position = animatedPosition;
-                return 0f;
+                grounded = FootPlacement.Follow(animatedPosition, rootGround, hit.point.y);
+                drop = FootPlacement.GroundDrop(rootGround, hit.point.y);
             }
 
-            target.position = FootPlacement.Follow(animatedPosition, rootGround, hit.point.y);
-            return FootPlacement.GroundDrop(rootGround, hit.point.y);
+            target.position = grounded;
+            return drop;
         }
 
         private void ApplyHipOffset(float leftDrop, float rightDrop, float feetWeight)

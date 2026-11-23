@@ -34,5 +34,32 @@ namespace HexFall.UI.Tests
                 }
             }
         }
+
+        // The real UAL2 slide clip carries the lean, the low seat and the stretched legs, so the IK
+        // stand-ins built before it are gone from the prefab and from the driver.
+        [TestCase("SlideLean")]
+        [TestCase("SlideLeanChest")]
+        public void TheSlideLeanStandInsAreGone(string constraint)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            Assert.IsFalse(prefab.GetComponentsInChildren<Transform>(true).Any(t => t.name == constraint),
+                $"{constraint} is still on the wizard.");
+        }
+
+        [TestCase("slideLean")]
+        [TestCase("slideLeanChest")]
+        public void TheDriverHasNoSlideLeanReferences(string field)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            var driver = prefab.GetComponent<HexFall.Player.Locomotion.PlayerIKDriver>();
+            Assert.IsNull(new SerializedObject(driver).FindProperty(field), $"PlayerIKDriver still has {field}.");
+        }
+
+        [Test]
+        public void TheHandmadeSlidePoseIsGone()
+        {
+            var assembly = typeof(HexFall.Player.Locomotion.PlayerIKDriver).Assembly;
+            Assert.IsNull(assembly.GetType("HexFall.Player.Locomotion.SlidePose"));
+        }
     }
 }

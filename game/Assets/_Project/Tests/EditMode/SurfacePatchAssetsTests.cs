@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace HexFall.UI.Tests
 {
-    // The Sandbox test patches: wood, grass and metal textures, their surfaces, and the patches that use them.
+    // The Sandbox test patches: wood, grass, metal and carpet textures, their surfaces, and the patches that use them.
     public class SurfacePatchAssetsTests
     {
         private const string PackPath = "Assets/ThirdParty/Kenney/ImpactSounds";
@@ -54,6 +54,7 @@ namespace HexFall.UI.Tests
         [TestCase("T_Wood", "Surface_Wood")]
         [TestCase("T_Grass", "Surface_Grass")]
         [TestCase("T_Metal", "Surface_Metal")]
+        [TestCase("T_Carpet", "Surface_Carpet")]
         public void RegistryMapsPatchTexturesToTheirSurfaces(string texture, string surface)
         {
             Assert.AreEqual(Surface(surface), Registry().Resolve(Texture(texture)));
@@ -80,9 +81,65 @@ namespace HexFall.UI.Tests
             AssertEffect("Surface_Metal", SurfaceImpact.Landing, "impactMetal_heavy", LandVolume);
         }
 
+        [Test]
+        public void CarpetUsesCarpetSteps_AndMediumSoftLandings()
+        {
+            AssertEffect("Surface_Carpet", SurfaceImpact.Footstep, "footstep_carpet", StepVolume);
+            AssertEffect("Surface_Carpet", SurfaceImpact.Landing, "impactSoft_medium", LandVolume);
+        }
+
+        [Test]
+        public void CarpetScrapesQuieterAndLowerThanTheOtherSurfaces()
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/ThirdParty/OpenGameArt/Scrapes/SlideScrape.wav");
+            Assert.IsTrue(Surface("Surface_Carpet").TryGetEffect(SurfaceImpact.Slide, out var effect));
+            CollectionAssert.AreEqual(new[] { clip }, effect.clips);
+            Assert.AreEqual(0.5f, effect.volumeRange.x, 1e-4f);
+            Assert.AreEqual(0.7f, effect.volumeRange.y, 1e-4f);
+            Assert.AreEqual(0.85f, effect.pitchRange.x, 1e-4f);
+            Assert.AreEqual(0.95f, effect.pitchRange.y, 1e-4f);
+            foreach (var other in new[] { "Surface_Grass", "Surface_Wood", "Surface_Stone", "Surface_Metal" })
+            {
+                Assert.IsTrue(Surface(other).TryGetEffect(SurfaceImpact.Slide, out var otherEffect));
+                Assert.Less(effect.volumeRange.y, otherEffect.volumeRange.y + 1e-4f, other);
+                Assert.Less(effect.pitchRange.y, otherEffect.pitchRange.y + 1e-4f, other);
+            }
+        }
+
+        [Test]
+        public void ThePatchesAndTheCrouchTunnelDoNotOverlap()
+        {
+            var scene = SceneManager.GetSceneByPath(SandboxPath);
+            var openedHere = !scene.isLoaded;
+            if (openedHere) scene = EditorSceneManager.OpenScene(SandboxPath, OpenSceneMode.Additive);
+            try
+            {
+                var all = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Collider>(true)).ToArray();
+                var names = new[] { "Patch_Wood", "Patch_Grass", "Patch_Metal", "Patch_Carpet" };
+                var patches = names.Select(n => all.FirstOrDefault(c => c.name == n)).ToArray();
+                Assert.That(patches, Has.All.Not.Null);
+                foreach (var patch in patches)
+                {
+                    var a = patch.bounds;
+                    foreach (var other in all)
+                    {
+                        if (other == patch || other.name == "Ground") continue;
+                        var b = other.bounds;
+                        var overlapsFootprint = a.min.x < b.max.x && a.max.x > b.min.x && a.min.z < b.max.z && a.max.z > b.min.z;
+                        Assert.IsFalse(overlapsFootprint, $"{patch.name} overlaps {other.name} on the ground plane.");
+                    }
+                }
+            }
+            finally
+            {
+                if (openedHere) EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
         [TestCase("T_Wood")]
         [TestCase("T_Grass")]
         [TestCase("T_Metal")]
+        [TestCase("T_Carpet")]
         public void PatchTexturesMatchTheGroundStyle(string name)
         {
             var path = $"{TexturesPath}/{name}.png";
@@ -99,6 +156,7 @@ namespace HexFall.UI.Tests
         [TestCase("Patch_Wood", "T_Wood")]
         [TestCase("Patch_Grass", "T_Grass")]
         [TestCase("Patch_Metal", "T_Metal")]
+        [TestCase("Patch_Carpet", "T_Carpet")]
         public void SandboxHasTheFlatPatch(string patchName, string textureName)
         {
             var scene = SceneManager.GetSceneByPath(SandboxPath);

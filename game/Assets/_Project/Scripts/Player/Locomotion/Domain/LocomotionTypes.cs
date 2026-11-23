@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace HexFall.Player.Locomotion
 {
-    public enum LocomotionStateId { Grounded, Jump, Fall }
+    public enum LocomotionStateId { Grounded, Jump, Fall, Crouch, Slide }
 
     // What the player wants this frame. Move is x right / y forward (magnitude 0..1) and is read
     // relative to the camera yaw, given in degrees.
@@ -12,9 +12,12 @@ namespace HexFall.Player.Locomotion
         public readonly bool Sprint;
         public readonly bool JumpPressed;
         public readonly float CameraYaw;
+        // One-shot press of the crouch button; crouch is a toggle on this press.
+        public readonly bool CrouchPressed;
 
-        public PlayerIntent(Vector2 move, bool sprint, bool jumpPressed, float cameraYaw)
+        public PlayerIntent(Vector2 move, bool sprint, bool jumpPressed, float cameraYaw, bool crouchPressed = false)
         {
+            CrouchPressed = crouchPressed;
             Move = move;
             Sprint = sprint;
             JumpPressed = jumpPressed;
@@ -26,10 +29,13 @@ namespace HexFall.Player.Locomotion
     public readonly struct GroundSense
     {
         public readonly bool Grounded;
+        // False when a ceiling leaves no room to stand up from a crouch.
+        public readonly bool CanStand;
 
-        public GroundSense(bool grounded)
+        public GroundSense(bool grounded, bool canStand = true)
         {
             Grounded = grounded;
+            CanStand = canStand;
         }
     }
 
@@ -54,6 +60,25 @@ namespace HexFall.Player.Locomotion
         public float coyoteSeconds = 0.12f;
         public float jumpBufferSeconds = 0.1f;
         public float jumpCooldownSeconds = 0.2f;
+
+        // Crouch and slide. standHeight matches the CharacterController height on the player prefab.
+        public float crouchSpeed = 1.6f;
+        public float standHeight = 1.8f;
+        public float crouchHeight = 1.1f;
+        // A slide needs sprint held and at least this planar speed.
+        public float slideMinEntrySpeed = 4.5f;
+        // Speed added on entry, capped at sprintSpeed + slideBoostCapMargin.
+        public float slideBoost = 2f;
+        public float slideBoostCapMargin = 2.5f;
+        // Friction eases from the start value to the end value over slideMaxSeconds, so the slide
+        // glides at first and brakes toward the end.
+        public float slideFrictionStart = 2f;
+        [UnityEngine.Serialization.FormerlySerializedAs("slideFriction")]
+        public float slideFrictionEnd = 7f;
+        public float slideEndSpeed = 1.8f;
+        public float slideMaxSeconds = 1.6f;
+        // Fraction of the normal turn authority kept while sliding.
+        public float slideSteering = 0.25f;
     }
 
     // Mutable body state shared by the states.
@@ -67,6 +92,9 @@ namespace HexFall.Player.Locomotion
         public float TimeSinceJumpPressed = float.PositiveInfinity;
         public float JumpCooldown;
         public float LastLandingSpeed;
+        // Target capsule height the motor applies; set by the states on enter.
+        public float BodyHeight;
+        public float SlideElapsed;
     }
 
     public interface ILocomotionState

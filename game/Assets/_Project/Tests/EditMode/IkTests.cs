@@ -65,6 +65,30 @@ namespace HexFall.UI.Tests
         }
     }
 
+    public class SlideAimProfileTests
+    {
+        // The UAL2 slide clip already holds the head and the torso, so the chest must not twist toward
+        // the crosshair and the head only follows it lightly.
+        [Test]
+        public void SlideDropsTheChestAimAndOnlyLooselyAimsTheHead()
+        {
+            foreach (ActionStateId action in System.Enum.GetValues(typeof(ActionStateId)))
+            {
+                var profile = IkProfiles.For(LocomotionStateId.Slide, action);
+                Assert.AreEqual(0f, profile.ChestAimWeight, 0.0001f, $"chest {action}");
+                Assert.AreEqual(IkProfiles.SlideHeadAim, profile.HeadAimWeight, 0.0001f, $"head {action}");
+                Assert.That(profile.HeadAimWeight, Is.LessThanOrEqualTo(IkProfiles.IdleHeadAim), $"head {action}");
+            }
+        }
+
+        [Test]
+        public void SlideLeavesTheFeetToTheClip()
+        {
+            foreach (ActionStateId action in System.Enum.GetValues(typeof(ActionStateId)))
+                Assert.AreEqual(0f, IkProfiles.For(LocomotionStateId.Slide, action).FeetWeight, 0.0001f, $"{action}");
+        }
+    }
+
     public class IkBlendTests
     {
         private static readonly IkProfile Off = new IkProfile(0f, 0f, 0f);

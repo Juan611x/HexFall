@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 085b50203d648994980ffba673764a2d, type: 3}
+  m_Name: Surface_Carpet
+  m_EditorClassIdentifier: HexFall.Surfaces::HexFall.Surfaces.SurfaceDefinition
+  displayName: Carpet
+  effects:
+  - impact: 0
+    clips:
+    - {fileID: 8300000, guid: caba9fbda5c9b27428e613a6b2aea12b, type: 3}
+    - {fileID: 8300000, guid: e948a055e15979d43b43f949612ada9a, type: 3}
+    - {fileID: 8300000, guid: 20cc1213d1d9079428bf7da340ae3d00, type: 3}
+    - {fileID: 8300000, guid: 019e206db9ec3cb409772512e85332a8, type: 3}
+    - {fileID: 8300000, guid: f8eb694b3f4470d458cc46017db54a15, type: 3}
+    volumeRange: {x: 0.8, y: 1}
+    pitchRange: {x: 0.95, y: 1.05}
+  - impact: 1
+    clips:
+    - {fileID: 8300000, guid: 407b90b1dc679b043af41be0278b5325, type: 3}
+    - {fileID: 8300000, guid: ef2a347ca670bae4b917481effec26ef, type: 3}
+    - {fileID: 8300000, guid: 343d3b131b1edfe4f91529e9b76352e5, type: 3}
+    - {fileID: 8300000, guid: 99abde523ed85544ea130fe8152c947d, type: 3}
+    - {fileID: 8300000, guid: 919458a69879fcb428e2e24a547d8eb9, type: 3}
+    volumeRange: {x: 0.9, y: 1}
+    pitchRange: {x: 0.95, y: 1.05}
+  - impact: 2
+    clips:
+    - {fileID: 8300000, guid: d9f0f59606a44ae45a48748dd3c84a86, type: 3}
+    volumeRange: {x: 0.5, y: 0.7}
+    pitchRange: {x: 0.85, y: 0.95}

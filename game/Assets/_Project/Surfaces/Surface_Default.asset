@@ -13,4 +13,9 @@ MonoBehaviour:
   m_Name: Surface_Default
   m_EditorClassIdentifier: HexFall.Surfaces::HexFall.Surfaces.SurfaceDefinition
   displayName: Default
-  effects: []
+  effects:
+  - impact: 2
+    clips:
+    - {fileID: 8300000, guid: d9f0f59606a44ae45a48748dd3c84a86, type: 3}
+    volumeRange: {x: 0.8, y: 1}
+    pitchRange: {x: 0.95, y: 1.05}

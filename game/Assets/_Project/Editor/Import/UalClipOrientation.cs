@@ -6,16 +6,25 @@ namespace HexFall.Editor.Import
     // Travelling clips (walk, jog, run, sprint) must face where they travel: with Unity's default
     // "Based Upon: Body Orientation" their facing is estimated from a twisted torso and came out about
     // 27 degrees (jog) and 21 degrees (sprint) to the right, so they use their original orientation
-    // turned 180 degrees, one exact axis conversion instead of a measured offset per clip. In-place
+    // turned 180 degrees (the crouch-walk and the slide are travelling too, though their names have no
+    // such marker), one exact axis conversion instead of a measured offset per clip. In-place
     // clips (idle, jumps, spells) have no travel direction and some are authored side-on (the idle is
     // 14 degrees off its root), so Unity's body estimate is what keeps them square to the front.
     public static class UalClipOrientation
     {
-        private const string LibraryFolder = "UniversalAnimationLibrary/";
-        private static readonly string[] TravellingMarkers = { "Walk", "Jog", "Run", "Sprint" };
+        private static readonly string[] LibraryFolders = { "UniversalAnimationLibrary/", "UniversalAnimationLibrary2/" };
+        private static readonly string[] TravellingMarkers = { "Walk", "Jog", "Run", "Sprint", "Crouch_Fwd", "Slide" };
 
-        public static bool AppliesTo(string assetPath) =>
-            assetPath != null && assetPath.Replace('\\', '/').Contains(LibraryFolder);
+        public static bool AppliesTo(string assetPath)
+        {
+            if (assetPath == null) return false;
+            var path = assetPath.Replace('\\', '/');
+            foreach (var folder in LibraryFolders)
+            {
+                if (path.Contains(folder)) return true;
+            }
+            return false;
+        }
 
         public static bool IsTravelling(string clipName)
         {
