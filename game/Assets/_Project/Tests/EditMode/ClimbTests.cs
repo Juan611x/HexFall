@@ -668,7 +668,7 @@ namespace HexFall.UI.Tests
             machine.Tick(Forward(jump: true), Ground(ledge), Dt);
 
             var sawOver = false;
-            while (machine.Current == LocomotionStateId.Climb)
+            for (var i = 0; i < 1000 && machine.Current == LocomotionStateId.Climb; i++)
             {
                 machine.Tick(Idle(), Ground(ledge), Dt);
                 machine.Context.Position = machine.Context.ClimbTarget;
@@ -699,7 +699,7 @@ namespace HexFall.UI.Tests
         public void ClimbShowsTheClimbClipUntilTheOverPhaseThenTheInAirPose()
         {
             Assert.AreEqual(AnimatorStateSelector.Climb, AnimatorStateSelector.ForClimb(false));
-            Assert.AreEqual(AnimatorStateSelector.InAir, AnimatorStateSelector.ForClimb(true));
+            Assert.AreEqual(AnimatorStateSelector.Hop, AnimatorStateSelector.ForClimb(true));
         }
 
         [Test]
@@ -709,6 +709,171 @@ namespace HexFall.UI.Tests
             Assert.IsFalse(AnimatorStateSelector.FadeAlreadyShown(LocomotionStateId.Climb, LocomotionStateId.Fall, false));
             Assert.IsFalse(AnimatorStateSelector.FadeAlreadyShown(LocomotionStateId.Climb, LocomotionStateId.Grounded, true));
             Assert.IsFalse(AnimatorStateSelector.FadeAlreadyShown(LocomotionStateId.Jump, LocomotionStateId.Fall, true));
+        }
+
+        // The hop: the climb-over drop plays the UAL2 ninja jump instead of the generic in-air pose
+
+        private static LocomotionMachine FallingAfterAnOverClimb()
+        {
+            var machine = StandingAtOrigin();
+            var ledge = ClimbOverLedge();
+            machine.Tick(Forward(jump: true), Ground(ledge), Dt);
+            RunClimb(machine, Ground(ledge));
+            Assert.AreEqual(LocomotionStateId.Fall, machine.Current);
+            return machine;
+        }
+
+        [Test]
+        public void TheFallAfterAnOverClimbIsMarkedAsAHopDrop()
+        {
+            var machine = FallingAfterAnOverClimb();
+
+            Assert.IsTrue(machine.Context.ClimbOverDrop);
+            Assert.IsFalse(machine.Context.LandedFromClimbOver);
+        }
+
+        [Test]
+        public void ClimbingUpNeverMarksAHopDrop()
+        {
+            var machine = StandingAtOrigin();
+            var ledge = ClimbUpLedge();
+            machine.Tick(Forward(jump: true), Ground(ledge), Dt);
+            RunClimb(machine, Ground(ledge));
+
+            Assert.AreEqual(LocomotionStateId.Grounded, machine.Current);
+            Assert.IsFalse(machine.Context.ClimbOverDrop);
+        }
+
+        [Test]
+        public void LandingEndsTheHopDropAndRemembersWhereItCameFrom()
+        {
+            var machine = FallingAfterAnOverClimb();
+
+            machine.Tick(Idle(), NoLedgeGround, Dt);
+
+            Assert.AreEqual(LocomotionStateId.Grounded, machine.Current);
+            Assert.IsFalse(machine.Context.ClimbOverDrop);
+            Assert.IsTrue(machine.Context.LandedFromClimbOver);
+        }
+
+        [Test]
+        public void ANormalLandingAfterAHopLandingClearsTheHopMark()
+        {
+            var machine = FallingAfterAnOverClimb();
+            machine.Tick(Idle(), NoLedgeGround, Dt);
+            Assert.IsTrue(machine.Context.LandedFromClimbOver);
+
+            machine.Tick(Idle(), NoLedgeAir, 1f);
+            machine.Tick(Idle(), NoLedgeAir, 1f);
+            Assert.AreEqual(LocomotionStateId.Fall, machine.Current);
+            Assert.IsFalse(machine.Context.ClimbOverDrop);
+            machine.Tick(Idle(), NoLedgeGround, Dt);
+
+            Assert.IsFalse(machine.Context.LandedFromClimbOver);
+        }
+
+        [Test]
+        public void GrabbingAnotherLedgeInTheHopDropClearsTheMark()
+        {
+            var machine = FallingAfterAnOverClimb();
+            machine.Tick(Forward(jump: true), Air(ClimbUpLedge()), Dt);
+
+            Assert.AreEqual(LocomotionStateId.Climb, machine.Current);
+            Assert.IsFalse(machine.Context.ClimbOverDrop);
+        }
+
+        [Test]
+        public void TheFallInTheHopDropShowsTheHopAndANormalFallTheInAirPose()
+        {
+            Assert.AreEqual(AnimatorStateSelector.Hop, AnimatorStateSelector.For(LocomotionStateId.Fall, LocomotionStateId.Climb, 0f, 2.5f, 9f, true));
+            Assert.AreEqual(AnimatorStateSelector.InAir, AnimatorStateSelector.For(LocomotionStateId.Fall, LocomotionStateId.Grounded, 0f, 2.5f, 9f, false));
+            Assert.AreEqual(AnimatorStateSelector.InAir, AnimatorStateSelector.For(LocomotionStateId.Fall, LocomotionStateId.Grounded, 0f, 2.5f, 9f));
+        }
+
+        // The over climb throws the body forward, so even with the stick released the body is still
+        // sliding to a stop when it lands: that must not count as running.
+        [Test]
+        public void LandingAHopWhileStillSlidingToAStopPlaysTheHopLandClip()
+        {
+            Assert.AreEqual(AnimatorStateSelector.HopLand,
+                AnimatorStateSelector.For(LocomotionStateId.Grounded, LocomotionStateId.Fall, 5f, 1f, 9f, true));
+        }
+
+        [Test]
+        public void LandingAStandingHopPlaysTheHopLandClip()
+        {
+            Assert.AreEqual(AnimatorStateSelector.HopLand,
+                AnimatorStateSelector.For(LocomotionStateId.Grounded, LocomotionStateId.Fall, 5f, 0f, 9f, true));
+        }
+
+        [Test]
+        public void LandingAMovingHopBlendsStraightIntoLocomotion()
+        {
+            Assert.AreEqual(AnimatorStateSelector.Locomotion,
+                AnimatorStateSelector.For(LocomotionStateId.Grounded, LocomotionStateId.Fall, 5f, 3.5f, 9f, true));
+        }
+
+        [Test]
+        public void ANormalLandingKeepsTheUal1Behaviour()
+        {
+            Assert.AreEqual(AnimatorStateSelector.Locomotion,
+                AnimatorStateSelector.For(LocomotionStateId.Grounded, LocomotionStateId.Fall, 5f, 0f, 9f, false));
+            Assert.AreEqual(AnimatorStateSelector.JumpLand,
+                AnimatorStateSelector.For(LocomotionStateId.Grounded, LocomotionStateId.Fall, 10f, 0f, 9f, false));
+        }
+
+        // The bridge latch: one fade per over climb, and only the Climb to Fall change skips its fade.
+
+        [Test]
+        public void TheBridgeFadesOncePerOverClimb()
+        {
+            var fade = new ClimbOverFade();
+
+            Assert.IsFalse(fade.ShouldFadeNow(LocomotionStateId.Climb, false), "pull-up still running");
+            Assert.IsTrue(fade.ShouldFadeNow(LocomotionStateId.Climb, true), "over phase starts");
+            Assert.IsFalse(fade.ShouldFadeNow(LocomotionStateId.Climb, true), "no second fade on later frames");
+            Assert.IsFalse(fade.ShouldFadeNow(LocomotionStateId.Climb, true));
+        }
+
+        [Test]
+        public void TheBridgeNeverFadesOutsideTheClimb()
+        {
+            var fade = new ClimbOverFade();
+
+            Assert.IsFalse(fade.ShouldFadeNow(LocomotionStateId.Fall, true));
+            Assert.IsFalse(fade.ShouldFadeNow(LocomotionStateId.Grounded, true));
+        }
+
+        [Test]
+        public void OnlyTheClimbToFallChangeSkipsTheFadeAfterTheOverFade()
+        {
+            var fade = new ClimbOverFade();
+            fade.ShouldFadeNow(LocomotionStateId.Climb, true);
+
+            Assert.IsTrue(fade.SkipsStateFade(LocomotionStateId.Climb, LocomotionStateId.Fall));
+
+            // The latch is consumed; the next over climb gets its own fade and skip.
+            Assert.IsTrue(fade.ShouldFadeNow(LocomotionStateId.Climb, true));
+            Assert.IsTrue(fade.SkipsStateFade(LocomotionStateId.Climb, LocomotionStateId.Fall));
+        }
+
+        [Test]
+        public void EveryOtherStateChangeFadesAndResetsTheLatch()
+        {
+            var fade = new ClimbOverFade();
+            fade.ShouldFadeNow(LocomotionStateId.Climb, true);
+            Assert.IsFalse(fade.SkipsStateFade(LocomotionStateId.Fall, LocomotionStateId.Grounded));
+
+            Assert.IsFalse(fade.SkipsStateFade(LocomotionStateId.Climb, LocomotionStateId.Fall), "latch was reset by the earlier change");
+        }
+
+        [Test]
+        public void AClimbUpHandOffFadesNormally()
+        {
+            var fade = new ClimbOverFade();
+
+            Assert.IsFalse(fade.SkipsStateFade(LocomotionStateId.Climb, LocomotionStateId.Grounded));
+            Assert.IsFalse(fade.SkipsStateFade(LocomotionStateId.Climb, LocomotionStateId.Fall), "no over fade was shown");
         }
     }
 }

@@ -31,16 +31,42 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void TheSlideAndClimbClipsAreDefined()
+        public void TheSlideClimbAndHopClipsAreDefined()
         {
             var names = Importer.clipAnimations.Select(c => c.name).ToArray();
-            CollectionAssert.AreEquivalent(new[] { "Slide_Exit", "Slide_Loop", "Slide_Start", "ClimbUp_1m" }, names);
+            CollectionAssert.AreEquivalent(new[] { "Slide_Exit", "Slide_Loop", "Slide_Start", "ClimbUp_1m", "NinjaJump_Start", "NinjaJump_Idle_Loop", "NinjaJump_Land" }, names);
+        }
+
+        // The hop clips are authored in place like the rest of the library.
+        [TestCase("NinjaJump_Start")]
+        [TestCase("NinjaJump_Idle_Loop")]
+        [TestCase("NinjaJump_Land")]
+        public void TheHopClipsAreInPlaceHumanoidClips(string clipName)
+        {
+            var clip = Importer.clipAnimations.First(c => c.name == clipName);
+            Assert.AreEqual("Armature|" + clipName, clip.takeName);
+            Assert.IsTrue(clip.keepOriginalPositionY, clipName);
+            Assert.IsTrue(clip.keepOriginalPositionXZ, clipName);
+        }
+
+        // The first frames of the ninja jump start are the crouched wind-up on the ground; the hop starts
+        // in the air, so the clip is trimmed to begin once the body has left the ground.
+        [Test]
+        public void TheHopStartSkipsTheGroundWindUp()
+        {
+            var clip = Importer.clipAnimations.First(c => c.name == "NinjaJump_Start");
+            Assert.That(clip.firstFrame, Is.InRange(3f, 8f));
+            Assert.AreEqual(29f, clip.lastFrame);
         }
 
         [TestCase("Slide_Loop", true)]
+        [TestCase("NinjaJump_Idle_Loop", true)]
+        [TestCase("NinjaJump_Start", false)]
+        [TestCase("NinjaJump_Land", false)]
+        [TestCase("ClimbUp_1m", false)]
         [TestCase("Slide_Start", false)]
         [TestCase("Slide_Exit", false)]
-        public void OnlyTheSlideLoopLoops(string clipName, bool loops)
+        public void OnlyTheLoopClipsLoop(string clipName, bool loops)
         {
             var clip = Importer.clipAnimations.First(c => c.name == clipName);
             Assert.AreEqual(loops, clip.loopTime);
@@ -61,6 +87,9 @@ namespace HexFall.UI.Tests
         [TestCase("Slide_Start")]
         [TestCase("Slide_Loop")]
         [TestCase("Slide_Exit")]
+        [TestCase("NinjaJump_Start")]
+        [TestCase("NinjaJump_Idle_Loop")]
+        [TestCase("NinjaJump_Land")]
         public void EverySlideClipIsAnAnimationClipOfTheLibrary(string clipName)
         {
             var clip = AssetDatabase.LoadAllAssetsAtPath(FbxPath).OfType<AnimationClip>().FirstOrDefault(c => c.name == clipName);

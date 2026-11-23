@@ -88,6 +88,7 @@ namespace HexFall.Player.Locomotion
             ctx.ClimbElapsed = 0f;
             ctx.ClimbProgress = 0f;
             ctx.ClimbOverPhase = false;
+            ctx.ClimbOverDrop = false;
             ctx.Velocity = Vector3.zero;
 
             _approach = new Vector3(ledge.ApproachDirection.x, 0f, ledge.ApproachDirection.z);
@@ -131,6 +132,7 @@ namespace HexFall.Player.Locomotion
         // forward across the top into the fall.
         public void Exit(LocomotionContext ctx)
         {
+            ctx.ClimbOverDrop = ctx.ClimbKind == ClimbKind.ClimbOver;
             ctx.Velocity = ctx.ClimbKind == ClimbKind.ClimbOver
                 ? _approach * _settings.climb.overPushSpeed
                 : Vector3.zero;

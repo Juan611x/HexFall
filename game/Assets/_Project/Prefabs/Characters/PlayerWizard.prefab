@@ -1200,6 +1200,10 @@ MonoBehaviour:
     stateName: Slide
   - key: Climb
     stateName: Climb
+  - key: Hop
+    stateName: Hop
+  - key: HopLand
+    stateName: HopLand
 --- !u!114 &8727903132480738405
 MonoBehaviour:
   m_ObjectHideFlags: 0

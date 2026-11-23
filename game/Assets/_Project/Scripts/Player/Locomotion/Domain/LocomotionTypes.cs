@@ -111,6 +111,11 @@ namespace HexFall.Player.Locomotion
         // True from the moment the over phase of a ClimbOver starts (after the pull-up), so the animator
         // can leave the climb clip for the in-air pose. Reset when a climb starts, kept after it ends.
         public bool ClimbOverPhase;
+        // The current fall started from a climb over, so the animator plays the hop instead of the
+        // generic in-air pose. Set when the over climb ends; cleared on landing or when a climb starts.
+        public bool ClimbOverDrop;
+        // The last landing ended a climb-over drop; read by the animator on the landing change.
+        public bool LandedFromClimbOver;
         // World position the body must reach by the end of this tick; Velocity carries it there.
         public Vector3 ClimbTarget;
     }

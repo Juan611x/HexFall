@@ -104,6 +104,8 @@ namespace HexFall.Player.Locomotion
             if (ground.Grounded)
             {
                 ctx.LastLandingSpeed = Mathf.Abs(ctx.Velocity.y);
+                ctx.LandedFromClimbOver = ctx.ClimbOverDrop;
+                ctx.ClimbOverDrop = false;
                 return LocomotionStateId.Grounded;
             }
             LocomotionMath.ApplyGravity(ctx, _settings, deltaTime);
