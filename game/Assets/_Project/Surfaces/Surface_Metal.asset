@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 085b50203d648994980ffba673764a2d, type: 3}
+  m_Name: Surface_Metal
+  m_EditorClassIdentifier: HexFall.Surfaces::HexFall.Surfaces.SurfaceDefinition
+  displayName: Metal
+  effects:
+  - impact: 0
+    clips:
+    - {fileID: 8300000, guid: f53b0fdf108c8754d9006bcc5b5e837b, type: 3}
+    - {fileID: 8300000, guid: 95bc5b5363245314d833fff06cfd6172, type: 3}
+    - {fileID: 8300000, guid: 0b07abfd9f514314a91ce57ba2afbd03, type: 3}
+    - {fileID: 8300000, guid: e297a66bc5c1998458ebc50bf3e637a3, type: 3}
+    - {fileID: 8300000, guid: 2bd9c6e12ed2e54448a7d256fd129604, type: 3}
+    volumeRange: {x: 0.8, y: 1}
+    pitchRange: {x: 0.95, y: 1.05}
+  - impact: 1
+    clips:
+    - {fileID: 8300000, guid: fe88e7640c84ee64383190e70f774378, type: 3}
+    - {fileID: 8300000, guid: 3c370f2ec24246c40a77baff78ffbc77, type: 3}
+    - {fileID: 8300000, guid: 1f4dd7a58d26f9d46b1fa37d110321d6, type: 3}
+    - {fileID: 8300000, guid: af8d0e5591f45554195909aad8542125, type: 3}
+    - {fileID: 8300000, guid: c1063798554d3944793de2ae2176f991, type: 3}
+    volumeRange: {x: 0.9, y: 1}
+    pitchRange: {x: 0.95, y: 1.05}

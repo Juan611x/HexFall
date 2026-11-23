@@ -1,4 +1,5 @@
 using HexFall.Player.Actions;
+using HexFall.Player.Locomotion;
 using UnityEngine;
 
 namespace HexFall.Player
@@ -11,13 +12,16 @@ namespace HexFall.Player
 
         private PlayerCombat _combat;
         private AudioSource _source;
+        private PlayerMotor _motor;
         private ActionMachine _subscribed;
+        private LocomotionMachine _subscribedLocomotion;
 
         public WizardSfxLibrary Library => library;
 
         private void Awake()
         {
             _combat = GetComponent<PlayerCombat>();
+            _motor = GetComponent<PlayerMotor>();
             _source = gameObject.AddComponent<AudioSource>();
             _source.playOnAwake = false;
             _source.spatialBlend = 0f;
@@ -33,8 +37,9 @@ namespace HexFall.Player
 
         private void Subscribe()
         {
+            SubscribeLocomotion();
             if (_combat == null || _combat.Machine == null || _subscribed == _combat.Machine) return;
-            Unsubscribe();
+            UnsubscribeCombat();
             _subscribed = _combat.Machine;
             _subscribed.StateChanged += OnStateChanged;
             _subscribed.HitResolved += OnHitResolved;
@@ -43,7 +48,29 @@ namespace HexFall.Player
             _subscribed.ParryPressed += OnParryPressed;
         }
 
+        // The motor is optional: without one the wizard just has no jump sound.
+        private void SubscribeLocomotion()
+        {
+            if (_motor == null || _motor.Machine == null || _subscribedLocomotion == _motor.Machine) return;
+            UnsubscribeLocomotion();
+            _subscribedLocomotion = _motor.Machine;
+            _subscribedLocomotion.StateChanged += OnLocomotionChanged;
+        }
+
+        private void UnsubscribeLocomotion()
+        {
+            if (_subscribedLocomotion == null) return;
+            _subscribedLocomotion.StateChanged -= OnLocomotionChanged;
+            _subscribedLocomotion = null;
+        }
+
         private void Unsubscribe()
+        {
+            UnsubscribeLocomotion();
+            UnsubscribeCombat();
+        }
+
+        private void UnsubscribeCombat()
         {
             if (_subscribed == null) return;
             _subscribed.StateChanged -= OnStateChanged;
@@ -55,6 +82,8 @@ namespace HexFall.Player
         }
 
         private void OnStateChanged(ActionStateId from, ActionStateId to) => Play(WizardSfxCues.ForStateChange(from, to));
+
+        private void OnLocomotionChanged(LocomotionStateId from, LocomotionStateId to) => Play(WizardSfxCues.ForLocomotionChange(from, to));
 
         private void OnHitResolved(HitResult hit) => Play(WizardSfxCues.ForHit(hit));
 

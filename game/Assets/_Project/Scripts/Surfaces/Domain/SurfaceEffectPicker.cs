@@ -14,6 +14,15 @@ namespace HexFall.Surfaces
             return Mathf.Min(index, clipCount - 1);
         }
 
+        // Like PickIndex but never returns `previous` when there is another clip: the random value is
+        // mapped over the remaining clips, uniformly. A previous index outside the range is ignored.
+        public static int PickIndexAvoiding(int clipCount, int previous, float random01)
+        {
+            if (clipCount <= 1 || previous < 0 || previous >= clipCount) return PickIndex(clipCount, random01);
+            int slot = PickIndex(clipCount - 1, random01);
+            return slot >= previous ? slot + 1 : slot;
+        }
+
         // Interpolates a range with a 0..1 random value.
         public static float Lerp(Vector2 range, float random01)
         {

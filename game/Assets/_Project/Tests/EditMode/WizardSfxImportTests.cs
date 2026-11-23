@@ -9,7 +9,7 @@ namespace HexFall.UI.Tests
     {
         private static readonly string[] Clips =
         {
-            "WizardCast", "BoltImpact", "ShieldRaise", "ParryDeflect", "ParryPerfect", "Snap", "Huff",
+            "WizardCast", "BoltImpact", "ShieldRaise", "ParryDeflect", "ParryPerfect", "Snap", "Huff", "Jump",
         };
 
         [TestCaseSource(nameof(Clips))]
