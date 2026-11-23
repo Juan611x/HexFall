@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEditor.dll::UnityEditor.SceneTemplate.SceneTemplateAsset
   templateScene: {fileID: 102900000, guid: d9d3d049f0813bd41bb98b0de79beb98, type: 3}
   templateName: HexFall Map
-  description: 'Night map: moonlit Environment_Night, PlayerWizard with camera rig,
-    HUD and a 50 m stone floor.'
+  description: 'Night map: moonlit Environment_Night with ground mist, battle music
+    (MapAudio), PlayerWizard with camera rig, HUD and a 50 m stone floor.'
   preview: {fileID: 0}
   dependencies:
   - dependency: {fileID: 9100000, guid: 40db3173a05ae3242b1c182a09b0a183, type: 2}
@@ -44,6 +44,8 @@ MonoBehaviour:
     instantiationMode: 1
   - dependency: {fileID: 2800000, guid: 9c4c57612b753d34fbc04b1a975c276d, type: 3}
     instantiationMode: 1
+  - dependency: {fileID: 2800000, guid: a50660b09841623448d3a4035c16733c, type: 3}
+    instantiationMode: 1
   - dependency: {fileID: 31900000, guid: f1b3958cd683e154abea17782f9f4354, type: 2}
     instantiationMode: 1
   - dependency: {fileID: 919132149155446097, guid: 16114d403eabb53438de032c6f0d1deb, type: 3}
@@ -69,6 +71,8 @@ MonoBehaviour:
   - dependency: {fileID: 2800000, guid: 104a45460231b8d4783e0bb2223be28c, type: 3}
     instantiationMode: 1
   - dependency: {fileID: 919132149155446097, guid: 98f277b0c8055e143b2fcf058d3c27dc, type: 3}
+    instantiationMode: 1
+  - dependency: {fileID: 8300000, guid: f7f1a52a92fdbec46a68fadbec79a0cf, type: 3}
     instantiationMode: 1
   - dependency: {fileID: 919132149155446097, guid: dacca30108b447b4aaa3544de8bbb6e5, type: 3}
     instantiationMode: 1
@@ -140,6 +144,8 @@ MonoBehaviour:
     instantiationMode: 1
   - dependency: {fileID: 11400000, guid: 45307fc7fcf2b4248a4c9d920ec419fd, type: 2}
     instantiationMode: 1
+  - dependency: {fileID: 2100000, guid: 55806c7dae842fd43a91e9c27b006d58, type: 2}
+    instantiationMode: 1
   - dependency: {fileID: 6471134571277237896, guid: fa53d1371e84db74588fc2dade9d689c, type: 3}
     instantiationMode: 1
   - dependency: {fileID: 8300000, guid: a3194b8bbc96ef84fab1f98f4b7dae3e, type: 3}
@@ -153,6 +159,8 @@ MonoBehaviour:
   - dependency: {fileID: 2800000, guid: 1c98c94efa7792645972ecf95e6f86c2, type: 3}
     instantiationMode: 1
   - dependency: {fileID: 164397724255835422, guid: c53786f561cb7534b9c24169d1b457c1, type: 3}
+    instantiationMode: 1
+  - dependency: {fileID: 7800329416517237661, guid: 91f3277dcdaa90342ba0169cc0292d73, type: 3}
     instantiationMode: 1
   - dependency: {fileID: 12800000, guid: 1e13ace7c4e89da47b77b894239c3ba1, type: 3}
     instantiationMode: 1
