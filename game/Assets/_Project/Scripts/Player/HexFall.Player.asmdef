@@ -2,7 +2,8 @@
     "name": "HexFall.Player",
     "rootNamespace": "HexFall.Player",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "HexFall.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
