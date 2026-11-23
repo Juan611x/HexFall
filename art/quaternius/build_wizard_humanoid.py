@@ -4,7 +4,12 @@ The Quaternius rig drives each leg with an IK constraint towards a foot bone tha
 `Root`. Unity's Humanoid avatar needs every foot to descend from its lower leg, so this script
 drops the two leg IK constraints, re-parents `Foot.L`/`Foot.R` under `LowerLeg.L`/`LowerLeg.R`
 (keeping their rest transforms, so skin weights and the mesh are unchanged) and exports mesh
-plus armature without animation: gameplay animations come from the Universal Animation Library.
+plus armature without animation.
+
+The wizard's own combat actions are exported too, one file per action on the same rig, so Unity
+can import them as Humanoid clips. Without the leg IK their legs are not usable; they are meant
+for upper-body layers, with locomotion coming from the Universal Animation Library. (One action
+per export with its slot assigned: Blender 4.5's "all actions" bake writes motionless takes.)
 
 `art/quaternius/Wizard.blend` is only read, never saved. The menu keeps using the original
 `Wizard.fbx`.
@@ -15,6 +20,7 @@ Run headless from the repository root:
 
 Output:
     game/Assets/_Project/Art/Characters/Wizard/WizardHumanoid.fbx
+    game/Assets/_Project/Art/Characters/Wizard/WizardHumanoid@<Action>.fbx (one per COMBAT_ACTIONS)
 """
 
 import os
@@ -24,6 +30,7 @@ import bpy
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT_DIR = os.path.join(ROOT, "game", "Assets", "_Project", "Art", "Characters", "Wizard")
 OUT_FILE = os.path.join(OUT_DIR, "WizardHumanoid.fbx")
+COMBAT_ACTIONS = ("Staff_Attack", "Spell1", "Spell2", "RecieveHit")
 
 ARMATURE = "CharacterArmature"
 FEET = {"Foot.L": "LowerLeg.L", "Foot.R": "LowerLeg.R"}
@@ -83,6 +90,36 @@ def main():
     for foot, leg in FEET.items():
         print(f"{foot} -> {arm.data.bones[foot].parent.name}")
     print(f"Exported {OUT_FILE}")
+
+    export_actions(arm)
+
+
+def export_actions(arm):
+    # The meshes go along so each file keeps the bind pose and the same hierarchy as the model;
+    # without them Unity takes the first animated frame as the avatar's reference pose.
+    data = arm.animation_data or arm.animation_data_create()
+    scene = bpy.context.scene
+    for name in COMBAT_ACTIONS:
+        action = bpy.data.actions[name]
+        data.action = action
+        if action.slots:
+            data.action_slot = action.slots[0]
+        scene.frame_start, scene.frame_end = (int(f) for f in action.frame_range)
+        path = os.path.join(OUT_DIR, f"WizardHumanoid@{name}.fbx")
+        bpy.ops.export_scene.fbx(
+            filepath=path,
+            object_types={"ARMATURE", "MESH"},
+            apply_scale_options="FBX_SCALE_ALL",
+            axis_forward="-Z",
+            axis_up="Y",
+            add_leaf_bones=False,
+            bake_anim=True,
+            bake_anim_use_all_actions=False,
+            bake_anim_use_nla_strips=False,
+            bake_anim_force_startend_keying=True,
+            path_mode="STRIP",
+        )
+        print(f"Exported {path}")
 
 
 if __name__ == "__main__":
