@@ -117,6 +117,7 @@ namespace HexFall.UI.Tests
                 Assert.Greater(beam.min.y - wall.max.y, 0.3f, "Beam too low to be a fair test.");
                 Assert.IsTrue(beam.min.x < wall.center.x && beam.max.x > wall.center.x);
                 Assert.IsTrue(beam.min.z < wall.center.z && beam.max.z > wall.center.z, "Beam must be over the wall top.");
+                Assert.GreaterOrEqual(beam.min.z, wall.min.z - 0.001f, "Beam must not stick out in front of the wall face.");
             });
         }
 

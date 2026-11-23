@@ -31,10 +31,10 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void TheThreeSlideClipsAreDefined()
+        public void TheSlideAndClimbClipsAreDefined()
         {
             var names = Importer.clipAnimations.Select(c => c.name).ToArray();
-            CollectionAssert.IsSubsetOf(new[] { "Slide_Exit", "Slide_Loop", "Slide_Start" }, names);
+            CollectionAssert.AreEquivalent(new[] { "Slide_Exit", "Slide_Loop", "Slide_Start", "ClimbUp_1m" }, names);
         }
 
         [TestCase("Slide_Loop", true)]
