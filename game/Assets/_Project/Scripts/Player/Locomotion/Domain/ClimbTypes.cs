@@ -35,6 +35,9 @@ namespace HexFall.Player.Locomotion
         public float topSurfaceTolerance = 0.1f;
         // Spacing of the samples that measure how deep a top is; the end is refined below this.
         public float probeStep = 0.05f;
+        // Vertical spacing of the horizontal rays that look for a ledge face between knee height and the
+        // maximum. Keep it below the thinnest slab or lip that should be climbable.
+        public float faceProbeStep = 0.1f;
         // Lowest ground behind a thin top that still counts as a landing, below the top of the ledge.
         public float maxLandingDrop = 3f;
 

@@ -5,9 +5,10 @@ namespace HexFall.Player.Locomotion
     // Measures the ledge in front of the body with physics casts, ignoring its own colliders and
     // triggers. Every distance comes from ClimbSettings; only tiny skin offsets are fixed here.
     //
-    // 1. Wall: horizontal rays at knee and chest height along the wanted direction find the face and its
-    //    normal (ApproachDirection = -normal); a ray just above climbMaxHeight that hits the same wall
-    //    means it is too high and there is no ledge.
+    // 1. Face: horizontal rays every faceProbeStep from knee height up to just below climbMaxHeight along
+    //    the wanted direction find the nearest non-walkable face and its normal (ApproachDirection =
+    //    -normal), whether it belongs to a wall or to a slab with nothing under it; a ray just above
+    //    climbMaxHeight that hits the same face means it is too high and there is no ledge.
     // 2. Top: a downward ray just past the face, started above climbMaxHeight, gives TopPoint and
     //    TopHeight; tops steeper than the slope limit are rejected.
     // 3. Depth: downward rays march along the approach while the surface stays within
@@ -22,6 +23,8 @@ namespace HexFall.Player.Locomotion
         // Half-width of the headroom ray pattern as a share of the radius.
         private const float RayInset = 0.7f;
         private const int Refinements = 6;
+        // Lower bound for faceProbeStep so a bad setting cannot flood the scene with rays.
+        private const float MinFaceStep = 0.02f;
         private const int HitCapacity = 16;
 
         private readonly LayerMask _layers;
@@ -75,13 +78,17 @@ namespace HexFall.Player.Locomotion
             approach = default;
             var reach = _radius + Skin + _climb.detectionDistance;
             var knee = _climb.climbMinHeight * 0.5f;
-            var chest = (_climb.climbMinHeight + _climb.climbMaxHeight) * 0.5f;
+            var topRay = Mathf.Max(knee, _climb.climbMaxHeight - Skin);
+            var step = Mathf.Max(MinFaceStep, _climb.faceProbeStep);
+            var rays = Mathf.CeilToInt((topRay - knee) / step) + 1;
 
+            // Rays from the knee up to just below the maximum: a slab or lip with no wall under it
+            // only has a face as thick as itself, which two rays at fixed heights would miss.
             RaycastHit best = default;
             var found = false;
-            for (var i = 0; i < 2; i++)
+            for (var i = 0; i < rays; i++)
             {
-                var height = i == 0 ? knee : chest;
+                var height = Mathf.Min(knee + i * step, topRay);
                 if (!Cast(feet + Vector3.up * height, dir, reach, out var hit)) continue;
                 if (hit.normal.y >= _walkableMinY) continue;
                 if (found && hit.distance >= best.distance) continue;

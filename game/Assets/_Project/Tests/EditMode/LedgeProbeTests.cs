@@ -201,5 +201,78 @@ namespace HexFall.UI.Tests
 
             Assert.IsFalse(Measure(Vector3.forward).HasLedge);
         }
+
+        // Ledges with no wall under the edge: the face is only the slab's own thickness.
+
+        // A slab whose near face is at z = 0.5, spanning bottom..top in height.
+        private void Slab(float bottom, float top, float depth) =>
+            Box("Slab", new Vector3(0f, (bottom + top) * 0.5f, 0.5f + depth * 0.5f), new Vector3(4f, top - bottom, depth));
+
+        [Test]
+        public void DeepLowRoofSlabWithNothingUnderItMeasuresAClimbUp()
+        {
+            Slab(1.0f, 1.15f, 1.5f);
+
+            var ledge = Measure(Vector3.forward);
+
+            Assert.IsTrue(ledge.HasLedge);
+            Assert.AreEqual(1.15f, ledge.TopHeight, 0.03f);
+            Assert.AreEqual(0.5f, ledge.TopPoint.z, 0.05f);
+            Assert.GreaterOrEqual(ledge.TopDepth, _climb.standDepth);
+            Assert.AreEqual(ClimbKind.ClimbUp, LedgeClassifier.Classify(ledge, _climb));
+        }
+
+        [Test]
+        public void ThinLipWhoseFaceIsBetweenTheOldRaysMeasuresAClimbOver()
+        {
+            Slab(0.95f, 1.1f, 0.3f);
+
+            var ledge = Measure(Vector3.forward);
+
+            Assert.IsTrue(ledge.HasLedge);
+            Assert.AreEqual(1.1f, ledge.TopHeight, 0.03f);
+            Assert.AreEqual(0.3f, ledge.TopDepth, 0.04f);
+            Assert.IsTrue(ledge.LandingClear);
+            Assert.AreEqual(ClimbKind.ClimbOver, LedgeClassifier.Classify(ledge, _climb));
+        }
+
+        [Test]
+        public void SlabBetweenTheKneeAndChestRaysIsFound()
+        {
+            Slab(0.5f, 0.65f, 1.5f);
+
+            var ledge = Measure(Vector3.forward);
+
+            Assert.IsTrue(ledge.HasLedge);
+            Assert.AreEqual(0.65f, ledge.TopHeight, 0.03f);
+        }
+
+        [Test]
+        public void SlabWhoseTopIsAboveTheMaximumHasNoLedge()
+        {
+            Slab(1.1f, 1.4f, 1.5f);
+
+            Assert.IsFalse(Measure(Vector3.forward).HasLedge);
+        }
+
+        [Test]
+        public void SlabWhoseFaceIsEntirelyAboveTheClimbableBandHasNoLedge()
+        {
+            Slab(1.3f, 1.45f, 1.5f);
+
+            Assert.IsFalse(Measure(Vector3.forward).HasLedge);
+        }
+
+        [Test]
+        public void FaceRaySpacingComesFromTheSetting()
+        {
+            // 0.04 m lip at 0.74..0.78 is missed by a coarse scan and found by a fine one.
+            Slab(0.74f, 0.78f, 1.5f);
+            _climb.faceProbeStep = 0.3f;
+            Assert.IsFalse(Measure(Vector3.forward).HasLedge, "coarse scan");
+
+            _climb.faceProbeStep = 0.02f;
+            Assert.IsTrue(Measure(Vector3.forward).HasLedge, "fine scan");
+        }
     }
 }

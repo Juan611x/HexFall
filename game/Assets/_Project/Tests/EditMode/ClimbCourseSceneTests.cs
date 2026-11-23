@@ -26,6 +26,35 @@ namespace HexFall.UI.Tests
             return prop.floatValue;
         }
 
+        private static float StandHeight()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
+            var motor = prefab.GetComponentInChildren<PlayerMotor>(true);
+            var prop = new SerializedObject(motor).FindProperty("settings.standHeight");
+            Assert.IsNotNull(prop, "settings.standHeight not serialized.");
+            return prop.floatValue;
+        }
+
+        // The slab-like obstacles have no wall under the edge: nothing between the floor and the
+        // underside, yet the underside is below standing head height so the player cannot walk under.
+        private static void AssertFloatsBelowHeadHeight(Bounds b)
+        {
+            Assert.Less(b.min.y, StandHeight(), "Player could walk under it.");
+            Assert.Greater(b.min.y, 0.3f, "Not floating.");
+            var half = new Vector3(b.extents.x, (b.min.y - 0.04f) / 2f, b.extents.z);
+            var center = new Vector3(b.center.x, 0.02f + half.y, b.center.z);
+            Assert.IsFalse(Physics.CheckBox(center, half, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore),
+                "Something holds the slab up.");
+        }
+
+        private static void AssertFreeAbove(Bounds b, float height)
+        {
+            var half = new Vector3(b.extents.x, height / 2f, b.extents.z);
+            var center = new Vector3(b.center.x, b.max.y + 0.02f + half.y, b.center.z);
+            Assert.IsFalse(Physics.CheckBox(center, half, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore),
+                $"Less than {height} m free over the top.");
+        }
+
         private static void WithCourse(System.Action<Transform> check)
         {
             var scene = SceneManager.GetSceneByPath(SandboxPath);
@@ -122,12 +151,47 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void LowRoofIsAFloatingDeepSlabInRangeWithRoomToStandOnTop()
+        {
+            WithCourse(c =>
+            {
+                var b = Part(c, "Ledge_LowRoof");
+                Assert.GreaterOrEqual(b.max.y, Climb("climbMinHeight"));
+                Assert.LessOrEqual(b.max.y, Climb("climbMaxHeight"));
+                Assert.GreaterOrEqual(b.size.z, Climb("standDepth"));
+                Assert.LessOrEqual(b.size.y, 0.2f, "A roof edge is thin; a thick one is a wall.");
+                AssertFloatsBelowHeadHeight(b);
+                AssertFreeAbove(b, Climb("minHeadroom"));
+            });
+        }
+
+        [Test]
+        public void LipIsAThinFloatingSlabInRangeWithRoomToClimbOver()
+        {
+            WithCourse(c =>
+            {
+                var b = Part(c, "Ledge_Lip");
+                Assert.GreaterOrEqual(b.max.y, Climb("climbMinHeight"));
+                Assert.LessOrEqual(b.max.y, Climb("climbMaxHeight"));
+                Assert.LessOrEqual(b.size.z, Climb("overMaxThickness"));
+                Assert.Less(b.size.z, Climb("standDepth"), "Too deep to be classified over.");
+                AssertFloatsBelowHeadHeight(b);
+                AssertFreeAbove(b, Climb("overMinHeadroom"));
+                var depth = Climb("landingClearDepth") + 0.6f;
+                var half = new Vector3(0.5f, 0.4f, depth / 2f);
+                var center = new Vector3(b.center.x, 0.5f, b.max.z + 0.02f + depth / 2f);
+                Assert.IsFalse(Physics.CheckBox(center, half, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore),
+                    "Landing area behind the lip is blocked.");
+            });
+        }
+
+        [Test]
         public void ObstaclesDoNotOverlapEachOtherOrOtherTestArenaParts()
         {
             WithCourse(c =>
             {
                 var own = c.GetComponentsInChildren<BoxCollider>().ToList();
-                Assert.GreaterOrEqual(own.Count, 6);
+                Assert.GreaterOrEqual(own.Count, 8);
                 var others = c.parent.GetComponentsInChildren<Collider>()
                     .Where(o => !o.transform.IsChildOf(c) && o.name != "Ground").ToList();
                 foreach (var a in own)
@@ -145,7 +209,7 @@ namespace HexFall.UI.Tests
         {
             WithCourse(c =>
             {
-                foreach (var name in new[] { "Step_Low", "Box_ClimbUp", "Wall_Over", "Wall_TooHigh", "Wall_Beam" })
+                foreach (var name in new[] { "Step_Low", "Box_ClimbUp", "Wall_Over", "Wall_TooHigh", "Wall_Beam", "Ledge_LowRoof", "Ledge_Lip" })
                 {
                     var b = Part(c, name);
                     var half = new Vector3(0.5f, 0.4f, 3f);
