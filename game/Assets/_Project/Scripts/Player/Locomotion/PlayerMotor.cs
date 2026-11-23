@@ -19,6 +19,7 @@ namespace HexFall.Player.Locomotion
 
         public LocomotionMachine Machine { get; private set; }
         public bool IsGrounded { get; private set; }
+        public LayerMask GroundLayers => groundLayers;
         public float InputMagnitude { get; private set; }
 
         private void Awake()
