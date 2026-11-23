@@ -40,6 +40,7 @@ Created for HexFall with no third-party source; listed so every binary in the re
 | Asset | Location | How |
 |---|---|---|
 | `T_LightShaft.png` (64×256), `T_Moon.png` (64×64) | `game/Assets/_Project/Art/Environment/Textures/` | Generated procedurally in the Unity Editor (tapered alpha gradient for the moonbeam, crescent mask for the moon) |
+| `T_MistNoise.png` (64×64) | `game/Assets/_Project/Art/Environment/Textures/` | Generated procedurally in the Unity Editor: 4-octave Perlin noise × smooth radial falloff, alpha posterised to 6 steps for the PSX look; used by the `GroundMist` particles |
 | `MenuTheme.wav` (91.4 s seamless loop, 22.05 kHz mono) | `game/Assets/_Project/Audio/Music/` | Composed and synthesized by `art/audio/compose_menu_theme.py` (pure Python, chip-style voices, D Phrygian dominant, 84 BPM); key chosen to match the Cathedral ambient layer (D/A drone) |
 | `Scanlines.png` (1×3) | `game/Assets/_Project/UI/Textures/` | Generated for HexFall: tiling pattern for the UI scanline overlay |
 | Hexagon emblem and UI icons (eye, dice, envelope, gear) | `HexagonElement.cs`, `IconElement.cs` | Drawn at runtime with UI Toolkit `Painter2D`; no image files |
@@ -57,6 +58,18 @@ Code packages from Unity Technologies, declared in `game/Packages/manifest.json`
 ## Required local import: Starter Assets
 
 The `PlayerWizard` prefab and the `Sandbox` scene use Unity's free **First Person + Third Person | Character Controllers** package (Starter Assets 2.0.2, Unity Technologies, Asset Store). Its Asset Store licence is still under review, so it is not in this repository (`game/Assets/Starter Assets/` is ignored). Before opening `Sandbox`, add the package to your Unity account and import it from **Window > Package Manager > My Assets** into `game/Assets/Starter Assets/`. Without it the player shows missing scripts and the scene has no camera rig; the main menu does not depend on it.
+
+## Required local import: Stark Crafts PSX night sky
+
+The `Sandbox` night skybox uses `PSX_NIGHTSKY.hdr` (2048×1024 HDRI, full moon and stars) from the **PSX Forest Asset Collection** by **Stark Crafts** ([itch.io](https://starkcrafts.itch.io/psx-forest-asset-collection-by-starkcrafts), download `PSX_Nightsky_HDRI.zip`). The page states no formal licence; in its comments the author allows commercial use and asks only to be credited. That does not meet the rule above for files in this repository, so the sky is **not committed**: `game/Assets/ThirdParty/StarkCrafts/` is ignored. Built games include it and credit the author.
+
+To get it locally, download the zip and run from the repository root:
+
+```
+blender -b --factory-startup --python art/environment/build_night_sky.py -- <path/to/PSX_Nightsky_HDRI.zip>
+```
+
+It writes the original `PSX_NIGHTSKY.hdr` and the darkened `T_NightSky_Dark.hdr` (sky ×0.5 and 25 % desaturated, moon kept bright; parameters at the top of the script) into `game/Assets/ThirdParty/StarkCrafts/NightSky/`. Without it, `Sandbox` falls back to a plain dark sky.
 
 ## Engine template content
 
