@@ -19,4 +19,4 @@ The game client is a Unity project. Building it combines the HexFall code with t
 | Covered by GPL-3.0 with the permission above | Not covered: keeps its own license |
 |---|---|
 | All code in this repository: the Unity C# scripts and tests (`game/Assets/_Project/`), Terraform (`infra/`), Python services and tools (`services/`, `tools/`), workflows (`.github/`) | Third-party assets listed in [docs/ASSET_CREDITS.md](docs/ASSET_CREDITS.md), such as the Quaternius wizard, Poly Haven textures, Kenney and OpenGameArt sounds (CC0 1.0) and the Cinzel and Pixelify Sans fonts (SIL OFL 1.1). Their license files sit next to them. |
-| Self-made content listed as such in `docs/ASSET_CREDITS.md` (for example the menu theme, the generated arena, the logo artwork) and the documentation | The Unity engine, its packages and the template content Unity generates (`game/Assets/TutorialInfo/`), under Unity's own terms |
+| Self-made content listed as such in `docs/ASSET_CREDITS.md` (for example the menu theme, the generated arena, the logo artwork) and the documentation | The Unity engine, its packages and any template content Unity generates, under Unity's own terms |
