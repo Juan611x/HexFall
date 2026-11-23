@@ -13,5 +13,9 @@ namespace HexFall.Player
             if (x * x + z * z < 1e-6f) return currentYaw;
             return Mathf.Atan2(x, z) * Mathf.Rad2Deg;
         }
+
+        // Yaw after turning from current toward target by at most maxStep degrees, the short way round.
+        public static float Turn(float currentYaw, float targetYaw, float maxStep) =>
+            Mathf.MoveTowardsAngle(currentYaw, targetYaw, maxStep);
     }
 }

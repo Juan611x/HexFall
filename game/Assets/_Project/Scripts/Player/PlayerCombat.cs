@@ -19,6 +19,8 @@ namespace HexFall.Player
         [SerializeField] private float aimDistance = 100f;
         [Tooltip("How long after the bolt leaves the wizard keeps facing the crosshair.")]
         [SerializeField] private float faceAimHoldSeconds = 0.3f;
+        [Tooltip("How fast the wizard turns to the crosshair when attacking (a fast turn, not a snap).")]
+        [SerializeField] private float faceAimDegreesPerSecond = 1800f;
         [Header("Shield")]
         [SerializeField] private int shieldCharges = 3;
         [SerializeField] private float chargeRechargeSeconds = 6f;
@@ -38,6 +40,10 @@ namespace HexFall.Player
 
         public int MaxShieldCharges => shieldCharges;
         public int ShieldCharges => _shield?.Charges(Time.time) ?? shieldCharges;
+
+        // True from the attack until the wizard stops facing the crosshair, and while the shield guard
+        // is up. Used by the IK to aim the head and chest harder.
+        public bool IsActing => _shield != null && (Time.time < _faceAimUntil || _shield.IsGuarding(Time.time));
 
         private void Awake()
         {
@@ -62,7 +68,6 @@ namespace HexFall.Player
             _animator.SetTrigger(AttackTrigger);
             _fireAt = Time.time + boltDelaySeconds;
             _faceAimUntil = _fireAt + faceAimHoldSeconds;
-            FaceAim();
             return true;
         }
 
@@ -82,7 +87,9 @@ namespace HexFall.Player
 
         private void FaceAim()
         {
-            var yaw = AimFacing.YawToward(transform.position, AimPoint(), transform.eulerAngles.y);
+            var current = transform.eulerAngles.y;
+            var target = AimFacing.YawToward(transform.position, AimPoint(), current);
+            var yaw = AimFacing.Turn(current, target, faceAimDegreesPerSecond * Time.deltaTime);
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
         }
 

@@ -40,6 +40,7 @@ Created for HexFall with no third-party source; listed so every binary in the re
 | Asset | Location | How |
 |---|---|---|
 | `T_LightShaft.png` (64×256), `T_Moon.png` (64×64) | `game/Assets/_Project/Art/Environment/Textures/` | Generated procedurally in the Unity Editor (tapered alpha gradient for the moonbeam, crescent mask for the moon) |
+| `M_TestWall.mat` and the `TestArena` greybox | `game/Assets/_Project/Art/Environment/`, `Sandbox` scene | Built in the Unity Editor from primitives with the existing `T_CastleBrick` and `T_StoneTiles` textures: walls, a 14° ramp to a platform, six 25 cm steps, jump boxes and a 2 m ledge for movement testing |
 | `T_MistNoise.png` (64×64) | `game/Assets/_Project/Art/Environment/Textures/` | Generated procedurally in the Unity Editor: 4-octave Perlin noise × smooth radial falloff, alpha posterised to 6 steps for the PSX look; used by the `GroundMist` particles |
 | `MenuTheme.wav` (91.4 s seamless loop, 22.05 kHz mono) | `game/Assets/_Project/Audio/Music/` | Composed and synthesized by `art/audio/compose_menu_theme.py` (pure Python, chip-style voices, D Phrygian dominant, 84 BPM); key chosen to match the Cathedral ambient layer (D/A drone) |
 | `BattleTheme.wav` (121.9 s seamless loop, 22.05 kHz mono) | `game/Assets/_Project/Audio/Music/` | Composed and synthesized by `art/audio/compose_battle_theme.py` (pure Python, chip-style voices, D Phrygian dominant like the menu theme, 126 BPM; war drums, galloping bass, string ostinato, solo violin, bells and low brass in an A–B–C–B' form) |
@@ -53,12 +54,12 @@ Code packages from Unity Technologies, declared in `game/Packages/manifest.json`
 | Package | Version | Used for | License |
 |---|---|---|---|
 | Cinemachine (`com.unity.cinemachine`) | 3.1.7 | Third-person camera: follow, shoulder aim, wall collision | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
-| Animation Rigging (`com.unity.animation.rigging`) | 1.4.1 | Runtime IK: head and torso aim at the crosshair, hand locked to the staff | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
+| Animation Rigging (`com.unity.animation.rigging`) | 1.4.1 | Runtime IK on PlayerWizard (`Rig` + `PlayerIKDriver`): feet placed on the ground with a hip drop (Two Bone IK per leg) and head and chest aiming at the crosshair (Multi-Aim) | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
 | Splines (`com.unity.splines`) | 2.9.0 | Not used directly; pulled in as a dependency of Cinemachine | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) |
 
-## Required local import: Starter Assets
+## No longer used: Starter Assets
 
-The `PlayerWizard` prefab and the `Sandbox` scene use Unity's free **First Person + Third Person | Character Controllers** package (Starter Assets 2.0.2, Unity Technologies, Asset Store). Its Asset Store licence is still under review, so it is not in this repository (`game/Assets/Starter Assets/` is ignored). Before opening `Sandbox`, add the package to your Unity account and import it from **Window > Package Manager > My Assets** into `game/Assets/Starter Assets/`. Without it the player shows missing scripts and the scene has no camera rig; the main menu does not depend on it.
+The project used Unity's **First Person + Third Person | Character Controllers** package (Starter Assets 2.0.2) for the player controller, camera rig and Sandbox greybox. Since the `feat/player-controller` work, HexFall has its own state-machine controller (`Scripts/Player/Locomotion/`), camera rig prefabs (`Prefabs/Camera/`) and `TestArena` geometry, and no tracked scene, prefab, material or template references the package. `game/Assets/Starter Assets/` stays ignored; a local copy can be deleted.
 
 ## Required local import: Stark Crafts PSX night sky
 
