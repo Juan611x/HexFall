@@ -225,3 +225,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: HexFall.Player::HexFall.Player.Bolt
   radius: 0.15
   lifetimeSeconds: 3
+  impactClip: {fileID: 8300000, guid: 937b21b8f16068d4abc491c545208e85, type: 3}
+  impactVolume: 0.9

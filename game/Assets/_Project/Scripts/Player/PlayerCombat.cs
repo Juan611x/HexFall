@@ -1,12 +1,12 @@
+using HexFall.Player.Actions;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace HexFall.Player
 {
     // Receives the Attack and Parry actions from PlayerInput (Send Messages), applies the attack cooldown
-    // and the shield rules, and drives the animator and the shield VFX. Incoming damage goes through
+    // and the shield rules, and drives the shield VFX. Incoming damage goes through
     // ResolveHit, which says how much of it the shield absorbed.
-    [RequireComponent(typeof(Animator))]
     public class PlayerCombat : MonoBehaviour
     {
         [SerializeField] private float attackCooldownSeconds = 0.5f;
@@ -29,27 +29,61 @@ namespace HexFall.Player
         [SerializeField, Range(0f, 1f)] private float partialBlock = 0.5f;
         [SerializeField] private MagicShield shield;
 
-        private static readonly int AttackTrigger = Animator.StringToHash("Attack");
-        private static readonly int ParryTrigger = Animator.StringToHash("Parry");
+        // Counts entries into Attack, so Attack() also reports an attack chained on the tick the last one ended.
+        private int _attackStarts;
 
-        private Animator _animator;
-        private AttackCooldown _attack;
-        private ShieldState _shield;
-        private float _fireAt = float.PositiveInfinity;
-        private float _faceAimUntil = float.NegativeInfinity;
+        // The action state machine; the IK, animator and audio adapters read it. Null before Awake.
+        public ActionMachine Machine { get; private set; }
 
         public int MaxShieldCharges => shieldCharges;
-        public int ShieldCharges => _shield?.Charges(Time.time) ?? shieldCharges;
+        public int ShieldCharges => Machine?.ShieldCharges(Time.time) ?? shieldCharges;
 
         // True from the attack until the wizard stops facing the crosshair, and while the shield guard
         // is up. Used by the IK to aim the head and chest harder.
-        public bool IsActing => _shield != null && (Time.time < _faceAimUntil || _shield.IsGuarding(Time.time));
+        public bool IsActing => Machine != null && Machine.IsActing;
 
         private void Awake()
         {
-            _animator = GetComponent<Animator>();
-            _attack = new AttackCooldown(attackCooldownSeconds);
-            _shield = new ShieldState(shieldCharges, chargeRechargeSeconds, perfectParrySeconds, guardSeconds, partialBlock);
+            Machine = new ActionMachine(new ActionSettings
+            {
+                attackCooldownSeconds = attackCooldownSeconds,
+                boltDelaySeconds = boltDelaySeconds,
+                faceAimHoldSeconds = faceAimHoldSeconds,
+                shieldCharges = shieldCharges,
+                chargeRechargeSeconds = chargeRechargeSeconds,
+                perfectParrySeconds = perfectParrySeconds,
+                guardSeconds = guardSeconds,
+                partialBlock = partialBlock,
+            });
+            Machine.StateChanged += OnActionChanged;
+            Machine.BoltFired += FireBolt;
+            Machine.HitResolved += OnHitResolved;
+        }
+
+        private void OnDestroy()
+        {
+            if (Machine == null) return;
+            Machine.StateChanged -= OnActionChanged;
+            Machine.BoltFired -= FireBolt;
+            Machine.HitResolved -= OnHitResolved;
+        }
+
+        // The shield flash follows the action state; the animator follows it in ActionAnimatorBridge.
+        private void OnActionChanged(ActionStateId from, ActionStateId to)
+        {
+            if (to == ActionStateId.Attack)
+            {
+                _attackStarts++;
+            }
+            else if (to == ActionStateId.Parry)
+            {
+                if (shield != null) shield.Flash(guardSeconds);
+            }
+        }
+
+        private void OnHitResolved(HitResult hit)
+        {
+            if (hit.Grade != ParryGrade.None && shield != null) shield.Deflect();
         }
 
         public void OnAttack(InputValue value)
@@ -64,25 +98,21 @@ namespace HexFall.Player
 
         public bool Attack()
         {
-            if (!_attack.TryAttack(Time.time)) return false;
-            _animator.SetTrigger(AttackTrigger);
-            _fireAt = Time.time + boltDelaySeconds;
-            _faceAimUntil = _fireAt + faceAimHoldSeconds;
-            return true;
+            var before = _attackStarts;
+            Machine.Tick(new ActionIntent(true, false), Time.time);
+            return _attackStarts != before;
         }
 
         private void Update()
         {
-            if (Time.time < _fireAt) return;
-            _fireAt = float.PositiveInfinity;
-            FireBolt();
+            Machine.Tick(default, Time.time);
         }
 
         // Runs after the movement controller, which only turns the wizard toward where it walks, so an
         // attack always faces the crosshair until the bolt is gone.
         private void LateUpdate()
         {
-            if (Time.time < _faceAimUntil) FaceAim();
+            if (Machine.FacesAim) FaceAim();
         }
 
         private void FaceAim()
@@ -121,19 +151,12 @@ namespace HexFall.Player
 
         public void Parry()
         {
-            if (!_shield.TryRaise(Time.time)) return;
-            _animator.SetTrigger(ParryTrigger);
-            if (shield != null) shield.Flash(guardSeconds);
+            Machine.Tick(new ActionIntent(false, true), Time.time);
         }
 
         // Restores every shield charge. False when the shield was already full.
-        public bool RefillShield() => _shield.Refill(Time.time);
+        public bool RefillShield() => Machine.RefillShield(Time.time);
 
-        public HitResult ResolveHit(int damage)
-        {
-            var hit = _shield.Resolve(damage, Time.time);
-            if (hit.Grade != ParryGrade.None && shield != null) shield.Deflect();
-            return hit;
-        }
+        public HitResult ResolveHit(int damage) => Machine.ResolveHit(damage, Time.time);
     }
 }

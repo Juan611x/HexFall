@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HexFall.Player.Actions;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
 
@@ -84,8 +85,8 @@ namespace HexFall.Player.Locomotion
             var machine = _motor.Machine;
             if (machine == null) return;
 
-            var acting = _combat != null && _combat.IsActing;
-            var target = IkProfiles.For(machine.Current, acting);
+            var action = _combat != null && _combat.Machine != null ? _combat.Machine.Current : ActionStateId.Ready;
+            var target = IkProfiles.For(machine.Current, action);
             _profile = IkBlend.Toward(_profile, target, blendRate, Time.deltaTime);
 
             var feetWeight = _hasAnimatedFeet ? _profile.FeetWeight : 0f;

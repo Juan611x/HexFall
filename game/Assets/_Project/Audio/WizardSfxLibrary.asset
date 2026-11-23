@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e66e8ea3e906934f9c51a443901b4ec, type: 3}
+  m_Name: WizardSfxLibrary
+  m_EditorClassIdentifier: HexFall.Player::HexFall.Player.WizardSfxLibrary
+  entries:
+  - cue: 1
+    clip: {fileID: 8300000, guid: b112828b661046c41bfbdda2adfe2ef1, type: 3}
+    volume: 0.8
+  - cue: 2
+    clip: {fileID: 8300000, guid: e02a1e9faa42aff41adada8f6540a4d9, type: 3}
+    volume: 0.8
+  - cue: 3
+    clip: {fileID: 8300000, guid: 665131b54eac9ba42ae7ea6c38bf7591, type: 3}
+    volume: 0.8
+  - cue: 4
+    clip: {fileID: 8300000, guid: cc3e36f570e40a241a58b43ebabf18f4, type: 3}
+    volume: 0.8
+  - cue: 5
+    clip: {fileID: 8300000, guid: 937b21b8f16068d4abc491c545208e85, type: 3}
+    volume: 0.9
+  - cue: 6
+    clip: {fileID: 8300000, guid: fc3e75bd46178bf42b02ae37e55b09e7, type: 3}
+    volume: 0.7
+  - cue: 7
+    clip: {fileID: 8300000, guid: 5a29e679b427ce94b8a2fc91417a9280, type: 3}
+    volume: 0.6

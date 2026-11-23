@@ -1,3 +1,4 @@
+using HexFall.Player.Actions;
 using UnityEngine;
 
 namespace HexFall.Player.Locomotion
@@ -26,8 +27,9 @@ namespace HexFall.Player.Locomotion
         public const float ActingHeadAim = 0.8f;
         public const float ActingChestAim = 0.6f;
 
-        public static IkProfile For(LocomotionStateId state, bool acting)
+        public static IkProfile For(LocomotionStateId state, ActionStateId action)
         {
+            var acting = action != ActionStateId.Ready;
             var feet = state == LocomotionStateId.Grounded ? 1f : 0f;
             return acting
                 ? new IkProfile(feet, ActingHeadAim, ActingChestAim)

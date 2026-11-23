@@ -9,11 +9,15 @@ namespace HexFall.Player
     {
         [SerializeField] private float radius = 0.15f;
         [SerializeField] private float lifetimeSeconds = 3f;
+        [SerializeField] private AudioClip impactClip;
+        [SerializeField, Range(0f, 1f)] private float impactVolume = 0.9f;
 
         private GameObject _owner;
         private Vector3 _velocity;
         private int _damage;
         private float _dieAt;
+
+        public AudioClip ImpactClip => impactClip;
 
         public void Launch(GameObject owner, Vector3 direction, float speed, int damage)
         {
@@ -45,6 +49,8 @@ namespace HexFall.Player
             {
                 var target = nearest.Value.collider.GetComponentInParent<IDamageable>();
                 target?.TakeHit(_damage, _owner);
+                // Any impact (target or world) is heard where it lands.
+                if (impactClip != null) AudioSource.PlayClipAtPoint(impactClip, nearest.Value.point, impactVolume * EffectsVolume.Current());
                 Destroy(gameObject);
                 return;
             }

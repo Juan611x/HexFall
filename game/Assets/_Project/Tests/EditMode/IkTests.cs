@@ -1,3 +1,4 @@
+using HexFall.Player.Actions;
 using HexFall.Player.Locomotion;
 using NUnit.Framework;
 using UnityEngine;
@@ -9,25 +10,25 @@ namespace HexFall.UI.Tests
         [Test]
         public void GroundedPlantsTheFeet()
         {
-            Assert.AreEqual(1f, IkProfiles.For(LocomotionStateId.Grounded, false).FeetWeight, 0.0001f);
+            Assert.AreEqual(1f, IkProfiles.For(LocomotionStateId.Grounded, ActionStateId.Ready).FeetWeight, 0.0001f);
         }
 
         [Test]
         public void JumpReleasesTheFeet()
         {
-            Assert.AreEqual(0f, IkProfiles.For(LocomotionStateId.Jump, false).FeetWeight, 0.0001f);
+            Assert.AreEqual(0f, IkProfiles.For(LocomotionStateId.Jump, ActionStateId.Ready).FeetWeight, 0.0001f);
         }
 
         [Test]
         public void FallReleasesTheFeet()
         {
-            Assert.AreEqual(0f, IkProfiles.For(LocomotionStateId.Fall, false).FeetWeight, 0.0001f);
+            Assert.AreEqual(0f, IkProfiles.For(LocomotionStateId.Fall, ActionStateId.Ready).FeetWeight, 0.0001f);
         }
 
         [Test]
         public void AimIsSoftWhenNotActing()
         {
-            var profile = IkProfiles.For(LocomotionStateId.Grounded, false);
+            var profile = IkProfiles.For(LocomotionStateId.Grounded, ActionStateId.Ready);
             Assert.AreEqual(IkProfiles.IdleHeadAim, profile.HeadAimWeight, 0.0001f);
             Assert.AreEqual(IkProfiles.IdleChestAim, profile.ChestAimWeight, 0.0001f);
         }
@@ -35,7 +36,15 @@ namespace HexFall.UI.Tests
         [Test]
         public void AimIsStrongWhenActing()
         {
-            var profile = IkProfiles.For(LocomotionStateId.Grounded, true);
+            var profile = IkProfiles.For(LocomotionStateId.Grounded, ActionStateId.Attack);
+            Assert.AreEqual(IkProfiles.ActingHeadAim, profile.HeadAimWeight, 0.0001f);
+            Assert.AreEqual(IkProfiles.ActingChestAim, profile.ChestAimWeight, 0.0001f);
+        }
+
+        [Test]
+        public void ParryAimsAsStronglyAsAttack()
+        {
+            var profile = IkProfiles.For(LocomotionStateId.Grounded, ActionStateId.Parry);
             Assert.AreEqual(IkProfiles.ActingHeadAim, profile.HeadAimWeight, 0.0001f);
             Assert.AreEqual(IkProfiles.ActingChestAim, profile.ChestAimWeight, 0.0001f);
         }
@@ -50,7 +59,7 @@ namespace HexFall.UI.Tests
         [Test]
         public void AimStaysOnWhileAirborne()
         {
-            var profile = IkProfiles.For(LocomotionStateId.Fall, true);
+            var profile = IkProfiles.For(LocomotionStateId.Fall, ActionStateId.Attack);
             Assert.AreEqual(IkProfiles.ActingHeadAim, profile.HeadAimWeight, 0.0001f);
             Assert.AreEqual(IkProfiles.ActingChestAim, profile.ChestAimWeight, 0.0001f);
         }
