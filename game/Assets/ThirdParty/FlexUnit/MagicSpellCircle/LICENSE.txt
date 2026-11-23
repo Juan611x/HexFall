@@ -1,0 +1,16 @@
+"Magic Spell Circle VFX For Unity | Shader Graph Tutorial" textures by Flex Unit
+Source: https://www.youtube.com/watch?v=mh14NDWnHog
+Channel: https://www.youtube.com/@FlexUnit
+Files used: Circle.png (stored as T_SpellCircle_Orange.png), Noise.png (stored as T_SpellCircle_Noise.png), Readme.pdf (unchanged)
+License: free for any project, including commercial ones; no attribution required (see Readme.pdf).
+
+Terms, quoted from the Readme.pdf shipped with the textures:
+
+  "These textures are completely free: feel free to use them in any of your
+  projects, including commercial ones. No attribution is required, but a
+  little thank-you goes a very long way."
+
+The author asks for a short comment under the tutorial video, a like and a
+subscribe in return; this is a request, not a condition of the license.
+
+The two PNG files were renamed only; their pixels are unchanged.
