@@ -20,10 +20,57 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void RejectsACountOutsideThreeToFour()
+        public void RejectsACountOutsideThreeToEight()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => Make(count: 2));
-            Assert.Throws<ArgumentOutOfRangeException>(() => Make(count: 5));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Make(count: 9));
+            Assert.AreEqual(6, Make(count: 6).Currents.Count);
+            Assert.AreEqual(8, Make(count: 8).Currents.Count);
+        }
+
+        // ---- six currents over the wider band (T6c) ----------------------------------------------------------------
+
+        [Test]
+        public void DefaultsAreSixCurrentsOverTheWideBand()
+        {
+            var scheduler = new WindCurrentScheduler(new Random(2));
+            Assert.AreEqual(6, scheduler.Currents.Count);
+
+            float min = 0f, max = 0f;
+            for (int step = 0; step < 3000; step++)
+            {
+                scheduler.Tick(0.05f);
+                foreach (var c in scheduler.Currents)
+                {
+                    min = Math.Min(min, c.Height);
+                    max = Math.Max(max, c.Height);
+                }
+            }
+
+            Assert.LessOrEqual(max, 0.85f);
+            Assert.GreaterOrEqual(min, -0.85f);
+            Assert.Greater(max, 0.8f, "reaches the top of the band");
+            Assert.Less(min, -0.8f, "reaches the bottom of the band");
+        }
+
+        [Test]
+        public void SixFastCurrentsKeepTheirHeightsApartAndTheirExpiriesApart()
+        {
+            for (int seed = 1; seed <= 20; seed++)
+            {
+                var scheduler = new WindCurrentScheduler(new Random(seed), 6, -0.85f, 0.85f, 0.22f, 12f, 0.6f, 0.8f, 0.06f);
+                for (int step = 0; step < 1500; step++)
+                {
+                    scheduler.Tick(1f / 60f);
+                    var heights = scheduler.Currents.Select(c => c.Height).OrderBy(x => x).ToArray();
+                    for (int i = 1; i < heights.Length; i++)
+                        Assert.Greater(heights[i] - heights[i - 1], 0.05f, "seed " + seed + " step " + step + ": heights apart");
+                }
+
+                var remaining = scheduler.Currents.Select(c => c.Lifetime * (1f - c.Progress)).OrderBy(x => x).ToArray();
+                for (int i = 1; i < remaining.Length; i++)
+                    Assert.Greater(remaining[i] - remaining[i - 1], 0.02f, "seed " + seed + ": expiries apart");
+            }
         }
 
         [Test]

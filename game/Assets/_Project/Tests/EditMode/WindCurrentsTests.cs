@@ -153,6 +153,59 @@ namespace HexFall.UI.Tests
             Assert.GreaterOrEqual(WindCurrentArc.RingRadius(5f), 0f, "never NaN above the pole");
         }
 
+        [Test]
+        public void Ring_radius_stays_valid_and_hugs_the_sphere_near_the_poles()
+        {
+            foreach (float h in new[] { -0.85f, 0.85f })
+            {
+                float radius = WindCurrentArc.RingRadius(h);
+                float sphereAtHeight = Mathf.Sqrt(0.25f - Mathf.Pow(h * 0.5f, 2));
+                Assert.IsFalse(float.IsNaN(radius));
+                Assert.Greater(radius, 0.2f, "does not collapse at " + h);
+                Assert.AreEqual(sphereAtHeight * 1.06f, radius, 1e-5f);
+            }
+        }
+
+        [Test]
+        public void Band_height_shrinks_toward_the_poles_so_it_never_crosses_them()
+        {
+            Assert.AreEqual(1f, WindCurrentArc.BandScaleY(0f), 1e-6f);
+            float last = 1f;
+            for (float h = 0f; h <= 1f; h += 0.05f)
+            {
+                float k = WindCurrentArc.BandScaleY(h);
+                Assert.LessOrEqual(k, last + 1e-6f, "monotonic at " + h);
+                Assert.AreEqual(k, WindCurrentArc.BandScaleY(-h), 1e-6f, "symmetric");
+                Assert.Greater(k, 0f);
+                last = k;
+            }
+
+            foreach (float h in new[] { 0.85f, -0.85f })
+            {
+                float top = Mathf.Abs(h) * 0.5f + WindCurrentArc.BandHalfHeight * WindCurrentArc.BandScaleY(h);
+                Assert.Less(top, 0.5f * 0.96f, "band edge stays below the pole at " + h);
+            }
+
+            Assert.IsFalse(float.IsNaN(WindCurrentArc.BandScaleY(float.NaN)));
+        }
+
+        [Test]
+        public void Tilt_shrinks_toward_the_poles_so_streaks_stay_streaks()
+        {
+            Assert.AreEqual(1f, WindCurrentArc.TiltScale(0f), 1e-6f);
+            Assert.Less(WindCurrentArc.TiltScale(0.85f), 0.6f);
+            Assert.GreaterOrEqual(WindCurrentArc.TiltScale(0.85f), 0f);
+            Assert.AreEqual(WindCurrentArc.TiltScale(0.85f), WindCurrentArc.TiltScale(-0.85f), 1e-6f);
+            Assert.AreEqual(0f, WindCurrentArc.TiltScale(1.5f), 1e-6f, "never NaN above the pole");
+        }
+
+        [Test]
+        public void Ring_mesh_half_height_matches_the_constant_the_adapter_uses()
+        {
+            var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(MeshPath);
+            Assert.AreEqual(WindCurrentArc.BandHalfHeight, mesh.bounds.extents.y, 1e-3f);
+        }
+
         // ---- assets ----------------------------------------------------------------------------------------------
 
         private static Shader LoadShader()
@@ -216,7 +269,7 @@ namespace HexFall.UI.Tests
             Assert.IsNotNull(mesh, MeshPath);
             Assert.AreEqual(0.5f, mesh.bounds.extents.x, 0.02f, "radius x");
             Assert.AreEqual(0.5f, mesh.bounds.extents.z, 0.02f, "radius z");
-            Assert.That(mesh.bounds.extents.y, Is.InRange(0.03f, 0.15f), "a thin band along the vertical axis");
+            Assert.That(mesh.bounds.extents.y, Is.InRange(0.11f, 0.14f), "a band (0.25 tall, thicker than T6) along the vertical axis");
             Assert.GreaterOrEqual(mesh.triangles.Length / 3, 96, "enough segments to look round");
             Assert.LessOrEqual(mesh.triangles.Length / 3, 400, "cheap");
             var uv = mesh.uv;
@@ -326,6 +379,38 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void Six_rings_cover_heights_up_to_the_wider_band_and_stay_off_the_poles()
+        {
+            var (go, currents, rings) = NewCurrents(6);
+            try
+            {
+                float minY = 0f, maxY = 0f;
+                for (int step = 0; step < 600; step++)
+                {
+                    currents.Step(0.02f, 1f);
+                    for (int i = 0; i < rings.Length; i++)
+                    {
+                        var t = rings[i].transform;
+                        minY = Mathf.Min(minY, t.localPosition.y);
+                        maxY = Mathf.Max(maxY, t.localPosition.y);
+                        float h = t.localPosition.y / 0.5f;
+                        Assert.AreEqual(WindCurrentArc.BandScaleY(h), t.localScale.y, 1e-4f, "band height at " + h);
+                        var state = currents.States[i];
+                        Assert.LessOrEqual(Quaternion.Angle(Quaternion.identity, t.localRotation),
+                            Mathf.Abs(state.TiltDegrees) * WindCurrentArc.TiltScale(state.Height) + 1e-3f, "tilt shrinks near the poles");
+                    }
+                }
+
+                Assert.AreEqual(6, currents.States.Count);
+                Assert.Greater(maxY, 0.7f * 0.5f, "currents start high");
+                Assert.Less(minY, -0.7f * 0.5f, "currents start low");
+                Assert.LessOrEqual(maxY, 0.85f * 0.5f + 1e-4f);
+                Assert.GreaterOrEqual(minY, -0.85f * 0.5f - 1e-4f);
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
         public void Restart_staggers_the_currents_again_and_Hide_turns_the_rings_off()
         {
             var (go, currents, rings) = NewCurrents();
@@ -390,6 +475,13 @@ namespace HexFall.UI.Tests
             return (shieldGo, shield, go, currents, rings);
         }
 
+        // The build timing the shield really uses: hold plus the serialized assemble/disassemble durations.
+        private static ShieldBuild BuildOf(MagicShield shield, float hold)
+        {
+            using (var so = new SerializedObject(shield))
+                return new ShieldBuild(hold, so.FindProperty("assembleSeconds").floatValue, so.FindProperty("disassembleSeconds").floatValue);
+        }
+
         private static float RingFade(Renderer ring, MaterialPropertyBlock block)
         {
             if (!ring.enabled) return 0f;
@@ -407,6 +499,7 @@ namespace HexFall.UI.Tests
                 try
                 {
                     const float hold = 0.4f, dt = 1f / 60f;
+                    var build = BuildOf(shield, hold);
                     shield.Flash(hold);
                     var heights = rings.Select(r => r.transform.localPosition.y).ToArray();
                     var lastFade = new float[rings.Length];
@@ -414,11 +507,11 @@ namespace HexFall.UI.Tests
                     for (float t = dt; t < 1.8f; t += dt)
                     {
                         shield.Apply(t, dt);
-                        if (t > hold + 0.02f)
+                        if (build.PhaseAt(t) >= ShieldBuildPhase.Disassembling)
                             for (int i = 0; i < rings.Length; i++)
                                 if (rings[i].enabled)
                                     Assert.AreEqual(heights[i], rings[i].transform.localPosition.y, 1e-5f, "no new current after disassembly starts (seed " + seed + ")");
-                        if (t >= 0.75f + dt)
+                        if (build.IsDone(t - dt))
                         {
                             for (int i = 0; i < rings.Length; i++)
                             {
@@ -428,7 +521,7 @@ namespace HexFall.UI.Tests
                                 if (fade > 0f) visibleAfterSphere = true;
                             }
                         }
-                        else if (t >= 0.75f)
+                        else if (build.IsDone(t))
                             for (int i = 0; i < rings.Length; i++) lastFade[i] = RingFade(rings[i], block);
 
                         if (t < hold)
@@ -553,7 +646,7 @@ namespace HexFall.UI.Tests
         // ---- prefab ----------------------------------------------------------------------------------------------
 
         [Test]
-        public void Player_prefab_wires_four_ring_renderers_under_the_shield()
+        public void Player_prefab_wires_six_ring_renderers_under_the_shield()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
             var shield = prefab.GetComponentInChildren<MagicShield>(true);
@@ -567,7 +660,7 @@ namespace HexFall.UI.Tests
             using (var so = new SerializedObject(currents))
             {
                 var rings = so.FindProperty("rings");
-                Assert.AreEqual(4, rings.arraySize);
+                Assert.AreEqual(6, rings.arraySize);
                 var material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
                 var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(MeshPath);
                 for (int i = 0; i < rings.arraySize; i++)

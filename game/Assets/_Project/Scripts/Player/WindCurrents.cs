@@ -23,6 +23,11 @@ namespace HexFall.Player
         [SerializeField] private float maxArcLength = 0.4f;
         [SerializeField] private float minLifetime = 0.6f;
         [SerializeField] private float maxLifetime = 0.8f;
+        [SerializeField] private float minHeight = -0.85f; // band of heights in sphere-radius units
+        [SerializeField] private float maxHeight = 0.85f;
+        [SerializeField] private float minHeightGap = 0.22f;
+        [SerializeField] private float maxTiltDegrees = 12f;
+        [SerializeField] private float minExpiryGap = 0.06f; // six currents in 0.6-0.8 s need a tighter gap than 0.1 s
 
         private static readonly int HeadId = Shader.PropertyToID("_Head");
         private static readonly int TailId = Shader.PropertyToID("_Tail");
@@ -126,9 +131,9 @@ namespace HexFall.Player
         {
             float scale = WindCurrentArc.RingRadius(state.Height, sphereRadius) / MeshRadius;
             ring.localPosition = new Vector3(0f, state.Height * sphereRadius, 0f);
-            ring.localScale = new Vector3(scale, 1f, scale);
+            ring.localScale = new Vector3(scale, WindCurrentArc.BandScaleY(state.Height), scale);
             var axis = Quaternion.Euler(0f, axisDegrees, 0f) * Vector3.right; // a random horizontal axis
-            ring.localRotation = Quaternion.AngleAxis(state.TiltDegrees, axis);
+            ring.localRotation = Quaternion.AngleAxis(state.TiltDegrees * WindCurrentArc.TiltScale(state.Height), axis);
         }
 
         // A current just respawned: it gets its own start position on the ring, tilt axis and noise seed.
@@ -146,8 +151,9 @@ namespace HexFall.Player
 
             _random = _random ?? new Random();
             _block = _block ?? new MaterialPropertyBlock();
-            int count = Mathf.Clamp(rings.Length, 3, 4);
-            _scheduler = new WindCurrentScheduler(_random, count, -0.6f, 0.6f, 0.3f, 12f, minLifetime, maxLifetime);
+            int count = Mathf.Clamp(rings.Length, 3, 8);
+            _scheduler = new WindCurrentScheduler(_random, count, minHeight, maxHeight, minHeightGap, maxTiltDegrees,
+                minLifetime, maxLifetime, minExpiryGap);
             _startTurn = new float[count];
             _tiltAxisDegrees = new float[count];
             _seed = new float[count];

@@ -19,7 +19,7 @@ namespace HexFall.Player
         }
     }
 
-    // Keeps a few horizontal wind currents alive around the shield. Lifetimes are staggered so they
+    // Keeps three to eight horizontal wind currents alive around the shield. Lifetimes are staggered so they
     // never appear or vanish together, and a finished current respawns at a new height that keeps a
     // minimum gap from the other active currents (several candidates, then the farthest one). A finished
     // current also carries its leftover time into the next one and picks a lifetime whose expiry stays
@@ -28,7 +28,6 @@ namespace HexFall.Player
     {
         private const int Candidates = 8;
         private const int MaxCarryRespawns = 16;
-        private const float MinExpiryGap = 0.1f;
 
         private readonly Random _random;
         private readonly float _minHeight;
@@ -37,6 +36,7 @@ namespace HexFall.Player
         private readonly float _maxTiltDegrees;
         private readonly float _minLifetime;
         private readonly float _maxLifetime;
+        private readonly float _minExpiryGap;
         private readonly float[] _age;
         private readonly WindCurrentState[] _states;
         private readonly bool[] _placed;
@@ -65,11 +65,12 @@ namespace HexFall.Player
         // No new currents from now on; the ones alive finish their life.
         public void StopSpawning() => Draining = true;
 
-        public WindCurrentScheduler(Random random, int count = 3, float minHeight = -0.6f, float maxHeight = 0.6f,
-            float minHeightGap = 0.3f, float maxTiltDegrees = 12f, float minLifetime = 1.2f, float maxLifetime = 2.2f)
+        public WindCurrentScheduler(Random random, int count = 6, float minHeight = -0.85f, float maxHeight = 0.85f,
+            float minHeightGap = 0.22f, float maxTiltDegrees = 12f, float minLifetime = 0.6f, float maxLifetime = 0.8f,
+            float minExpiryGap = 0.1f)
         {
             if (random == null) throw new ArgumentNullException(nameof(random));
-            if (count < 3 || count > 4) throw new ArgumentOutOfRangeException(nameof(count));
+            if (count < 3 || count > 8) throw new ArgumentOutOfRangeException(nameof(count));
             if (maxHeight < minHeight) throw new ArgumentException("maxHeight must not be below minHeight");
             if (minLifetime <= 0f || maxLifetime < minLifetime) throw new ArgumentException("invalid lifetime range");
 
@@ -80,6 +81,7 @@ namespace HexFall.Player
             _maxTiltDegrees = maxTiltDegrees;
             _minLifetime = minLifetime;
             _maxLifetime = maxLifetime;
+            _minExpiryGap = minExpiryGap;
             _age = new float[count];
             _states = new WindCurrentState[count];
             _placed = new bool[count];
@@ -196,7 +198,7 @@ namespace HexFall.Player
 
             for (int k = 0; k < Candidates; k++) _candidates[k] = _lifetimes[k] * (1f - phase) - age;
             int n = CollectOthers(self, remaining: true);
-            return _lifetimes[PickIndex(_candidates, _others, n, MinExpiryGap)];
+            return _lifetimes[PickIndex(_candidates, _others, n, _minExpiryGap)];
         }
 
         private int CollectOthers(int self, bool remaining)

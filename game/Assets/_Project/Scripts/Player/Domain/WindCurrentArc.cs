@@ -32,6 +32,11 @@ namespace HexFall.Player
         private const float FadeOutStart = 0.3f; // long dissipation: 70 % of the life
         private const float GateStart = 0.1f;    // build progress at which the currents start to show
 
+        // Half the height of the ring mesh (AirCurrentRing.fbx, build_current_ring_mesh.py HALF_HEIGHT).
+        public const float BandHalfHeight = 0.125f;
+
+        private const float MinBandScale = 0.2f;
+
         public static WindArc At(float progress, float startTurn, float sweepTurns = 1.1f, float maxLength = 0.4f)
         {
             float p = float.IsNaN(progress) ? 0f : Clamp01(progress);
@@ -53,6 +58,24 @@ namespace HexFall.Player
         {
             float y = normalizedHeight * sphereRadius;
             return (float)Math.Sqrt(Math.Max(0f, sphereRadius * sphereRadius - y * y)) * margin;
+        }
+
+        // Vertical scale of the band at `normalizedHeight`: a straight band over a curving cap would float off the
+        // sphere or cross the pole, so it thins out as the height approaches the pole (1 - h^2, never below 20 %).
+        public static float BandScaleY(float normalizedHeight)
+        {
+            if (float.IsNaN(normalizedHeight)) return 1f;
+            float h = Clamp01(Math.Abs(normalizedHeight));
+            return Math.Max(MinBandScale, 1f - h * h);
+        }
+
+        // Share of the random tilt a ring keeps at `normalizedHeight`: a small circle near a pole would swing off the
+        // sphere with the full tilt (sqrt(1 - h^2): 1 at the equator, 0 at the pole).
+        public static float TiltScale(float normalizedHeight)
+        {
+            if (float.IsNaN(normalizedHeight)) return 1f;
+            float h = Math.Abs(normalizedHeight);
+            return (float)Math.Sqrt(Math.Max(0f, 1f - h * h));
         }
 
         private static float Clamp01(float v) => Math.Max(0f, Math.Min(1f, v));
