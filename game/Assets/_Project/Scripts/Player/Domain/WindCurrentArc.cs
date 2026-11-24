@@ -20,16 +20,17 @@ namespace HexFall.Player
         }
     }
 
-    // Pure shape of one wind current over its life (progress 0..1): the arc grows out of nothing while its head
-    // sweeps around the sphere, stays at full length, then shrinks and fades out. Also the gate that ties the
-    // currents to the shield build and the ring size that hugs the sphere at a height.
+    // Pure shape of one wind current over its life (progress 0..1): it enters fast (the arc grows out of nothing and
+    // is fully opaque within the first ~12 % of life while its head sweeps most of the way round), then dissipates
+    // slowly (the head keeps drifting, the arc shortens and the opacity fades over the remaining ~70 %). Also the
+    // gate that opens the currents early in the shield build and the ring size that hugs the sphere at a height.
     public static class WindCurrentArc
     {
-        private const float GrowEnd = 0.35f;     // life progress at which the arc has its full length
-        private const float ShrinkStart = 0.75f; // progress at which the arc starts to shorten
-        private const float FadeInEnd = 0.2f;
-        private const float FadeOutStart = 0.7f;
-        private const float GateStart = 0.4f;    // build progress at which the currents start to show
+        private const float GrowEnd = 0.2f;      // life progress at which the arc has its full length
+        private const float ShrinkStart = 0.4f;  // progress at which the arc starts to shorten
+        private const float FadeInEnd = 0.12f;   // fast entry
+        private const float FadeOutStart = 0.3f; // long dissipation: 70 % of the life
+        private const float GateStart = 0.1f;    // build progress at which the currents start to show
 
         public static WindArc At(float progress, float startTurn, float sweepTurns = 1.1f, float maxLength = 0.4f)
         {
@@ -38,11 +39,12 @@ namespace HexFall.Player
             float shrink = 1f - 0.6f * Smooth((p - ShrinkStart) / (1f - ShrinkStart));
             float length = maxLength * grow * shrink;
             float fade = Smooth(p / FadeInEnd) * (1f - Smooth((p - FadeOutStart) / (1f - FadeOutStart)));
-            float head = startTurn + sweepTurns * p;
+            float rest = 1f - p;
+            float head = startTurn + sweepTurns * (1f - rest * rest * rest); // ease-out: fast sweep, slow drift
             return new WindArc(head, head - length, fade);
         }
 
-        // 0 while the shield is still mostly unbuilt, 1 once it is complete; NaN closes the gate.
+        // 0 until the shield has started to build, 1 once it is complete; NaN closes the gate.
         public static float Gate(float buildProgress) =>
             float.IsNaN(buildProgress) ? 0f : Smooth((Clamp01(buildProgress) - GateStart) / (1f - GateStart));
 

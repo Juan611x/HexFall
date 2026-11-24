@@ -212,6 +212,85 @@ namespace HexFall.UI.Tests
             }
         }
 
+        // ---- fast currents, draining and the initial expiry gap (T6b) -------------------------------------------------
+
+        private static WindCurrentScheduler MakeFast(int seed, int count = 4)
+        {
+            return new WindCurrentScheduler(new Random(seed), count, -0.6f, 0.6f, 0.3f, 12f, 0.6f, 0.8f);
+        }
+
+        [Test]
+        public void InitialExpiriesStayApartUsingTheRemainingTimeNotTheFullLifetime()
+        {
+            for (int seed = 1; seed <= 40; seed++)
+            {
+                var scheduler = MakeFast(seed);
+
+                var remaining = scheduler.Currents.Select(c => c.Lifetime * (1f - c.Progress)).OrderBy(x => x).ToArray();
+                for (int i = 1; i < remaining.Length; i++) // 0.1 s is the target; late phases leave little room to pick, so 0.05 s is enforced
+                    Assert.GreaterOrEqual(remaining[i] - remaining[i - 1], 0.05f, "seed " + seed);
+            }
+        }
+
+        [Test]
+        public void FastLifetimesBirthSeveralCurrentsDuringTheGuardWindow()
+        {
+            for (int seed = 1; seed <= 20; seed++)
+            {
+                var scheduler = MakeFast(seed);
+                var heights = scheduler.Currents.Select(c => c.Height).ToArray();
+                int births = 0;
+                for (int step = 0; step < 24; step++) // 24 / 60 s = the 0.4 s guard
+                {
+                    scheduler.Tick(1f / 60f);
+                    for (int i = 0; i < heights.Length; i++)
+                    {
+                        if (scheduler.Currents[i].Height == heights[i]) continue;
+                        heights[i] = scheduler.Currents[i].Height;
+                        births++;
+                    }
+                }
+
+                Assert.GreaterOrEqual(births, 2, "seed " + seed);
+            }
+        }
+
+        [Test]
+        public void StopSpawningLetsLiveCurrentsFinishWithoutRespawning()
+        {
+            var scheduler = MakeFast(3);
+            scheduler.Tick(0.1f);
+            var heights = scheduler.Currents.Select(c => c.Height).ToArray();
+            Assert.IsFalse(scheduler.Draining);
+            Assert.IsFalse(scheduler.IsIdle);
+
+            scheduler.StopSpawning();
+            Assert.IsTrue(scheduler.Draining);
+            float last = scheduler.Currents.Max(c => c.Progress);
+            for (int step = 0; step < 120; step++)
+            {
+                scheduler.Tick(1f / 60f);
+                for (int i = 0; i < heights.Length; i++)
+                    Assert.AreEqual(heights[i], scheduler.Currents[i].Height, "no respawn of current " + i);
+                Assert.GreaterOrEqual(scheduler.Currents.Max(c => c.Progress), last - 1e-6f);
+                last = scheduler.Currents.Max(c => c.Progress);
+            }
+
+            Assert.IsTrue(scheduler.IsIdle, "everything expired after 2 s");
+            Assert.IsTrue(scheduler.Currents.All(c => c.Progress == 1f));
+        }
+
+        [Test]
+        public void ADrainingSchedulerIsNotIdleWhileAnyCurrentIsAlive()
+        {
+            var scheduler = MakeFast(5);
+            scheduler.StopSpawning();
+
+            scheduler.Tick(0.05f);
+
+            Assert.IsFalse(scheduler.IsIdle);
+        }
+
         [Test]
         public void ALargeTickRespawnsWithoutOverflowingProgress()
         {

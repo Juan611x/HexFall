@@ -47,6 +47,24 @@ namespace HexFall.Player
 
         public IReadOnlyList<WindCurrentState> Currents => _states;
 
+        // Draining: a finished current is not respawned (it stays at progress 1, invisible), so the live ones fade out.
+        public bool Draining { get; private set; }
+
+        // Draining and every current has finished.
+        public bool IsIdle
+        {
+            get
+            {
+                if (!Draining) return false;
+                for (int i = 0; i < _states.Length; i++)
+                    if (_age[i] < _states[i].Lifetime) return false;
+                return true;
+            }
+        }
+
+        // No new currents from now on; the ones alive finish their life.
+        public void StopSpawning() => Draining = true;
+
         public WindCurrentScheduler(Random random, int count = 3, float minHeight = -0.6f, float maxHeight = 0.6f,
             float minHeightGap = 0.3f, float maxTiltDegrees = 12f, float minLifetime = 1.2f, float maxLifetime = 2.2f)
         {
@@ -72,7 +90,7 @@ namespace HexFall.Player
             {
                 float phase = (i + (float)_random.NextDouble() * 0.5f) / count; // evenly spread life phases
                 float height = PickHeight(i);
-                float lifetime = PickLifetime(i, 0f, NextLifetime());
+                float lifetime = PickLifetime(i, 0f, phase, NextLifetime());
                 _age[i] = phase * lifetime;
                 _states[i] = new WindCurrentState(phase, height, NextTilt(), lifetime);
                 _placed[i] = true;
@@ -90,14 +108,17 @@ namespace HexFall.Player
                 var s = _states[i];
                 _expired[i] = _age[i] >= s.Lifetime;
                 if (_expired[i])
+                {
                     _placed[i] = false; // not one of the "others" until it has respawned
+                    if (Draining) _states[i] = new WindCurrentState(1f, s.Height, s.TiltDegrees, s.Lifetime);
+                }
                 else
                     _states[i] = new WindCurrentState(_age[i] / s.Lifetime, s.Height, s.TiltDegrees, s.Lifetime);
             }
 
             for (int i = 0; i < _states.Length; i++)
             {
-                if (!_expired[i]) continue;
+                if (!_expired[i] || Draining) continue;
                 Respawn(i);
                 _placed[i] = true;
             }
@@ -147,7 +168,7 @@ namespace HexFall.Player
             }
 
             float height = PickHeight(self);
-            lifetime = PickLifetime(self, leftover, lifetime);
+            lifetime = PickLifetime(self, leftover, 0f, lifetime);
             _age[self] = leftover;
             _states[self] = new WindCurrentState(leftover / lifetime, height, NextTilt(), lifetime);
         }
@@ -161,18 +182,19 @@ namespace HexFall.Player
             return _candidates[PickIndex(_candidates, _others, n, _minHeightGap)];
         }
 
-        // Lifetime whose remaining time (lifetime - age) stays apart from the other currents' remaining time.
-        // `first` is already known to be longer than `age`; redraws that are not are replaced by it.
-        private float PickLifetime(int self, float age, float first)
+        // Lifetime whose remaining time stays apart from the other currents' remaining time. The current has already
+        // lived `age` seconds (respawn carry) or sits at life `phase` (initial spread), so it has
+        // lifetime * (1 - phase) - age left. `first` is already known to outlast `age`; redraws that do not are replaced by it.
+        private float PickLifetime(int self, float age, float phase, float first)
         {
             _lifetimes[0] = first;
             for (int k = 1; k < Candidates; k++)
             {
                 float candidate = NextLifetime();
-                _lifetimes[k] = candidate > age ? candidate : first;
+                _lifetimes[k] = candidate * (1f - phase) > age ? candidate : first;
             }
 
-            for (int k = 0; k < Candidates; k++) _candidates[k] = _lifetimes[k] - age;
+            for (int k = 0; k < Candidates; k++) _candidates[k] = _lifetimes[k] * (1f - phase) - age;
             int n = CollectOthers(self, remaining: true);
             return _lifetimes[PickIndex(_candidates, _others, n, MinExpiryGap)];
         }
