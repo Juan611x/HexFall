@@ -1,28 +1,22 @@
-# Wind shield texture
+# Wind shield art
 
-Generates the streak mask used by the `HexFall/WindShield` shader (the parry shield, an air sphere around the wizard).
+Textures and mesh of the parry shield (an air sphere around the wizard), in the PSX style of DD-003: a real CC0 photo reduced to a tiny point-filtered texture on a low-poly mesh.
 
 | File | Role |
 |---|---|
-| `generate_wind_streaks.py` | Deterministic generator (Pillow): thin, curved, tapered, mostly horizontal streaks on black, grayscale. Tileable in X, so it wraps around the sphere's vertical axis. The same seed gives the same image. |
+| `source/Snow_blowing_under_lamp_1_1280px.jpg` | Source photo "Snow blowing under lamp 1" by W.carter (CC0), see `source/SOURCE.txt`. |
+| `derive_air_texture.py` | Deterministic (Pillow): derives `T_AirShield.png` (128×64, tileable in U) and `T_AirWisp.png` (16×8) from the photo. |
+| `build_air_shield_mesh.py` | Blender headless: builds `AirShield.fbx`, a flat-shaded 100-triangle UV sphere (U around the vertical axis, V pole to pole). |
 | `requirements.txt` | Pinned dependency (`pillow`). |
 
 ## Rebuild
 
 ```sh
 python -m venv .venv && .venv/Scripts/pip install -r art/vfx/wind_shield/requirements.txt
-.venv/Scripts/python art/vfx/wind_shield/generate_wind_streaks.py game/Assets/_Project/VFX/WindShield/Textures/T_WindStreaks.png --seed 11
+.venv/Scripts/python -I art/vfx/wind_shield/derive_air_texture.py art/vfx/wind_shield/source/Snow_blowing_under_lamp_1_1280px.jpg game/Assets/_Project/VFX/WindShield/Textures
+blender -b --factory-startup --python art/vfx/wind_shield/build_air_shield_mesh.py
 ```
 
-Unity keeps its import settings (`.meta`: wrap U repeat, wrap V clamp, sRGB off, mipmaps on), so regenerating over the same path keeps the material reference.
+Unity keeps the import settings in the `.meta` files (point filter, no mipmaps, max size 128; shield: wrap U repeat, wrap V clamp, sRGB off), so regenerating over the same paths keeps the material references.
 
-## Parameters
-
-| Option | Default | Meaning |
-|---|---|---|
-| `out` (positional) | none | Output PNG path. |
-| `--seed` | `11` | Streak layout seed. |
-| `--width` / `--height` | `512` / `256` | Output size; 2:1 matches a full turn around a sphere. |
-| `--count` | `44` | Number of streaks. |
-
-License: self-made, see `docs/ASSET_CREDITS.md`.
+License: the photo is CC0; the scripts, textures derived from it and the mesh are covered in `docs/ASSET_CREDITS.md`.

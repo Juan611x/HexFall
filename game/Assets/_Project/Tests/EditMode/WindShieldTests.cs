@@ -9,13 +9,15 @@ using UnityEngine.Rendering;
 
 namespace HexFall.UI.Tests
 {
-    // The air-sphere look of the parry shield: shader compiles and exposes the colour MagicShield animates,
-    // the material wires shader and streak texture, the player prefab uses it, and the streak texture tiles.
+    // The air-sphere look of the parry shield (PSX style, DD-003): a low-poly mesh, a tiny point-filtered photo
+    // texture that tiles around it, and a shader with PSX vertex snapping that keeps the colour MagicShield animates.
     public class WindShieldTests
     {
         private const string ShaderName = "HexFall/WindShield";
         private const string MaterialPath = "Assets/_Project/VFX/WindShield/Materials/M_WindShield.mat";
-        private const string TexturePath = "Assets/_Project/VFX/WindShield/Textures/T_WindStreaks.png";
+        private const string TexturePath = "Assets/_Project/VFX/WindShield/Textures/T_AirShield.png";
+        private const string OldTexturePath = "Assets/_Project/VFX/WindShield/Textures/T_WindStreaks.png";
+        private const string MeshPath = "Assets/_Project/VFX/WindShield/Models/AirShield.fbx";
         private const string PlayerPrefab = "Assets/_Project/Prefabs/Characters/PlayerWizard.prefab";
 
         [Test]
@@ -35,12 +37,13 @@ namespace HexFall.UI.Tests
             var shader = Shader.Find(ShaderName);
             Assert.IsNotNull(shader);
             foreach (var name in new[] { "_BaseColor", "_StreakTex", "_RimPower", "_RimStrength", "_CoreAlpha",
+                "_SnapResolution", "_AffineStrength", "_AlphaSteps",
                 "_Layer1Speed", "_Layer1Tilt", "_Layer1Scale", "_Layer2Speed", "_Layer2Tilt", "_Layer2Scale" })
                 Assert.GreaterOrEqual(shader.FindPropertyIndex(name), 0, name);
         }
 
         [Test]
-        public void Material_uses_the_shader_and_the_streak_texture()
+        public void Material_uses_the_shader_and_the_air_texture()
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
             Assert.IsNotNull(material, MaterialPath);
@@ -89,19 +92,22 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void Streak_texture_tiles_horizontally_and_imports_as_a_repeating_mask()
+        public void Air_texture_is_tiny_point_filtered_and_tiles_horizontally()
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(TexturePath);
             Assert.IsNotNull(importer, TexturePath);
             Assert.AreEqual(TextureWrapMode.Repeat, importer.wrapModeU);
             Assert.AreEqual(TextureWrapMode.Clamp, importer.wrapModeV);
             Assert.IsFalse(importer.sRGBTexture, "mask is linear data");
-            Assert.IsTrue(importer.mipmapEnabled);
+            Assert.IsFalse(importer.mipmapEnabled, "no mipmaps");
+            Assert.AreEqual(FilterMode.Point, importer.filterMode);
+            Assert.LessOrEqual(importer.maxTextureSize, 128);
 
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
             try
             {
                 Assert.IsTrue(texture.LoadImage(System.IO.File.ReadAllBytes(TexturePath)));
+                Assert.LessOrEqual(texture.width, 128, "width");
                 var w = texture.width;
                 var seam = 0f;
                 var interior = 0f; // largest step between neighbouring columns away from the seam
@@ -114,6 +120,24 @@ namespace HexFall.UI.Tests
                 Assert.IsTrue(seam <= interior + 0.1f, "seam " + seam + " vs interior " + interior);
             }
             finally { Object.DestroyImmediate(texture); }
+        }
+
+        [Test]
+        public void Shield_uses_the_low_poly_air_mesh()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
+            var shield = prefab.GetComponentInChildren<MagicShield>(true);
+            var mesh = shield.GetComponent<MeshFilter>().sharedMesh;
+            Assert.IsNotNull(mesh, "mesh");
+            Assert.AreEqual(AssetDatabase.LoadAssetAtPath<Mesh>(MeshPath), mesh, "AirShield mesh");
+            Assert.LessOrEqual(mesh.triangles.Length / 3, 150, "triangles");
+            Assert.GreaterOrEqual(mesh.triangles.Length / 3, 60, "still reads as a sphere");
+        }
+
+        [Test]
+        public void Old_procedural_streak_texture_is_gone()
+        {
+            Assert.IsNull(AssetDatabase.LoadAssetAtPath<Texture2D>(OldTexturePath));
         }
 
         private static void Invoke(MagicShield shield, string method) =>

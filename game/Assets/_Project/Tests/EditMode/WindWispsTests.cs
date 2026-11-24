@@ -145,6 +145,19 @@ namespace HexFall.UI.Tests
             typeof(MagicShield).GetField("_startedAt", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(_shield, seconds);
 
         [Test]
+        public void Wisp_material_uses_the_tiny_point_filtered_photo_sprite()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(WispMaterialPath);
+            var texture = material.GetTexture("_BaseMap");
+            Assert.IsNotNull(texture, "_BaseMap");
+            Assert.AreEqual("T_AirWisp", texture.name);
+            Assert.LessOrEqual(texture.width, 16);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture));
+            Assert.AreEqual(FilterMode.Point, importer.filterMode);
+            Assert.IsFalse(importer.mipmapEnabled, "no mipmaps");
+        }
+
+        [Test]
         public void Flash_starts_the_wisps()
         {
             Assert.IsFalse(_wisps.isEmitting);

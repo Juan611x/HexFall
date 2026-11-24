@@ -24,21 +24,24 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _StreakTex:
-        m_Texture: {fileID: 2800000, guid: 4d911acb55d178b49b362428e5f9c2ea, type: 3}
+        m_Texture: {fileID: 2800000, guid: 743268cc99951c64aba73b8d829b3373, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _CoreAlpha: 0.12
+    - _AffineStrength: 0.6
+    - _AlphaSteps: 5
+    - _CoreAlpha: 0.3
     - _Layer1Scale: 1
     - _Layer1Speed: 0.12
     - _Layer1Tilt: 0.35
     - _Layer2Scale: 2
     - _Layer2Speed: -0.07
     - _Layer2Tilt: -0.25
-    - _RimPower: 2.5
-    - _RimStrength: 1.2
+    - _RimPower: 3
+    - _RimStrength: 1
     m_Colors:
     - _BaseColor: {r: 0.8, g: 1, b: 0.95, a: 0.4}
+    - _SnapResolution: {r: 320, g: 180, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
