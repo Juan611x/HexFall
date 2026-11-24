@@ -1,3 +1,4 @@
+using HexFall.World;
 using UnityEngine;
 
 namespace HexFall.Player
@@ -19,6 +20,10 @@ namespace HexFall.Player
         [SerializeField] private GameObject collectVfx;
         [SerializeField] private float collectVfxSeconds = 2f;
 
+        [Tooltip("Played once at the pickup when collecting it gave something (3D, scaled by the effects volume).")]
+        [SerializeField] private AudioClip collectSound;
+        [Range(0f, 1f)] [SerializeField] private float collectVolume = 1f;
+
         private RespawnTimer _respawn;
         private Vector3 _restPosition;
         private bool _hidden;
@@ -28,6 +33,15 @@ namespace HexFall.Player
             GetComponent<Collider>().isTrigger = true;
             _respawn = new RespawnTimer(respawnSeconds);
             if (visual != null) _restPosition = visual.localPosition;
+        }
+
+        public AudioClip CollectSound => collectSound;
+        public float CollectVolume => collectVolume;
+
+        internal void ConfigureCollectSound(AudioClip clip, float volume)
+        {
+            collectSound = clip;
+            collectVolume = volume;
         }
 
         // Says what collecting does for the object that touched the pickup (any collider of it).
@@ -43,20 +57,23 @@ namespace HexFall.Player
 
         // Stay as well as Enter: someone waiting inside a pickup they could not use gets it as soon as
         // it would do something.
-        private void OnTriggerEnter(Collider other) => TryCollect(other);
-        private void OnTriggerStay(Collider other) => TryCollect(other);
+        private void OnTriggerEnter(Collider other) => TryCollect(other.gameObject);
+        private void OnTriggerStay(Collider other) => TryCollect(other.gameObject);
 
-        private void TryCollect(Collider other)
+        // True when the collector got something: the pickup then sounds, shows its VFX and hides.
+        internal bool TryCollect(GameObject collector)
         {
-            if (_hidden) return;
-            if (!TryApply(other.gameObject)) return;
+            if (_hidden) return false;
+            if (!TryApply(collector)) return false;
             _respawn.Consume(Time.time);
+            SpatialSfx.Play(collectSound, visual != null ? visual.position : transform.position, collectVolume);
             if (collectVfx != null)
             {
                 var vfxAt = visual != null ? visual.position : transform.position;
                 Destroy(Instantiate(collectVfx, vfxAt, Quaternion.identity), collectVfxSeconds);
             }
             SetHidden(true);
+            return true;
         }
 
         private void SetHidden(bool hidden)

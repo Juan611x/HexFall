@@ -4971,6 +4971,8 @@ MonoBehaviour:
   respawnSeconds: 15
   collectVfx: {fileID: 1350551369000210272, guid: 0a5615096cbff484395dfcbddc5abb33, type: 3}
   collectVfxSeconds: 2
+  collectSound: {fileID: 8300000, guid: d1daa03405e789e448f789a07fe8354e, type: 3}
+  collectVolume: 0.8
   healAmount: 100
 --- !u!1001 &6571343478066122956
 PrefabInstance:

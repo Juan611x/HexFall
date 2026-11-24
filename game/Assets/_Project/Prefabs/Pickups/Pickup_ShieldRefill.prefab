@@ -102,6 +102,8 @@ MonoBehaviour:
   respawnSeconds: 15
   collectVfx: {fileID: 3257195368540828743, guid: d0574d2c702551d4786228c14b069fd2, type: 3}
   collectVfxSeconds: 2
+  collectSound: {fileID: 8300000, guid: 1104c6cb62b107e4a897a955fcd2a934, type: 3}
+  collectVolume: 0.8
 --- !u!1 &4708910827768029526
 GameObject:
   m_ObjectHideFlags: 0
