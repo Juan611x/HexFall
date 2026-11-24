@@ -1,14 +1,12 @@
-"""Derives the air shield textures from the CC0 photo "Snow blowing under lamp 1" (W.carter, Wikimedia Commons).
+"""Derives the air wisp sprite from the CC0 photo "Snow blowing under lamp 1" (W.carter, Wikimedia Commons).
 
-Deterministic (no randomness). Reads the photo stored under source/ and writes two tiny masks:
+Deterministic (no randomness). Reads the photo stored under source/ and writes one tiny mask:
 
-    T_AirShield.png  128x64 grayscale, tileable in U: wraps around the sphere
     T_AirWisp.png    16x8 grayscale: the sprite of the wind wisp particles
 
-Steps for the shield: crop (2:1) -> grayscale -> flatten the lamp (remove the large-scale
-brightness with a blurred copy, clip the highlights) -> autocontrast -> mirror-blend the left and
-right edges so U tiles -> fade the top and bottom rows to black (sphere poles) -> LANCZOS downscale
--> light posterise (16 levels, like PSXPost).
+Steps: crop (2:1) -> grayscale -> flatten the lamp (remove the large-scale brightness with a blurred
+copy, clip the highlights) -> autocontrast -> streakiest strip -> faded ends -> LANCZOS downscale ->
+posterise (8 levels). The shield sphere no longer uses a photo: SG_WindShield makes its air procedurally.
 
 Usage (repository root):
 
@@ -26,10 +24,7 @@ CROP_CENTRE = (0.3, 0.5)  # fraction of the photo (x, y)
 CROP_WIDTH = 0.6          # fraction of the photo width; height follows from the 2:1 ratio
 HIGHLIGHT_PERCENTILE = 0.995
 LEVELS = 16
-SHIELD_SIZE = (128, 64)
 WISP_SIZE = (16, 8)
-POLE_FADE = 0.18          # fraction of the height faded to black at the top and bottom
-TILE_BAND = 0.2           # fraction of the width cross-faded to make U tileable
 
 
 def crop_2to1(img):
@@ -59,36 +54,6 @@ def flatten_lamp(gray):
     return out
 
 
-def make_tileable(gray):
-    """Cross-fades both edges toward their mean so column w-1 continues into column 0."""
-    w, h = gray.size
-    band = int(w * TILE_BAND)
-    src, out = gray.load(), gray.copy()
-    op = out.load()
-    for i in range(band):
-        t = i / band  # 0 at the seam (pure mean), 1 at the inner edge of the band (untouched)
-        for y in range(h):
-            a, b = src[w - 1 - i, y], src[i, y]
-            m = (a + b) / 2
-            op[w - 1 - i, y] = round(a * t + m * (1 - t))
-            op[i, y] = round(b * t + m * (1 - t))
-    return out
-
-
-def fade_poles(gray):
-    w, h = gray.size
-    out = gray.copy()
-    op = out.load()
-    fade = max(int(h * POLE_FADE), 1)
-    for y in range(h):
-        d = min(y, h - 1 - y)
-        k = min(d / fade, 1.0)
-        k = k * k * (3 - 2 * k)
-        for x in range(w):
-            op[x, y] = round(op[x, y] * k)
-    return out
-
-
 def posterise(gray, levels=LEVELS):
     step = 255 / (levels - 1)
     return gray.point(lambda v: round(round(v / step) * step))
@@ -97,10 +62,6 @@ def posterise(gray, levels=LEVELS):
 def derive(photo_path, out_dir):
     img = Image.open(photo_path).convert("RGB")
     gray = ImageOps.autocontrast(flatten_lamp(crop_2to1(img).convert("L")), cutoff=1)
-    shield = fade_poles(make_tileable(gray))
-    shield = posterise(shield.resize(SHIELD_SIZE, Image.LANCZOS))
-    shield.save(os.path.join(out_dir, "T_AirShield.png"), optimize=True)
-
     # Wisp sprite: the streakiest horizontal strip of the flattened photo, faded at the ends so the
     # stretched particle has soft-but-chunky tips, then cut to a tiny point-filtered sprite.
     w, h = gray.size
