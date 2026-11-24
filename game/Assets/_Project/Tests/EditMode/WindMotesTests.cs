@@ -117,6 +117,83 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void Burst_is_a_small_puff_of_motes()
+        {
+            var ps = Child("WindBurst");
+            Assert.AreEqual(14f, ps.emission.GetBurst(0).count.constant);
+            Assert.LessOrEqual(ps.main.maxParticles, 20);
+        }
+
+        [Test]
+        public void Motes_system_is_capped_for_the_halved_amount()
+        {
+            Assert.LessOrEqual(Child("WindMotes").main.maxParticles, 40);
+            Assert.AreEqual(50f, ShieldMotes.For(ShieldBuildPhase.Assembling).Rate);
+        }
+
+        private static float[,] MoteFrame(int frame)
+        {
+            var path = System.IO.Path.GetFullPath("Assets/_Project/VFX/WindShield/Textures/T_AirMote.png");
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            Assert.IsTrue(ImageConversion.LoadImage(tex, System.IO.File.ReadAllBytes(path)));
+            Assert.AreEqual(64, tex.width);
+            Assert.AreEqual(16, tex.height);
+            var a = new float[16, 16];
+            for (int y = 0; y < 16; y++)
+                for (int x = 0; x < 16; x++)
+                    a[y, x] = tex.GetPixel(frame * 16 + x, y).a;
+            Object.DestroyImmediate(tex);
+            return a;
+        }
+
+        // Closed ring / full swirl proxy: the bright pixels (alpha >= 0.4), seen from their own centroid, reach
+        // out in many directions. An open arc or comma only covers a few of the 8 octants.
+        private static int BrightOctants(float[,] a)
+        {
+            float sx = 0, sy = 0, n = 0;
+            for (int y = 0; y < 16; y++)
+                for (int x = 0; x < 16; x++)
+                    if (a[y, x] >= 0.4f) { sx += x; sy += y; n++; }
+            if (n == 0) return 0;
+            float cx = sx / n, cy = sy / n;
+            var seen = new bool[8];
+            for (int y = 0; y < 16; y++)
+                for (int x = 0; x < 16; x++)
+                {
+                    float dx = x - cx, dy = y - cy;
+                    if (a[y, x] < 0.4f || dx * dx + dy * dy < 4f) continue;
+                    int octant = Mathf.FloorToInt((Mathf.Atan2(dy, dx) + Mathf.PI) / (Mathf.PI / 4f)) % 8;
+                    seen[octant] = true;
+                }
+            int count = 0;
+            foreach (var s in seen) if (s) count++;
+            return count;
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        public void Mote_frames_are_open_wisps_never_a_closed_ring(int frame)
+        {
+            var a = MoteFrame(frame);
+            Assert.LessOrEqual(BrightOctants(a), 5, "bright pixels surround their centre like a ring");
+            float max = 0, border = 0;
+            int bright = 0;
+            for (int y = 0; y < 16; y++)
+                for (int x = 0; x < 16; x++)
+                {
+                    max = Mathf.Max(max, a[y, x]);
+                    if (a[y, x] >= 0.4f) bright++;
+                    if (x == 0 || y == 0 || x == 15 || y == 15) border = Mathf.Max(border, a[y, x]);
+                }
+            Assert.GreaterOrEqual(max, 0.9f, "has a bright core");
+            Assert.LessOrEqual(bright, 80, "a thin fragment, not a filled blob");
+            Assert.GreaterOrEqual(bright, 8, "readable at 16 px");
+            Assert.LessOrEqual(border, 0.25f, "soft edge, no hard crop line");
+        }
+
+        [Test]
         public void Burst_is_a_one_shot_outward_ring_emitted_at_time_zero()
         {
             var ps = Child("WindBurst");
@@ -220,7 +297,9 @@ namespace HexFall.UI.Tests
         {
             _shield.Flash(0.3f);
             SetStartedAt(Time.time - (0.3f + Serialized("disassembleSeconds") + 0.05f)); // already Done, never saw Disassembling
+            _go.GetComponent<Renderer>().enabled = false; // the sphere is gone: only the live motes keep Update going
             _motes.Emit(3);
+            Assert.IsTrue(_motes.IsAlive(true));
             Invoke("Update");
             Assert.Greater(_motes.velocityOverLifetime.radial.constant, 0f, "blowing out, not stuck inward");
             Assert.IsFalse(_motes.isEmitting);

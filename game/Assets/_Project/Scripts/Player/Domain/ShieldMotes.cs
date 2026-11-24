@@ -23,16 +23,16 @@ namespace HexFall.Player
     public static class ShieldMotes
     {
         public const float SurfaceRadius = 0.5f;
-        public const int DisassemblePuff = 14;
+        public const int DisassemblePuff = 7;
 
-        // Assembling: dense, spawned outside the surface, drifting in while spiralling. Held: a few motes orbiting on
+        // Assembling: a loose stream, spawned outside the surface, drifting in while spiralling. Held: a few motes orbiting on
         // the surface. Disassembling and after: no new motes; the live ones are pushed outward (the puff adds more).
         public static MoteProfile For(ShieldBuildPhase phase)
         {
             switch (phase)
             {
-                case ShieldBuildPhase.Assembling: return new MoteProfile(110f, -0.9f, 0.8f, 1.5f);
-                case ShieldBuildPhase.Holding: return new MoteProfile(22f, 0f, SurfaceRadius + 0.02f, 1.2f);
+                case ShieldBuildPhase.Assembling: return new MoteProfile(50f, -0.9f, 0.8f, 1.5f);
+                case ShieldBuildPhase.Holding: return new MoteProfile(10f, 0f, SurfaceRadius + 0.02f, 1.2f);
                 case ShieldBuildPhase.Disassembling:
                 case ShieldBuildPhase.Done: return new MoteProfile(0f, 1.8f, SurfaceRadius + 0.02f, 0.6f);
                 default: return new MoteProfile(0f, 0f, SurfaceRadius, 0f);

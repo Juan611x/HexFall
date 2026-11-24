@@ -14,9 +14,10 @@ because hard alpha levels made the sphere read as flat blocks. The Unity importe
     twirl_02.png -> T_AirTwirl_B.png   second, counter-rotating layer
     trace_04.png -> T_AirTrace.png     the stroke of the wind currents (not used by the sphere)
 
-It also cuts T_AirMote.png, the 4-frame flipbook (4 x 1 frames of MOTE_SIZE px) of the air motes: small curls
-cropped out of the twirls (whole twirl_02, whole twirl_03, the bright arc of twirl_02, the core of twirl_03),
-each frame normalised on its own and converted like the others. No streak (trace_04) is used, so nothing reads as a bar.
+It also cuts T_AirMote.png, the 4-frame flipbook (4 x 1 frames of MOTE_SIZE px) of the air motes: open arc
+fragments (curved pieces of the bright twirl arms, plus a short piece of the trace_04 streak), never a whole twirl,
+so no frame reads as a ring. Each crop is faded to nothing at its border (smooth window), then box-filtered,
+normalised on its own and converted like the others.
 """
 
 import os
@@ -28,12 +29,13 @@ import numpy as np
 SIZE = 128
 GAMMA = 0.8
 MOTE_SIZE = 16
+MOTE_CONTRAST = 3.0  # power on each normalised crop: keeps the thin bright arm, drops the wide soft halo
 # (original, (row0, row1, col0, col1) in the 512 px original): the 4 flipbook frames.
 MOTE_FRAMES = (
-    ("twirl_02.png", (0, 512, 0, 512)),
-    ("twirl_03.png", (0, 512, 0, 512)),
-    ("twirl_02.png", (0, 256, 256, 512)),
-    ("twirl_03.png", (128, 384, 128, 384)),
+    ("twirl_03.png", (20, 212, 280, 472)),   # the bright upper arm as a crescent, tapering into its soft tail
+    ("twirl_03.png", (200, 392, 320, 512)),  # the same arm down the right side, bending back at the end
+    ("twirl_02.png", (10, 202, 270, 462)),   # softer crescent of the second twirl's arm
+    ("trace_04.png", (100, 292, 160, 352)),  # the wavy streak (rotated at random by the particles)
 )
 JOBS = (("twirl_03.png", "T_AirTwirl_A.png"), ("twirl_02.png", "T_AirTwirl_B.png"), ("trace_04.png", "T_AirTrace.png"))
 
@@ -72,6 +74,15 @@ def save_png(rgba, path):
     bpy.data.images.remove(img)
 
 
+def edge_window(h, w):
+    """Smooth 0..1 window (1 over the middle, fading to 0 at the crop border) so a crop never ends in a hard line."""
+    def ramp(n):
+        t = (np.arange(n, dtype=np.float32) + 0.5) / n
+        return np.clip(np.minimum(t, 1.0 - t) / 0.2, 0.0, 1.0)
+    r = ramp(h)[:, None] * ramp(w)[None, :]
+    return r * r * (3.0 - 2.0 * r)
+
+
 def mote_flipbook(src):
     cache = {}
     frames = []
@@ -79,6 +90,8 @@ def mote_flipbook(src):
         if original not in cache:
             cache[original] = read_luminance(os.path.join(src, original))
         crop = cache[original][r0:r1, c0:c1]
+        crop = crop * edge_window(*crop.shape)
+        crop = (crop / crop.max()) ** MOTE_CONTRAST
         frames.append(to_rgba(box_downscale(crop, MOTE_SIZE)))
     return np.concatenate(frames, axis=1)
 

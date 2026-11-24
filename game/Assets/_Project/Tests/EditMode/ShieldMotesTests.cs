@@ -37,6 +37,14 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void Amounts_are_sparse_wisps_not_a_cloud()
+        {
+            Assert.AreEqual(50f, ShieldMotes.For(ShieldBuildPhase.Assembling).Rate);
+            Assert.AreEqual(10f, ShieldMotes.For(ShieldBuildPhase.Holding).Rate);
+            Assert.AreEqual(7, ShieldMotes.DisassemblePuff);
+        }
+
+        [Test]
         public void Not_started_emits_nothing()
         {
             var p = ShieldMotes.For(ShieldBuildPhase.NotStarted);
