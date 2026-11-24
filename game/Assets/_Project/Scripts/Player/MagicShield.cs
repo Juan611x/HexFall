@@ -15,8 +15,8 @@ namespace HexFall.Player
         [SerializeField] private float disassembleSeconds = 0.35f;
         [SerializeField] private float deflectSeconds = 0.15f;
         [SerializeField] private float deflectBoost = 2.5f;
-        [SerializeField] private ParticleSystem wisps; // looping gusts orbiting the wizard while the shield is held
-        [SerializeField] private ParticleSystem burst; // one-shot ring of faster gusts on a parried hit
+        [SerializeField] private ParticleSystem motes; // air motes: drift in while assembling, orbit while held, blow out after
+        [SerializeField] private ParticleSystem burst; // one-shot outward ring of motes on a parried hit
         [SerializeField] private WindCurrents currents; // horizontal wind currents wrapping the sphere, gated by the build
 
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
@@ -29,6 +29,7 @@ namespace HexFall.Player
         private float _startedAt = float.NegativeInfinity;
         private float _holdSeconds;
         private float _deflectedAt = float.NegativeInfinity; // elapsed since Flash when the last parry landed
+        private ShieldBuildPhase _motePhase = ShieldBuildPhase.NotStarted;
 
         private void Awake()
         {
@@ -36,12 +37,35 @@ namespace HexFall.Player
             _block = new MaterialPropertyBlock();
             _baseColor = _renderer.sharedMaterial.GetColor(BaseColor);
             _renderer.enabled = false;
-            if (wisps != null) wisps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (motes != null) motes.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             if (burst != null) burst.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
-        // Wisps emit while the shield is held; once it starts disassembling they stop and the live ones die out.
-        public static bool WispsEmitting(float elapsed, float holdSeconds) => elapsed >= 0f && elapsed < holdSeconds;
+        // Copies the profile of `phase` into the mote system when the phase changes: spawn radius, rate, radial and
+        // orbital speed (live motes pick up the new radial speed at once, which is what blows them outward), plus one
+        // outward puff when the disassembly starts. Emission stops with the profile's rate; live motes die out.
+        private void DriveMotes(ShieldBuildPhase phase)
+        {
+            if (motes == null || phase == _motePhase) return;
+            var profile = ShieldMotes.For(phase);
+            var shape = motes.shape;
+            shape.radius = profile.SpawnRadius;
+            var velocity = motes.velocityOverLifetime;
+            velocity.radial = profile.Radial;
+            velocity.orbitalY = profile.OrbitalY;
+            int puff = ShieldMotes.PuffCount(_motePhase, phase);
+            if (puff > 0) motes.Emit(puff);
+            _motePhase = phase;
+            if (profile.Rate > 0f)
+            {
+                var emission = motes.emission;
+                emission.rateOverTime = profile.Rate;
+            }
+            else if (motes.isEmitting)
+            {
+                motes.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            }
+        }
 
         public void Flash(float holdSeconds)
         {
@@ -51,8 +75,13 @@ namespace HexFall.Player
             _deflectedAt = float.NegativeInfinity;
             _renderer.enabled = true;
             if (currents != null) currents.Restart();
+            if (motes != null)
+            {
+                motes.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear); // a lingering earlier blow-out must not carry over
+                _motePhase = ShieldBuildPhase.NotStarted;
+            }
             Apply(0f); // first frame already empty: the material default (_Build 1) must never show
-            if (wisps != null) wisps.Play(true);
+            if (motes != null) motes.Play(true);
         }
 
         public void Deflect() => Deflect(Time.time - _startedAt);
@@ -66,12 +95,10 @@ namespace HexFall.Player
 
         private void Update()
         {
-            bool lingering = currents != null && currents.IsLingering; // currents outlive the sphere a little
+            // Currents and motes outlive the sphere a little; keep stepping while either is still alive.
+            bool lingering = (currents != null && currents.IsLingering) || (motes != null && motes.IsAlive(true));
             if (!_renderer.enabled && !lingering) return;
-            var t = Time.time - _startedAt;
-            if (wisps != null && wisps.isEmitting && !WispsEmitting(t, _holdSeconds))
-                wisps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-            Apply(t, Time.deltaTime);
+            Apply(Time.time - _startedAt, Time.deltaTime);
         }
 
         // Pushes the build state for `elapsed` seconds since Flash to the renderer and the wind currents (which advance by
@@ -87,6 +114,7 @@ namespace HexFall.Player
             }
 
             var phase = _shieldBuild.PhaseAt(elapsed);
+            DriveMotes(phase);
             if (phase == ShieldBuildPhase.Done)
             {
                 _renderer.enabled = false;
