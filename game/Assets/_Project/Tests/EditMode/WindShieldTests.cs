@@ -53,9 +53,12 @@ namespace HexFall.UI.Tests
         public void Player_prefab_shield_renders_with_the_wind_material()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
+            Assert.IsNotNull(prefab, PlayerPrefab);
             var shield = prefab.GetComponentInChildren<MagicShield>(true);
-            Assert.IsNotNull(shield);
-            Assert.AreEqual(AssetDatabase.LoadAssetAtPath<Material>(MaterialPath), shield.GetComponent<Renderer>().sharedMaterial);
+            Assert.IsNotNull(shield, "MagicShield");
+            var renderer = shield.GetComponent<Renderer>();
+            Assert.IsNotNull(renderer, "shield Renderer");
+            Assert.AreEqual(AssetDatabase.LoadAssetAtPath<Material>(MaterialPath), renderer.sharedMaterial);
         }
 
         [Test]

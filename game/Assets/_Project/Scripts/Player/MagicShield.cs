@@ -10,6 +10,8 @@ namespace HexFall.Player
         [SerializeField] private float popSeconds = 0.06f;
         [SerializeField] private float fadeSeconds = 0.15f;
         [SerializeField] private float deflectBoost = 2.5f;
+        [SerializeField] private ParticleSystem wisps; // looping gusts orbiting the wizard while the shield is held
+        [SerializeField] private ParticleSystem burst; // one-shot ring of faster gusts on a parried hit
 
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
@@ -28,22 +30,34 @@ namespace HexFall.Player
             _baseColor = _renderer.sharedMaterial.GetColor(BaseColor);
             _fullScale = transform.localScale;
             _renderer.enabled = false;
+            if (wisps != null) wisps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (burst != null) burst.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
+
+        // Wisps emit while the shield is held; once it starts fading they stop and the live ones die out.
+        public static bool WispsEmitting(float elapsed, float holdSeconds) => elapsed >= 0f && elapsed < holdSeconds;
 
         public void Flash(float holdSeconds)
         {
             _holdSeconds = holdSeconds;
             _startedAt = Time.time;
             _renderer.enabled = true;
+            if (wisps != null) wisps.Play(true);
         }
 
-        public void Deflect() => _boostUntil = Time.time + fadeSeconds;
+        public void Deflect()
+        {
+            _boostUntil = Time.time + fadeSeconds;
+            if (burst != null) burst.Play(true);
+        }
 
         private void Update()
         {
             if (!_renderer.enabled) return;
             var t = Time.time - _startedAt;
             var end = _holdSeconds + fadeSeconds;
+            if (wisps != null && wisps.isEmitting && !WispsEmitting(t, _holdSeconds))
+                wisps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
             if (t >= end)
             {
                 _renderer.enabled = false;

@@ -2,7 +2,7 @@
 
 Thin, curved, tapered streaks run mostly horizontally; they wrap in X so the texture
 can be mapped around a sphere's vertical axis. Deterministic: same seed, same image.
-Usage: python generate_wind_streaks.py OUT.png [--seed N] [--width 512] [--height 256] [--count 70]
+Usage: python generate_wind_streaks.py OUT.png [--seed N] [--width 512] [--height 256] [--count 44]
 Shipped texture: game/Assets/_Project/VFX/WindShield/Textures/T_WindStreaks.png (defaults, --seed 11).
 """
 import argparse
