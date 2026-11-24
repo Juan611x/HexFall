@@ -200,8 +200,8 @@ namespace HexFall.UI.Tests
             Assert.IsNull(audio.AmbientClip);
         }
 
-        [TestCase("RuneCircle_Launch", "ambient_01", 0.25f)]
-        [TestCase("RuneCircle_Teleport", "weird_03", 0.2f)]
+        [TestCase("RuneCircle_Launch", "RuneAmbienceLaunch", 0.3f)]
+        [TestCase("RuneCircle_Teleport", "RuneAmbienceTeleport", 0.3f)]
         public void EachVariantHasItsQuietAmbientLoop(string prefab, string clipName, float volume)
         {
             var audio = Load(prefab).GetComponent<RuneCircleAudio>();
@@ -221,18 +221,37 @@ namespace HexFall.UI.Tests
             Assert.Less(go.GetComponent<RuneCircleAudio>().AmbientVolume, effectVolume * 0.5f);
         }
 
-        [TestCase("ambient_01", 8f, 8.5f)]
-        [TestCase("weird_03", 3f, 4f)]
+        [TestCase("RuneAmbienceLaunch", 8f, 8.5f)]
+        [TestCase("RuneAmbienceTeleport", 3f, 4f)]
         public void TheAmbientLoopsAreImportedForLooping3DUse(string name, float min, float max)
         {
-            var path = $"{Loops}/{name}.ogg";
+            var path = $"{Loops}/{name}.wav";
             var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
             Assert.IsNotNull(clip, name);
             Assert.That(clip.length, Is.InRange(min, max));
+            Assert.AreEqual(1, clip.channels, "mono, spatialised by the AudioSource");
             var importer = (AudioImporter)AssetImporter.GetAtPath(path);
-            Assert.IsTrue(importer.defaultSampleSettings.loadType == AudioClipLoadType.CompressedInMemory);
-            Assert.IsTrue(importer.loadInBackground);
+            Assert.AreEqual(AudioClipLoadType.DecompressOnLoad, importer.defaultSampleSettings.loadType, "PCM in memory keeps the loop point exact");
+            Assert.IsTrue(importer.defaultSampleSettings.preloadAudioData);
             Assert.IsTrue(File.Exists($"{Loops}/LICENSE.txt"));
+        }
+
+        // The loops are levelled by art/audio/derive_rune_circle_ambience.py to -20 dBFS RMS; the effect clips sit near
+        // -15 dBFS, so at ambient volume 0.3 the bed is about 15 dB under them: audible, still background.
+        [TestCase("RuneAmbienceLaunch")]
+        [TestCase("RuneAmbienceTeleport")]
+        public void TheAmbientLoopsAreLevelledToMinusTwentyDb(string name)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>($"{Loops}/{name}.wav");
+            Assert.IsNotNull(clip, name);
+            clip.LoadAudioData();
+            var data = new float[clip.samples * clip.channels];
+            Assert.IsTrue(clip.GetData(data, 0));
+            double sum = 0; float peak = 0;
+            foreach (var v in data) { sum += v * v; peak = Mathf.Max(peak, Mathf.Abs(v)); }
+            var rmsDb = 20.0 * System.Math.Log10(System.Math.Sqrt(sum / data.Length));
+            Assert.AreEqual(-20.0, rmsDb, 1.0, "RMS dBFS");
+            Assert.LessOrEqual(20.0 * System.Math.Log10(peak), -0.9, "peak dBFS");
         }
 
         [Test]
