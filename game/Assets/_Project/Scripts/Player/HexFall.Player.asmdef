@@ -3,9 +3,11 @@
     "rootNamespace": "HexFall.Player",
     "references": [
         "Unity.InputSystem",
+        "Unity.Cinemachine",
         "Unity.Animation.Rigging",
         "HexFall.UI",
-        "HexFall.Surfaces"
+        "HexFall.Surfaces",
+        "HexFall.World"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

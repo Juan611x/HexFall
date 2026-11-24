@@ -58,7 +58,8 @@ namespace HexFall.Player.Locomotion
 
         public void Enter(LocomotionContext ctx)
         {
-            var speed = Mathf.Sqrt(2f * _settings.jumpHeight * -_settings.gravity);
+            var speed = float.IsNaN(ctx.LaunchSpeed) ? Mathf.Sqrt(2f * _settings.jumpHeight * -_settings.gravity) : ctx.LaunchSpeed;
+            ctx.LaunchSpeed = float.NaN;
             ctx.Velocity = new Vector3(ctx.Velocity.x, speed, ctx.Velocity.z);
             ctx.JumpCooldown = _settings.jumpCooldownSeconds;
             ctx.TimeSinceJumpPressed = float.PositiveInfinity;

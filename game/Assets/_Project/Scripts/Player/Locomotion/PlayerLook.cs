@@ -22,6 +22,10 @@ namespace HexFall.Player.Locomotion
         private float _pitch;
 
         public float Yaw => _yaw;
+        public Transform CameraTarget => cameraTarget;
+
+        // Turns the view by delta degrees, e.g. when the body is turned by a teleport.
+        public void AddYaw(float delta) => _yaw += delta;
 
         private void Awake()
         {

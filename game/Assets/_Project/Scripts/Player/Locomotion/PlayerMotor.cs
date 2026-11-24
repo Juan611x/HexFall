@@ -1,3 +1,4 @@
+using HexFall.World.RuneCircles;
 using UnityEngine;
 
 namespace HexFall.Player.Locomotion
@@ -5,7 +6,7 @@ namespace HexFall.Player.Locomotion
     // Feeds the locomotion machine with the intent and ground sensing each frame and applies the
     // resulting velocity and facing to the CharacterController.
     [RequireComponent(typeof(CharacterController), typeof(PlayerInputReader), typeof(PlayerLook))]
-    public sealed class PlayerMotor : MonoBehaviour
+    public sealed class PlayerMotor : MonoBehaviour, IRuneCircleTarget
     {
         [SerializeField] private LocomotionSettings settings = new LocomotionSettings();
         [Header("Ground check")]
@@ -30,6 +31,38 @@ namespace HexFall.Player.Locomotion
         public float InputMagnitude { get; private set; }
         // The last ledge measured; only refreshed when a jump could start a climb. Used by the gizmos.
         public LedgeMeasurement LastLedge { get; private set; }
+
+        public float GravityMagnitude => -settings.gravity;
+        public float FacingYaw => transform.eulerAngles.y;
+
+        // Bottom centre of the capsule, from the transform (the controller's bounds lag a teleport until
+        // the next physics sync); the circles test this point against their footprint.
+        public Vector3 FeetPosition => transform.position + Vector3.up * _feetOffset;
+
+        // Throws the body upward (jump state, same animation and landing); ignored while climbing.
+        public void Launch(float verticalSpeed) => Machine.Launch(verticalSpeed);
+
+        // Places the body with its feet at position, facing yaw, keeping its planar momentum: the
+        // controller is toggled so it accepts the new transform, the view turns by the same angle as the
+        // body (no turn when the yaw is kept) and the follow camera is told the target jumped so it does
+        // not lerp or clip through the level. Returns false, and does nothing, while climbing.
+        public bool Teleport(Vector3 position, float yaw)
+        {
+            if (Machine.Current == LocomotionStateId.Climb) return false;
+
+            var origin = position - Vector3.up * _feetOffset;
+            var turn = Mathf.DeltaAngle(transform.eulerAngles.y, yaw);
+            var delta = origin - transform.position;
+            _controller.enabled = false;
+            transform.SetPositionAndRotation(origin, Quaternion.Euler(0f, yaw, 0f));
+            _controller.enabled = true;
+
+            IsGrounded = CheckGround();
+            Machine.Teleport(origin, yaw, IsGrounded);
+            _look.AddYaw(turn);
+            CameraWarp.Warp(_look.CameraTarget, delta);
+            return true;
+        }
 
         private void Awake()
         {
