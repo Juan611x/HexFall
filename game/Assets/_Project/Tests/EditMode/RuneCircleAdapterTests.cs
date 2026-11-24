@@ -19,7 +19,7 @@ namespace HexFall.UI.Tests
             public float GravityMagnitude => 15f;
             public int Launches;
             public void Launch(float verticalSpeed) { Launches++; }
-            public void Teleport(Vector3 position, float yaw) { }
+            public bool Teleport(Vector3 position, float yaw) => true;
         }
 
         // A destroyable target that, like the player's motor, is a component.
@@ -30,7 +30,7 @@ namespace HexFall.UI.Tests
             public Vector3 FeetPosition => transform.position;
             public float FacingYaw => 0f;
             public void Launch(float verticalSpeed) { }
-            public void Teleport(Vector3 position, float yaw) { }
+            public bool Teleport(Vector3 position, float yaw) => true;
         }
 
         private static readonly List<string> Log = new List<string>();

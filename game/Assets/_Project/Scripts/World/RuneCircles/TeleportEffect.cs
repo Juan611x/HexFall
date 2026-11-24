@@ -35,8 +35,9 @@ namespace HexFall.World.RuneCircles
 
             var arrival = destination.transform;
             var yaw = keepFacing ? activation.Target.FacingYaw : arrival.eulerAngles.y;
-            activation.Target.Teleport(arrival.position + Vector3.up * arrivalLift, yaw);
-            destination.Lock(activation.Target);
+            // Lock only when the player really moved, so a refused teleport does not silence the destination.
+            if (activation.Target.Teleport(arrival.position + Vector3.up * arrivalLift, yaw))
+                destination.Lock(activation.Target);
         }
     }
 }

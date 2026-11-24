@@ -44,22 +44,99 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void TeleportResetsVelocityAndSpeedAndSetsPositionAndFacing()
+        public void TeleportKeepsThePlanarVelocityWhenTheFacingIsKept()
         {
-            var machine = new LocomotionMachine(new LocomotionSettings(), LocomotionStateId.Fall);
+            var settings = new LocomotionSettings();
+            var machine = new LocomotionMachine(settings, LocomotionStateId.Grounded);
+            machine.Context.FacingYaw = 30f;
             machine.Context.Velocity = new Vector3(3f, -20f, 4f);
             machine.Context.PlanarSpeed = 5f;
             machine.Context.YawVelocity = 12f;
             machine.Context.LaunchSpeed = 9f;
 
-            machine.Teleport(new Vector3(20f, 0.05f, 6f), 135f, grounded: true);
+            machine.Teleport(new Vector3(20f, 0.05f, 6f), 30f, grounded: true);
 
-            Assert.AreEqual(Vector3.zero, machine.Context.Velocity);
-            Assert.AreEqual(0f, machine.Context.PlanarSpeed);
+            Assert.AreEqual(3f, machine.Context.Velocity.x, 0.0001f);
+            Assert.AreEqual(4f, machine.Context.Velocity.z, 0.0001f);
+            Assert.AreEqual(5f, machine.Context.PlanarSpeed, 0.0001f);
+            Assert.AreEqual(settings.groundedStickSpeed, machine.Context.Velocity.y, 0.0001f);
             Assert.AreEqual(0f, machine.Context.YawVelocity);
             Assert.IsNaN(machine.Context.LaunchSpeed);
             Assert.AreEqual(new Vector3(20f, 0.05f, 6f), machine.Context.Position);
-            Assert.AreEqual(135f, machine.Context.FacingYaw, 0.0001f);
+            Assert.AreEqual(30f, machine.Context.FacingYaw, 0.0001f);
+        }
+
+        [Test]
+        public void TeleportRotatesThePlanarVelocityWithTheFacing()
+        {
+            var machine = new LocomotionMachine(new LocomotionSettings(), LocomotionStateId.Grounded);
+            machine.Context.FacingYaw = 0f;
+            machine.Context.Velocity = new Vector3(0f, -2f, 6f);
+            machine.Context.PlanarSpeed = 6f;
+
+            machine.Teleport(Vector3.zero, 90f, grounded: true);
+
+            Assert.AreEqual(6f, machine.Context.Velocity.x, 0.001f);
+            Assert.AreEqual(0f, machine.Context.Velocity.z, 0.001f);
+            Assert.AreEqual(6f, machine.Context.PlanarSpeed, 0.001f);
+            Assert.AreEqual(90f, machine.Context.FacingYaw, 0.0001f);
+        }
+
+        [Test]
+        public void TeleportRotatesByTheShortestAngle()
+        {
+            var machine = new LocomotionMachine(new LocomotionSettings(), LocomotionStateId.Grounded);
+            machine.Context.FacingYaw = 350f;
+            machine.Context.Velocity = new Vector3(0f, -2f, 4f);
+            machine.Context.PlanarSpeed = 4f;
+
+            machine.Teleport(Vector3.zero, 10f, grounded: true);
+
+            // +20 degrees about Y turns (0,0,4) toward +x.
+            Assert.AreEqual(4f * Mathf.Sin(20f * Mathf.Deg2Rad), machine.Context.Velocity.x, 0.001f);
+            Assert.AreEqual(4f * Mathf.Cos(20f * Mathf.Deg2Rad), machine.Context.Velocity.z, 0.001f);
+        }
+
+        [Test]
+        public void TeleportAirborneDropsTheVerticalSpeedButKeepsThePlanarOne()
+        {
+            var machine = new LocomotionMachine(new LocomotionSettings(), LocomotionStateId.Fall);
+            machine.Context.Velocity = new Vector3(3f, -20f, 4f);
+            machine.Context.PlanarSpeed = 5f;
+
+            machine.Teleport(Vector3.zero, 0f, grounded: false);
+
+            Assert.AreEqual(0f, machine.Context.Velocity.y);
+            Assert.AreEqual(5f, machine.Context.PlanarSpeed, 0.0001f);
+        }
+
+        [Test]
+        public void TeleportFromStandStillStaysStill()
+        {
+            var machine = new LocomotionMachine(new LocomotionSettings(), LocomotionStateId.Grounded);
+
+            machine.Teleport(Vector3.one, 45f, grounded: true);
+
+            Assert.AreEqual(0f, machine.Context.PlanarSpeed);
+            Assert.AreEqual(0f, machine.Context.Velocity.x);
+            Assert.AreEqual(0f, machine.Context.Velocity.z);
+        }
+
+        [Test]
+        public void TheRunningPlayerKeepsTheRunAfterTheTeleport()
+        {
+            var settings = new LocomotionSettings();
+            var machine = new LocomotionMachine(settings, LocomotionStateId.Grounded);
+            var run = new PlayerIntent(new Vector2(0f, 1f), true, false, 0f);
+            for (var i = 0; i < 40; i++) machine.Tick(run, new GroundSense(true), 0.05f);
+            var speed = machine.Context.PlanarSpeed;
+            Assert.Greater(speed, 1f);
+
+            machine.Teleport(new Vector3(20f, 0.05f, 6f), machine.Context.FacingYaw, grounded: true);
+            machine.Tick(run, new GroundSense(true), 0.02f);
+
+            Assert.AreEqual(LocomotionStateId.Grounded, machine.Current);
+            Assert.AreEqual(speed, machine.Context.PlanarSpeed, 0.1f);
         }
 
         [Test]
@@ -119,14 +196,17 @@ namespace HexFall.UI.Tests
             public float FacingYaw { get; set; } = 40f;
             public bool IsGrounded { get; set; } = true;
             public float GravityMagnitude => 15f;
+            public bool Accepts = true;
             public readonly List<(Vector3 position, float yaw)> Teleports = new List<(Vector3, float)>();
             public void Launch(float verticalSpeed) { }
 
-            public void Teleport(Vector3 position, float yaw)
+            public bool Teleport(Vector3 position, float yaw)
             {
                 Teleports.Add((position, yaw));
+                if (!Accepts) return false;
                 FeetPosition = position;
                 FacingYaw = yaw;
+                return true;
             }
         }
 
@@ -202,6 +282,39 @@ namespace HexFall.UI.Tests
             LogAssert.NoUnexpectedReceived();
         }
 
+        [Test]
+        public void ARefusedTeleportDoesNotLockTheDestination()
+        {
+            var a = NewCircle("A", new Vector3(-16f, 0.01f, -8f));
+            var b = NewCircle("B", new Vector3(20f, 0.01f, 6f));
+            SetGate(b);
+            var effectA = AddEffect(a, b);
+            AddEffect(b, a);
+            var target = new FakeTarget { FeetPosition = b.transform.position, Accepts = false };
+            b.Track(target);
+
+            effectA.Apply(new RuneCircleActivation(a.transform, target));
+            Run(0.5f, b);
+
+            Assert.AreEqual(2, target.Teleports.Count, "A refused teleport leaves B free to fire for a player standing on it.");
+        }
+
+        [Test]
+        public void AnAcceptedTeleportLocksTheDestination()
+        {
+            var a = NewCircle("A", new Vector3(-16f, 0.01f, -8f));
+            var b = NewCircle("B", new Vector3(20f, 0.01f, 6f));
+            SetGate(b);
+            var effectA = AddEffect(a, b);
+            AddEffect(b, a);
+            var target = new FakeTarget { FeetPosition = b.transform.position };
+
+            effectA.Apply(new RuneCircleActivation(a.transform, target));
+            Run(0.5f, b);
+
+            Assert.AreEqual(1, target.Teleports.Count);
+        }
+
         // --- Round trip A <-> B ---
 
         private static void Run(float seconds, params RuneCircle[] circles)
@@ -213,10 +326,38 @@ namespace HexFall.UI.Tests
 
         private static void SetGate(RuneCircle circle)
         {
-            circle.Gate.mode = RuneCircleActivationMode.AfterStanding;
-            circle.Gate.standSeconds = 0.6f;
+            circle.Gate.mode = RuneCircleActivationMode.OnEnter;
             circle.Gate.cooldownSeconds = 1f;
             circle.Gate.requireGrounded = true;
+        }
+
+        [Test]
+        public void RunningThroughAGoesToBAtOnceWithoutBouncingBack()
+        {
+            var a = NewCircle("A", new Vector3(-16f, 0.01f, -8f));
+            var b = NewCircle("B", new Vector3(20f, 0.01f, 6f));
+            SetGate(a);
+            SetGate(b);
+            AddEffect(a, b);
+            AddEffect(b, a);
+            var target = new FakeTarget { FeetPosition = new Vector3(-19f, 0.01f, -8f) };
+            a.Track(target);
+
+            // Sprint along +x at 8 m/s, one 0.1 s tick at a time; the teleport moves the target to B,
+            // where it keeps running along +x and leaves.
+            var enteredAt = -1;
+            for (var i = 0; i < 100; i++)
+            {
+                var f = target.FeetPosition;
+                target.FeetPosition = new Vector3(f.x + 8f * Dt, f.y, f.z);
+                a.Tick(Dt);
+                b.Tick(Dt);
+                if (enteredAt < 0 && target.Teleports.Count > 0) enteredAt = i;
+            }
+
+            Assert.AreEqual(1, target.Teleports.Count, "Fires once on entry and never bounces back from B.");
+            Assert.AreEqual(20f, target.Teleports[0].position.x, 0.0001f);
+            Assert.LessOrEqual(enteredAt, 5, "Fires as soon as the feet reach the ring, within a few ticks.");
         }
 
         [Test]
@@ -231,11 +372,8 @@ namespace HexFall.UI.Tests
             var target = new FakeTarget { FeetPosition = a.transform.position };
             a.Track(target);
 
-            Run(0.5f, a, b);
-            Assert.AreEqual(0, target.Teleports.Count, "Standing less than standSeconds does not teleport.");
-
-            Run(0.3f, a, b);
-            Assert.AreEqual(1, target.Teleports.Count);
+            Run(0.2f, a, b);
+            Assert.AreEqual(1, target.Teleports.Count, "Entering fires at once, with no standing wait.");
             Assert.AreEqual(20f, target.Teleports[0].position.x, 0.0001f);
 
             Run(5f, a, b);

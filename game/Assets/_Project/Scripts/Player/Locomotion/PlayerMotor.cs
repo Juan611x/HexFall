@@ -42,24 +42,26 @@ namespace HexFall.Player.Locomotion
         // Throws the body upward (jump state, same animation and landing); ignored while climbing.
         public void Launch(float verticalSpeed) => Machine.Launch(verticalSpeed);
 
-        // Places the body at position (its feet) facing yaw, with no motion left: the controller is
-        // toggled so it accepts the new transform, the view turns by the same angle as the body (no turn
-        // when the yaw is kept) and the follow camera is told the target jumped so it does not lerp or
-        // clip through the level. Ignored while climbing.
-        public void Teleport(Vector3 position, float yaw)
+        // Places the body with its feet at position, facing yaw, keeping its planar momentum: the
+        // controller is toggled so it accepts the new transform, the view turns by the same angle as the
+        // body (no turn when the yaw is kept) and the follow camera is told the target jumped so it does
+        // not lerp or clip through the level. Returns false, and does nothing, while climbing.
+        public bool Teleport(Vector3 position, float yaw)
         {
-            if (Machine.Current == LocomotionStateId.Climb) return;
+            if (Machine.Current == LocomotionStateId.Climb) return false;
 
+            var origin = position - Vector3.up * _feetOffset;
             var turn = Mathf.DeltaAngle(transform.eulerAngles.y, yaw);
-            var delta = position - transform.position;
+            var delta = origin - transform.position;
             _controller.enabled = false;
-            transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+            transform.SetPositionAndRotation(origin, Quaternion.Euler(0f, yaw, 0f));
             _controller.enabled = true;
 
             IsGrounded = CheckGround();
-            Machine.Teleport(position, yaw, IsGrounded);
+            Machine.Teleport(origin, yaw, IsGrounded);
             _look.AddYaw(turn);
             CameraWarp.Warp(_look.CameraTarget, delta);
+            return true;
         }
 
         private void Awake()

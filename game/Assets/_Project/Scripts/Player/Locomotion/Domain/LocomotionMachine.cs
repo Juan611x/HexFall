@@ -8,16 +8,18 @@ namespace HexFall.Player.Locomotion
     public sealed class LocomotionMachine
     {
         private readonly ILocomotionState[] _states;
+        private readonly float _groundedStickSpeed;
         private ILocomotionState _current;
 
         public LocomotionMachine(LocomotionSettings settings, LocomotionStateId initial)
-            : this(new ILocomotionState[] { new GroundedState(settings), new JumpState(settings), new FallState(settings), new CrouchState(settings), new SlideState(settings), new ClimbState(settings) }, initial)
+            : this(new ILocomotionState[] { new GroundedState(settings), new JumpState(settings), new FallState(settings), new CrouchState(settings), new SlideState(settings), new ClimbState(settings) }, initial, settings.groundedStickSpeed)
         {
         }
 
-        public LocomotionMachine(ILocomotionState[] states, LocomotionStateId initial)
+        public LocomotionMachine(ILocomotionState[] states, LocomotionStateId initial, float groundedStickSpeed = -2f)
         {
             _states = states;
+            _groundedStickSpeed = groundedStickSpeed;
             Context = new LocomotionContext();
             _current = Find(initial);
             _current.Enter(Context);
@@ -61,17 +63,22 @@ namespace HexFall.Player.Locomotion
             return true;
         }
 
-        // Places the body: sets position and facing, clears all motion and enters Grounded (or Fall when
-        // the new spot is not on the ground). Works from any state but Climb; returns false when ignored.
+        // Places the body: sets position and facing and enters Grounded (or Fall when the new spot is not
+        // on the ground). Momentum is kept: the planar velocity (and so the speed) turns with the change
+        // of facing, so the body keeps moving the same way relative to where it looks; the vertical speed
+        // resets to the grounded stick speed (zero when airborne). Works from any state but Climb;
+        // returns false when ignored.
         public bool Teleport(Vector3 position, float yaw, bool grounded)
         {
             if (_current.Id == LocomotionStateId.Climb) return false;
 
+            var turn = Mathf.DeltaAngle(Context.FacingYaw, yaw);
+            var planar = Quaternion.Euler(0f, turn, 0f) * new Vector3(Context.Velocity.x, 0f, Context.Velocity.z);
             Context.Position = position;
             Context.FacingYaw = yaw;
             Context.YawVelocity = 0f;
-            Context.PlanarSpeed = 0f;
-            Context.Velocity = Vector3.zero;
+            Context.PlanarSpeed = planar.magnitude;
+            Context.Velocity = new Vector3(planar.x, grounded ? _groundedStickSpeed : 0f, planar.z);
             Context.LaunchSpeed = float.NaN;
             Context.ClimbOverDrop = false;
             Context.TimeSinceGrounded = grounded ? 0f : Context.TimeSinceGrounded;

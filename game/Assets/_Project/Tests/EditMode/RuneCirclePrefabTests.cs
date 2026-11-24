@@ -103,12 +103,10 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void TeleportGateWaitsForTheWalkerToStopBeforeFiring()
+        public void TeleportGateFiresOnEntryWithoutAStandingWait()
         {
-            // 0.6 s outlasts a jog across the 1.8 m ring (about 0.5 s), so crossing it does not teleport.
             var gate = Load("RuneCircle_Teleport").GetComponent<RuneCircle>().Gate;
-            Assert.AreEqual(RuneCircleActivationMode.AfterStanding, gate.mode);
-            Assert.AreEqual(0.6f, gate.standSeconds, 0.0001f);
+            Assert.AreEqual(RuneCircleActivationMode.OnEnter, gate.mode);
             Assert.AreEqual(1f, gate.cooldownSeconds, 0.0001f);
             Assert.IsTrue(gate.requireGrounded);
         }
@@ -127,7 +125,7 @@ namespace HexFall.UI.Tests
         {
             var launch = Load("RuneCircle_Launch").GetComponent<LaunchEffect>();
             Assert.IsNotNull(launch);
-            Assert.AreEqual(6f, launch.LaunchHeight, 0.0001f);
+            Assert.AreEqual(10f, launch.LaunchHeight, 0.0001f);
             Assert.IsNull(Load("RuneCircle_Launch").GetComponent<TeleportEffect>());
             Assert.AreEqual(1, Load("RuneCircle_Launch").GetComponents<IRuneCircleEffect>().Length);
 

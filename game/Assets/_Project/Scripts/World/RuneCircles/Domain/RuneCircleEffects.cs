@@ -14,9 +14,10 @@ namespace HexFall.World.RuneCircles
         float GravityMagnitude { get; }
         // Throws the body upward at the given vertical speed; ignored when the body cannot be launched.
         void Launch(float verticalSpeed);
-        // Places the body with its feet at position, facing yaw degrees, and clears its motion;
-        // ignored when the body cannot be teleported.
-        void Teleport(Vector3 position, float yaw);
+        // Places the body with its feet at position, facing yaw degrees. The body keeps its planar speed
+        // (turned by the change of facing) and loses its vertical speed. Returns false, and does nothing,
+        // when the body cannot be teleported (while climbing).
+        bool Teleport(Vector3 position, float yaw);
     }
 
     public readonly struct RuneCircleActivation

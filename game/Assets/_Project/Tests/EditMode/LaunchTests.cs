@@ -26,6 +26,27 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(0f, LaunchMath.SpeedForHeight(6f, 0f));
         }
 
+        [Test]
+        public void LaunchEffectDefaultsToTenMetresAndIsAnEditableInspectorField()
+        {
+            var go = new GameObject("launch");
+            try
+            {
+                Assert.AreEqual(10f, go.AddComponent<LaunchEffect>().LaunchHeight, 0.0001f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+
+            var field = typeof(LaunchEffect).GetField("launchHeight", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.IsNotNull(field);
+            Assert.IsNotNull(field.GetCustomAttributes(typeof(SerializeField), false).Length > 0 ? field : null, "Serialized.");
+            Assert.IsNotEmpty(field.GetCustomAttributes(typeof(TooltipAttribute), false));
+            var min = (MinAttribute)field.GetCustomAttributes(typeof(MinAttribute), false)[0];
+            Assert.AreEqual(0f, min.min);
+        }
+
         [TestCase(LocomotionStateId.Grounded)]
         [TestCase(LocomotionStateId.Crouch)]
         [TestCase(LocomotionStateId.Slide)]

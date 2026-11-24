@@ -102,11 +102,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4413157206425883334, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
       propertyPath: gate.mode
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4413157206425883334, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
-      propertyPath: gate.standSeconds
-      value: 0.6
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4413157206425883334, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
       propertyPath: gate.cooldownSeconds

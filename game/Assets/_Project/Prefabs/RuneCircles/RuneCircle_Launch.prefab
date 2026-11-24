@@ -77,4 +77,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9efd290d651d3ca458393004e5fe7c17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HexFall.World::HexFall.World.RuneCircles.LaunchEffect
-  launchHeight: 6
+  launchHeight: 10
