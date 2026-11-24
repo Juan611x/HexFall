@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using HexFall.World;
 using HexFall.World.RuneCircles;
 using NUnit.Framework;
@@ -14,6 +15,7 @@ namespace HexFall.UI.Tests
     public class RuneCircleSoundTests
     {
         private const string Folder = "Assets/_Project/Prefabs/RuneCircles";
+        private const string Loops = "Assets/ThirdParty/OpenGameArt/Rubberduck30Loops";
         private const string Clips = "Assets/ThirdParty/CC0Combat150/MagicSpells";
 
         private sealed class Request
@@ -191,11 +193,68 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void TheBasePrefabHasTheAmbientHookButNoAmbientClipYet()
+        public void TheBasePrefabHasTheAmbientHookButNoAmbientClip()
         {
             var audio = Load("RuneCircle").GetComponent<RuneCircleAudio>();
             Assert.IsNotNull(audio);
             Assert.IsNull(audio.AmbientClip);
+        }
+
+        [TestCase("RuneCircle_Launch", "ambient_01", 0.25f)]
+        [TestCase("RuneCircle_Teleport", "weird_03", 0.2f)]
+        public void EachVariantHasItsQuietAmbientLoop(string prefab, string clipName, float volume)
+        {
+            var audio = Load(prefab).GetComponent<RuneCircleAudio>();
+            Assert.IsNotNull(audio.AmbientClip);
+            Assert.AreEqual(clipName, audio.AmbientClip.name);
+            Assert.AreEqual(volume, audio.AmbientVolume, 0.0001f);
+            Assert.AreEqual(1.5f, audio.MinDistance, 0.0001f);
+            Assert.AreEqual(12f, audio.MaxDistance, 0.0001f);
+        }
+
+        [TestCase("RuneCircle_Launch")]
+        [TestCase("RuneCircle_Teleport")]
+        public void TheAmbientIsQuieterThanTheEffectSound(string prefab)
+        {
+            var go = Load(prefab);
+            var effectVolume = prefab == "RuneCircle_Launch" ? go.GetComponent<LaunchEffect>().SoundVolume : go.GetComponent<TeleportEffect>().SoundVolume;
+            Assert.Less(go.GetComponent<RuneCircleAudio>().AmbientVolume, effectVolume * 0.5f);
+        }
+
+        [TestCase("ambient_01", 8f, 8.5f)]
+        [TestCase("weird_03", 3f, 4f)]
+        public void TheAmbientLoopsAreImportedForLooping3DUse(string name, float min, float max)
+        {
+            var path = $"{Loops}/{name}.ogg";
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            Assert.IsNotNull(clip, name);
+            Assert.That(clip.length, Is.InRange(min, max));
+            var importer = (AudioImporter)AssetImporter.GetAtPath(path);
+            Assert.IsTrue(importer.defaultSampleSettings.loadType == AudioClipLoadType.CompressedInMemory);
+            Assert.IsTrue(importer.loadInBackground);
+            Assert.IsTrue(File.Exists($"{Loops}/LICENSE.txt"));
+        }
+
+        [Test]
+        public void TheSourceUsesTheConfiguredRolloff()
+        {
+            var audio = NewObject(Vector3.zero).AddComponent<RuneCircleAudio>();
+            audio.ConfigureAmbient(NewClip("ambient"), 0.25f);
+
+            var source = audio.Build();
+
+            Assert.AreEqual(AudioRolloffMode.Linear, source.rolloffMode);
+            Assert.AreEqual(audio.MinDistance, source.minDistance, 0.0001f);
+            Assert.AreEqual(audio.MaxDistance, source.maxDistance, 0.0001f);
+        }
+
+        [TestCase(10f, 0f, 0f)]
+        [TestCase(10f, 0.5f, 5f)]
+        [TestCase(10f, 1f, 0f)]
+        [TestCase(0f, 0.7f, 0f)]
+        public void TheLoopStartsAtARandomPointInsideTheClip(float length, float random, float expected)
+        {
+            Assert.AreEqual(expected, RuneCircleAudio.StartOffset(length, random), 0.0001f);
         }
 
         [Test]

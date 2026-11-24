@@ -182,8 +182,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: HexFall.World::HexFall.World.RuneCircles.RuneCircleAudio
   ambientClip: {fileID: 0}
   ambientVolume: 0.5
-  minDistance: 2
-  maxDistance: 20
+  minDistance: 1.5
+  maxDistance: 12
 --- !u!1 &4174621249635397861
 GameObject:
   m_ObjectHideFlags: 0

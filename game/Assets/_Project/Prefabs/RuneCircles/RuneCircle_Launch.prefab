@@ -8,6 +8,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 353670401153670194, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+      propertyPath: ambientClip
+      value: 
+      objectReference: {fileID: 8300000, guid: 12907d7a5dfb9034990020fdb7b86a16, type: 3}
+    - target: {fileID: 353670401153670194, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+      propertyPath: ambientVolume
+      value: 0.25
+      objectReference: {fileID: 0}
     - target: {fileID: 3559876520943724373, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
       propertyPath: m_Name
       value: RuneCircle_Launch

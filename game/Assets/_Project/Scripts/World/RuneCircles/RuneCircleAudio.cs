@@ -3,16 +3,24 @@ using UnityEngine;
 namespace HexFall.World.RuneCircles
 {
     // Layer 1 of a circle's sound: an optional ambient loop emitted by the circle itself (3D, effects
-    // volume). The clip is left empty until one is chosen, so the circle is silent. The sound each
-    // effect makes when the circle fires belongs to the effect (layer 2).
+    // volume, linear rolloff so it is only heard close to the circle). With no clip the circle is silent.
+    // The loop starts at a random point so several circles of one kind do not play in phase. The sound
+    // each effect makes when the circle fires belongs to the effect (layer 2).
     public sealed class RuneCircleAudio : MonoBehaviour
     {
         [SerializeField] private AudioClip ambientClip;
         [Range(0f, 1f)] [SerializeField] private float ambientVolume = 0.5f;
-        [SerializeField] private float minDistance = 2f;
-        [SerializeField] private float maxDistance = 20f;
+        [SerializeField] private float minDistance = 1.5f;
+        [SerializeField] private float maxDistance = 12f;
 
         public AudioClip AmbientClip => ambientClip;
+        public float AmbientVolume => ambientVolume;
+        public float MinDistance => minDistance;
+        public float MaxDistance => maxDistance;
+
+        // Where in a clip of the given length the loop starts, for a random value in [0, 1).
+        internal static float StartOffset(float clipLength, float random01) =>
+            clipLength > 0f && random01 >= 0f && random01 < 1f ? clipLength * random01 : 0f;
 
         internal void ConfigureAmbient(AudioClip clip, float volume)
         {
@@ -39,7 +47,9 @@ namespace HexFall.World.RuneCircles
         private void Start()
         {
             var source = Build();
-            if (source != null) source.Play();
+            if (source == null) return;
+            source.time = StartOffset(source.clip.length, Random.value);
+            source.Play();
         }
     }
 }
