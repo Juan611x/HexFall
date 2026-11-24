@@ -78,3 +78,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HexFall.World::HexFall.World.RuneCircles.LaunchEffect
   launchHeight: 10
+  sound: {fileID: 8300000, guid: e61a13ec6b8afd047ad68380fab62edc, type: 3}
+  soundVolume: 0.9

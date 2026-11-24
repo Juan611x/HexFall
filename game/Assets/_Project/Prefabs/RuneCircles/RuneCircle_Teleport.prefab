@@ -180,3 +180,5 @@ MonoBehaviour:
   destination: {fileID: 0}
   keepFacing: 1
   arrivalLift: 0.05
+  sound: {fileID: 8300000, guid: a8d7a098e369b8a4e9175193f4ea6e0e, type: 3}
+  soundVolume: 0.9

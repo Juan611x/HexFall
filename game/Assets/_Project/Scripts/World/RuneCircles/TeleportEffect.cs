@@ -13,7 +13,20 @@ namespace HexFall.World.RuneCircles
         [Tooltip("Metres above the destination circle's centre the feet are placed at, so the body never starts inside the floor.")]
         [SerializeField] private float arrivalLift = 0.05f;
 
+        [Tooltip("Played at the departure circle and again at the arrival circle when the player is teleported.")]
+        [SerializeField] private AudioClip sound;
+        [Range(0f, 1f)] [SerializeField] private float soundVolume = 1f;
+
         private bool _warned;
+
+        public AudioClip Sound => sound;
+        public float SoundVolume => soundVolume;
+
+        internal void ConfigureSound(AudioClip clip, float volume)
+        {
+            sound = clip;
+            soundVolume = volume;
+        }
 
         public RuneCircle Destination => destination;
         public bool KeepFacing => keepFacing;
@@ -36,8 +49,12 @@ namespace HexFall.World.RuneCircles
             var arrival = destination.transform;
             var yaw = keepFacing ? activation.Target.FacingYaw : arrival.eulerAngles.y;
             // Lock only when the player really moved, so a refused teleport does not silence the destination.
-            if (activation.Target.Teleport(arrival.position + Vector3.up * arrivalLift, yaw))
-                destination.Lock(activation.Target);
+            if (!activation.Target.Teleport(arrival.position + Vector3.up * arrivalLift, yaw)) return;
+            destination.Lock(activation.Target);
+            // Out at the source, in at the destination: the listener follows the player, so the arrival is
+            // the one that is always heard and the departure is heard while the source is within range.
+            SpatialSfx.Play(sound, activation.Circle.position, soundVolume);
+            SpatialSfx.Play(sound, arrival.position, soundVolume);
         }
     }
 }

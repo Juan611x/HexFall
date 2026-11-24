@@ -12,10 +12,24 @@ namespace HexFall.World.RuneCircles
         [Min(0f)]
         [SerializeField] private float launchHeight = 10f;
 
+        [Tooltip("Played at the circle when it launches.")]
+        [SerializeField] private AudioClip sound;
+        [Range(0f, 1f)] [SerializeField] private float soundVolume = 1f;
+
         public float LaunchHeight => launchHeight;
+        public AudioClip Sound => sound;
+        public float SoundVolume => soundVolume;
+
+        internal void ConfigureSound(AudioClip clip, float volume)
+        {
+            sound = clip;
+            soundVolume = volume;
+        }
 
         public void Apply(RuneCircleActivation activation)
         {
+            // The sound marks the circle firing; a launch the target refuses (climbing) still sounds.
+            SpatialSfx.Play(sound, activation.Circle.position, soundVolume);
             var speed = LaunchMath.SpeedForHeight(launchHeight, activation.Target.GravityMagnitude);
             if (speed > 0f) activation.Target.Launch(speed);
         }

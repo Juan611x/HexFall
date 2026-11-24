@@ -1,7 +1,9 @@
 {
     "name": "HexFall.World",
     "rootNamespace": "HexFall.World",
-    "references": [],
+    "references": [
+        "HexFall.UI"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
