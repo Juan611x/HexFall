@@ -5,7 +5,7 @@ Mesh and textures of the parry shield (an air sphere around the wizard), in the 
 | File | Role |
 |---|---|
 | `build_air_shield_mesh.py` | Blender headless: builds `AirShield.fbx`, a 32 x 16 UV sphere (960 triangles, smooth shading, radius 0.5) with its poles on the vertical (Unity Y) axis, which is the shield's spin axis. |
-| `build_current_ring_mesh.py` | Blender headless: builds `AirCurrentRing.fbx`, the band (256 triangles, radius 0.5, 0.25 tall, U around, V across) that each wind current is drawn on. Its axis is on Unity Y. |
+| `build_current_ring_mesh.py` | Blender headless: builds `AirCurrentRing.fbx`, the band (256 triangles, radius 0.5, 0.338 tall, U around, V across) that each wind current is drawn on. Its axis is on Unity Y. |
 | `source/Snow_blowing_under_lamp_1_1280px.jpg` | Source photo "Snow blowing under lamp 1" by W.carter (CC0), see `source/SOURCE.txt`. |
 | `derive_air_texture.py` | Deterministic (Pillow): derives `T_AirWisp.png` (16x8) from the photo. |
 | `derive_air_twirls.py` | Deterministic (Blender headless, numpy; no Pillow needed): derives `T_AirTwirl_A.png`, `T_AirTwirl_B.png`, `T_AirTrace.png` (128x128, white RGB, real alpha from luminance, smooth gradient) from the Kenney originals in `game/Assets/ThirdParty/Kenney/ParticlePack/`. |

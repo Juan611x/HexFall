@@ -33,7 +33,7 @@ namespace HexFall.Player
         private const float GateStart = 0.1f;    // build progress at which the currents start to show
 
         // Half the height of the ring mesh (AirCurrentRing.fbx, build_current_ring_mesh.py HALF_HEIGHT).
-        public const float BandHalfHeight = 0.125f;
+        public const float BandHalfHeight = 0.169f;
 
         private const float MinBandScale = 0.2f;
 

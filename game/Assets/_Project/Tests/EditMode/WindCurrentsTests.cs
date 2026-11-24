@@ -269,7 +269,7 @@ namespace HexFall.UI.Tests
             Assert.IsNotNull(mesh, MeshPath);
             Assert.AreEqual(0.5f, mesh.bounds.extents.x, 0.02f, "radius x");
             Assert.AreEqual(0.5f, mesh.bounds.extents.z, 0.02f, "radius z");
-            Assert.That(mesh.bounds.extents.y, Is.InRange(0.11f, 0.14f), "a band (0.25 tall, thicker than T6) along the vertical axis");
+            Assert.That(mesh.bounds.extents.y, Is.InRange(0.16f, 0.18f), "a band (0.34 tall, 35 % thicker than T6c) along the vertical axis");
             Assert.GreaterOrEqual(mesh.triangles.Length / 3, 96, "enough segments to look round");
             Assert.LessOrEqual(mesh.triangles.Length / 3, 400, "cheap");
             var uv = mesh.uv;

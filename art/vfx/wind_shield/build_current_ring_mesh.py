@@ -23,7 +23,7 @@ OUT = os.path.join(ROOT, "game", "Assets", "_Project", "VFX", "WindShield", "Mod
 
 SEGMENTS = 64      # around the axis: 64 * 2 rows * 2 triangles = 256 triangles
 RADIUS = 0.5
-HALF_HEIGHT = 0.125  # the band is 0.25 tall (WindCurrentArc.BandHalfHeight)
+HALF_HEIGHT = 0.169  # the band is 0.338 tall (WindCurrentArc.BandHalfHeight)
 # Bottom, middle and top row: the outer rows sit on the sphere surface at +-HALF_HEIGHT, the middle one on its equator.
 ROW_RADIUS = (math.sqrt(RADIUS ** 2 - HALF_HEIGHT ** 2), RADIUS, math.sqrt(RADIUS ** 2 - HALF_HEIGHT ** 2))
 ROW_Y = (-HALF_HEIGHT, 0.0, HALF_HEIGHT)
