@@ -18,6 +18,8 @@ namespace HexFall.UI.Tests
         private const string OldShaderPath = "Assets/_Project/VFX/WindShield/Shaders/WindShield.shader";
         private const string MaterialPath = "Assets/_Project/VFX/WindShield/Materials/M_WindShield.mat";
         private const string OldTexturePath = "Assets/_Project/VFX/WindShield/Textures/T_AirShield.png";
+        private const string TextureDir = "Assets/_Project/VFX/WindShield/Textures/";
+        private const string KenneyDir = "Assets/ThirdParty/Kenney/ParticlePack/";
         private const string MeshPath = "Assets/_Project/VFX/WindShield/Models/AirShield.fbx";
         private const string PlayerPrefab = "Assets/_Project/Prefabs/Characters/PlayerWizard.prefab";
 
@@ -51,7 +53,8 @@ namespace HexFall.UI.Tests
         {
             var shader = LoadGraph();
             foreach (var name in new[] { "_BaseColor", "_Build", "_Density", "_AlphaSteps", "_NoiseCells", "_FlowSpeed",
-                "_RimPower", "_CoreAlpha", "_PoleFade", "_SnapResolution", "_BuildSpin" })
+                "_RimPower", "_CoreAlpha", "_PoleFade", "_SnapResolution", "_BuildSpin",
+                "_TwirlTexA", "_TwirlTexB", "_TwirlTilingA", "_TwirlTilingB", "_WarpAmount" })
                 Assert.GreaterOrEqual(shader.FindPropertyIndex(name), 0, name);
         }
 
@@ -62,10 +65,59 @@ namespace HexFall.UI.Tests
             Assert.IsNotNull(material, MaterialPath);
             Assert.AreEqual(LoadGraph(), material.shader);
             Assert.AreEqual(RenderQueue.Transparent, (RenderQueue)material.renderQueue);
-            Assert.AreEqual(5f, material.GetFloat("_AlphaSteps"), "default posterisation");
+            Assert.Less(material.GetFloat("_AlphaSteps"), 2f, "no hard posterisation: it read as flat blocks");
             Assert.AreEqual(1f, material.GetFloat("_Build"), "complete in the editor");
             Assert.Less(material.GetFloat("_Density"), 0.5f, "low density: mostly transparent");
             Assert.Greater(material.GetColor("_BaseColor").a, 0f);
+        }
+
+        [TestCase("T_AirTwirl_A.png", "twirl_03.png")]
+        [TestCase("T_AirTwirl_B.png", "twirl_02.png")]
+        [TestCase("T_AirTrace.png", "trace_04.png")]
+        public void Derived_wind_textures_are_low_res_point_filtered_with_a_real_alpha(string derived, string original)
+        {
+            Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<Texture2D>(KenneyDir + original), "original " + original);
+            var path = TextureDir + derived;
+            Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<Texture2D>(path), path);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            Assert.AreEqual(FilterMode.Point, importer.filterMode, "point filter");
+            Assert.IsFalse(importer.mipmapEnabled, "no mipmaps");
+            Assert.IsTrue(importer.alphaIsTransparency, "alpha is transparency");
+            Assert.AreEqual(TextureImporterAlphaSource.FromInput, importer.alphaSource);
+
+            var image = new Texture2D(2, 2);
+            Assert.IsTrue(image.LoadImage(System.IO.File.ReadAllBytes(path)), "decode " + path);
+            try
+            {
+                Assert.That(image.width, Is.InRange(64, 128), "width");
+                Assert.That(image.height, Is.InRange(64, 128), "height");
+                var pixels = image.GetPixels32();
+                Assert.Greater(pixels.Count(p => p.a < 8), pixels.Length / 4, "a transparent background");
+                Assert.Greater(pixels.Max(p => p.a), 200, "visible strokes");
+                Assert.Greater(pixels.Select(p => (int)p.a).Distinct().Count(), 24, "soft internal gradient, not posterised");
+                Assert.IsTrue(pixels.Where(p => p.a > 0).All(p => p.r >= 250 && p.g >= 250 && p.b >= 250), "RGB stays white");
+            }
+            finally { Object.DestroyImmediate(image); }
+        }
+
+        [Test]
+        public void Kenney_particle_pack_license_travels_with_the_originals()
+        {
+            Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<Object>(KenneyDir + "License.txt"));
+        }
+
+        [Test]
+        public void Material_assigns_the_twirl_textures_with_whole_tile_counts_around_the_sphere()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
+            Assert.AreEqual(AssetDatabase.LoadAssetAtPath<Texture2D>(TextureDir + "T_AirTwirl_A.png"), material.GetTexture("_TwirlTexA"));
+            Assert.AreEqual(AssetDatabase.LoadAssetAtPath<Texture2D>(TextureDir + "T_AirTwirl_B.png"), material.GetTexture("_TwirlTexB"));
+            foreach (var name in new[] { "_TwirlTilingA", "_TwirlTilingB" })
+            {
+                var tiling = material.GetVector(name);
+                Assert.Greater(tiling.x, 0f, name);
+                Assert.AreEqual(Mathf.Round(tiling.x), tiling.x, 1e-4f, name + ": whole tiles hide the atan2 seam");
+            }
         }
 
         [Test]

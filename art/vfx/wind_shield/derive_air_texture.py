@@ -6,7 +6,7 @@ Deterministic (no randomness). Reads the photo stored under source/ and writes o
 
 Steps: crop (2:1) -> grayscale -> flatten the lamp (remove the large-scale brightness with a blurred
 copy, clip the highlights) -> autocontrast -> streakiest strip -> faded ends -> LANCZOS downscale ->
-posterise (8 levels). The shield sphere no longer uses a photo: SG_WindShield makes its air procedurally.
+posterise (8 levels). The shield sphere does not use this photo: its air comes from the Kenney twirls (derive_air_twirls.py).
 
 Usage (repository root):
 

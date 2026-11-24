@@ -4,11 +4,13 @@
 //  WindShield_Snap     vertex stage. PSX vertex snapping (same grid rule as HexFall/PSX Lit): the vertex is snapped in
 //                      clip space, then carried back to object space, because the Shader Graph Position block is
 //                      object space and the pipeline transforms it again. The round trip is exact apart from the snap.
-//  WindShield_Surface  fragment stage. Procedural wind veins from the object-space direction (no mesh UVs, so nothing
-//                      pinches at the poles), pixelated to a coarse grid, posterised, with fresnel rim, pole fade and
-//                      the spiral build (_Build) that assembles the shield bottom to top.
+//  WindShield_Surface  fragment stage. The air is two low-res wind-twirl images (Kenney Particle Pack, CC0, alpha =
+//                      stroke) tiled around the Y axis from the object-space direction (no mesh UVs, so nothing
+//                      pinches at the poles) and scrolled in opposite directions. Procedural noise only warps their
+//                      UVs, so the strokes ripple and never sit still; it no longer draws the shape. Plus fresnel
+//                      rim, pole fade and the spiral build (_Build) that assembles the shield bottom to top.
 //
-// No textures, no compute: WebGL2 friendly.
+// Two texture samples, no compute: WebGL2 friendly.
 
 #ifndef HEXFALL_WIND_SHIELD_CORE_INCLUDED
 #define HEXFALL_WIND_SHIELD_CORE_INCLUDED
@@ -40,23 +42,12 @@ float WS_Noise(float3 p)
                 lerp(lerp(n001, n101, f.x), lerp(n011, n111, f.x), f.y), f.z);
 }
 
-float2 WS_RotateXZ(float2 p, float turns)
+// Twirl UV: u = turns around the Y axis times a WHOLE tile count, so the atan2 seam (around jumps by 1) lands on a
+// whole number of tiles and the image repeats seamlessly; v = latitude. The sample uses an explicit mip 0 (the textures
+// have no mips), so the seam never produces a huge derivative either.
+float2 WS_TwirlUV(float around, float height, float2 tiling, float turns, float2 warp)
 {
-    float s, c;
-    sincos(turns * WS_TWO_PI, s, c);
-    return float2(c * p.x - s * p.y, s * p.x + c * p.y);
-}
-
-// A thin ridge where the noise crosses 0.5, stretched along the horizontal flow. Returns 0..1.
-float WS_Vein(float3 dir, float turns, float stretch, float scale, float warp, float threshold)
-{
-    float3 p = dir;
-    p.xz = WS_RotateXZ(p.xz, turns + p.y * 0.35); // swirl: higher rings turn a little ahead of lower ones
-    p.xz *= scale;                                  // slow around the sphere...
-    p.y = p.y * stretch + warp;                     // ...fast from bottom to top: thin horizontal veins
-    float n = WS_Noise(p);
-    float ridge = 1.0 - abs(n * 2.0 - 1.0);
-    return saturate((ridge - threshold) / max(1.0 - threshold, 1e-3));
+    return float2((around + turns) * tiling.x, height * tiling.y) + warp;
 }
 
 void WindShield_Snap_float(float3 positionOS, float2 resolution, out float3 snappedOS)
@@ -77,6 +68,7 @@ void WindShield_Snap_float(float3 positionOS, float2 resolution, out float3 snap
 void WindShield_Surface_float(
     float3 positionOS, float4 baseColor, float build, float density, float alphaSteps, float2 noiseCells,
     float flowSpeed, float rimPower, float coreAlpha, float poleFade, float buildSpin,
+    UnityTexture2D twirlA, UnityTexture2D twirlB, float2 tilingA, float2 tilingB, float warpAmount,
     out float3 color, out float alpha)
 {
 #ifdef SHADERGRAPH_PREVIEW
@@ -93,22 +85,29 @@ void WindShield_Surface_float(
     float height = asin(clamp(dir.y, -1.0, 1.0)) / 3.14159265 + 0.5; // 0 bottom pole .. 1 top pole
     float around = atan2(dir.z, dir.x) / WS_TWO_PI + 0.5;             // 0..1 around the Y axis
 
-    // PSX texels: snap the direction to a coarse angular grid fixed on the sphere; the flow moves through it.
+    // PSX texels for the warp: snap the direction to a coarse angular grid fixed on the sphere; the noise moves through it.
     float2 cells = max(noiseCells, float2(4, 4));
     float2 cell = (floor(float2(around, height) * cells) + 0.5) / cells;
     float phi = (cell.y - 0.5) * 3.14159265;
     float theta = (cell.x - 0.5) * WS_TWO_PI;
     float3 qdir = float3(cos(phi) * cos(theta), sin(phi), cos(phi) * sin(theta));
 
-    // Two layers: a stretched horizontal flow, and a slower counter-turning layer that also warps the first.
-    float spin = (1.0 - build) * buildSpin; // extra turns while assembling: the swirl spins faster
-    float threshold = 1.0 - density * 0.3;
-    float warpNoise = WS_Noise(float3(qdir.x * 1.7 - time * 0.05, qdir.y * 3.0, qdir.z * 1.7) + 7.3);
-    float veinA = WS_Vein(qdir, time * flowSpeed + spin, 9.0, 1.5, (warpNoise - 0.5) * 0.9 + time * 0.045, threshold);
-    float veinB = WS_Vein(qdir, -time * flowSpeed * 0.55 - spin * 0.6, 14.0, 2.2, warpNoise * 0.6 - time * 0.03 + 3.1, threshold);
-    float veins = max(veinA, veinB * 0.75);
+    // Noise warp: two octaves of drifting value noise bend the twirl UVs, so the strokes ripple and are never static.
+    float3 drift = float3(time * 0.07, time * 0.03, -time * 0.05);
+    float2 warp = float2(WS_Noise(qdir * 2.2 + drift), WS_Noise(qdir * 2.2 + 17.0 - drift)) - 0.5;
+    warp += (float2(WS_Noise(qdir * 5.0 + 5.0 + drift * 2.0), WS_Noise(qdir * 5.0 + 31.0 - drift * 2.0)) - 0.5) * 0.5;
+    warp *= warpAmount;
 
-    // Fresnel: strong at the silhouette, faint facing the camera so the wizard stays visible.
+    // Two layers scrolling around the sphere in opposite directions; building makes the swirl spin faster.
+    float spin = (1.0 - build) * buildSpin;
+    float2 uvA = WS_TwirlUV(around, height, tilingA, time * flowSpeed + spin, warp);
+    float2 uvB = WS_TwirlUV(around, height, tilingB, -time * flowSpeed * 0.6 - spin * 0.6, warp.yx);
+    float strokesA = SAMPLE_TEXTURE2D_LOD(twirlA.tex, twirlA.samplerstate, uvA, 0).a;
+    float strokesB = SAMPLE_TEXTURE2D_LOD(twirlB.tex, twirlB.samplerstate, uvB, 0).a;
+    float pattern = 1.0 - (1.0 - strokesA) * (1.0 - strokesB * 0.8); // screen blend: overlaps brighten, never exceed 1
+    pattern = smoothstep(0.12, 0.8, pattern); // clears the faint haze between arms; still a smooth ramp, not posterised
+
+    // Fresnel: strongest at the silhouette; coreAlpha is how much of the pattern shows facing the camera.
     float nDotV = saturate(dot(normalize(normalWS), viewDir));
     float rim = pow(1.0 - nDotV, max(rimPower, 0.1));
     float shell = saturate(coreAlpha + rim);
@@ -125,11 +124,12 @@ void WindShield_Surface_float(
     float built = saturate((reach - field) / edge);
     float fringe = saturate(1.0 - abs(reach - field - edge * 0.5) / (edge * 0.5)) * step(0.001, build) * step(build, 0.999);
 
-    float mask = saturate(veins * shell * 1.4 + rim * 0.15) * polar * built;
-    // The fringe is broken up (veins plus a few noise texels) so it reads as sparkling air, not a flat band.
-    mask = saturate(mask + fringe * 0.5 * saturate(veins * 1.5 + step(0.62, jitter)) * polar);
-    float steps = max(alphaSteps, 2.0);
-    mask = floor(mask * steps + 0.5) / steps; // posterised alpha, PSX style
+    // density is the pattern gain (0.4 = as drawn, lower = thinner air). The gradient stays smooth.
+    float mask = saturate(pattern * shell * density * 2.5 + rim * 0.12) * polar * built;
+    // The fringe is broken up (strokes plus a few noise texels) so it reads as sparkling air, not a flat band.
+    mask = saturate(mask + fringe * 0.5 * saturate(pattern * 1.5 + step(0.62, jitter)) * polar);
+    if (alphaSteps >= 2.0)
+        mask = floor(mask * alphaSteps + 0.5) / alphaSteps; // optional posterisation, off by default (read as flat blocks)
 
     color = baseColor.rgb * (1.0 + rim * 0.8 + fringe * 0.5);
     alpha = baseColor.a * mask;
