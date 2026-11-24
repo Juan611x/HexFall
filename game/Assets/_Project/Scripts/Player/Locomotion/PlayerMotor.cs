@@ -34,6 +34,16 @@ namespace HexFall.Player.Locomotion
 
         public float GravityMagnitude => -settings.gravity;
 
+        // Bottom centre of the capsule; the circles test this point against their footprint.
+        public Vector3 FeetPosition
+        {
+            get
+            {
+                var bounds = _controller.bounds;
+                return new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+            }
+        }
+
         // Throws the body upward (jump state, same animation and landing); ignored while climbing.
         public void Launch(float verticalSpeed) => Machine.Launch(verticalSpeed);
 

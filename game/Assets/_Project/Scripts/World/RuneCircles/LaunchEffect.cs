@@ -3,6 +3,8 @@ using UnityEngine;
 namespace HexFall.World.RuneCircles
 {
     // Throws the player straight up so the apex is launchHeight metres above the launch point.
+    // The target may refuse (the player cannot be launched while climbing); the circle's firing is
+    // consumed anyway, so the player has to leave the circle and return to try again.
     public sealed class LaunchEffect : MonoBehaviour, IRuneCircleEffect
     {
         [Tooltip("Height of the apex above the launch point, in metres.")]

@@ -6,6 +6,8 @@ namespace HexFall.World.RuneCircles
     public interface IRuneCircleTarget
     {
         bool IsGrounded { get; }
+        // World position of the body's feet (the bottom centre of its collider).
+        Vector3 FeetPosition { get; }
         // Magnitude of the gravity acceleration (positive), in m/s^2.
         float GravityMagnitude { get; }
         // Throws the body upward at the given vertical speed; ignored when the body cannot be launched.

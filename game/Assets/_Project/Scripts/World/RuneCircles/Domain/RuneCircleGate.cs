@@ -26,7 +26,9 @@ namespace HexFall.World.RuneCircles
     //    a stay that began inside the cooldown fires once when it elapses);
     //  - with requireGrounded, an airborne player is not eligible (AfterStanding restarts its timer);
     //  - Lock() suppresses firing until the player has been seen inside and then outside again, so a
-    //    teleport arrival does not trigger the destination circle.
+    //    teleport arrival does not trigger the destination circle;
+    //  - firing is consumed here, whatever the effects do with it: a launch refused by the target (while
+    //    climbing) is not retried until the stay ends.
     public sealed class RuneCircleGate
     {
         private readonly RuneCircleGateSettings _settings;
