@@ -4173,6 +4173,7 @@ SceneRoots:
   - {fileID: 1419628491}
   - {fileID: 1051854548}
   - {fileID: 517876932}
+  - {fileID: 2108981507}
 --- !u!1 &800665631
 GameObject:
   m_ObjectHideFlags: 0
@@ -4397,3 +4398,223 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1508349374}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &559258628
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2108981507}
+    m_Modifications:
+    - target: {fileID: 2294938581771404228, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_Name
+      value: RuneCircle_Launch
+      objectReference: {fileID: 0}
+    - target: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 7.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -8
+      objectReference: {fileID: 0}
+    - target: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+--- !u!4 &559258629 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5868158447979875621, guid: 6d89c102e23c5a1448fbef31303ce794, type: 3}
+  m_PrefabInstance: {fileID: 559258628}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1361021401
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2108981507}
+    m_Modifications:
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -16
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -8
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504689222510560420, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_Name
+      value: RuneCircle_Teleport_A
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+--- !u!4 &1361021402 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+  m_PrefabInstance: {fileID: 1361021401}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2108981506
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2108981507}
+  m_Layer: 0
+  m_Name: RuneCircles
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2108981507
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108981506}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 559258629}
+  - {fileID: 1361021402}
+  - {fileID: 2119161534}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &2119161533
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2108981507}
+    m_Modifications:
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504689222510560420, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: m_Name
+      value: RuneCircle_Teleport_B
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+--- !u!4 &2119161534 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+  m_PrefabInstance: {fileID: 2119161533}
+  m_PrefabAsset: {fileID: 0}
