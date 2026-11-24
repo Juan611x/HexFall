@@ -390,7 +390,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a5728f517dbcc0c41ba9927dc2036f8f, type: 2}
+  - {fileID: 2100000, guid: 83760e1eea9a1c0428aaf3f97fdf6735, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1154,8 +1154,13 @@ MonoBehaviour:
       standDepth: 0.5
       overMaxThickness: 0.6
       minHeadroom: 1.8
+      overMinHeadroom: 1.2
       detectionDistance: 0.8
       landingClearDepth: 0.6
+      topSurfaceTolerance: 0.1
+      probeStep: 0.05
+      faceProbeStep: 0.1
+      maxLandingDrop: 3
       approachMinDot: 0.5
       airGrabWindowSeconds: 0.5
       reachSeconds: 0.3333
@@ -1163,6 +1168,8 @@ MonoBehaviour:
       reachRiseFraction: 0.6
       wallStandoff: 0.3
       forwardOntoTop: 0.4
+      overSeconds: 0.3
+      overClearDistance: 0.4
       overPushSpeed: 2.5
   groundedOffset: -0.14
   groundedRadius: 0.28
