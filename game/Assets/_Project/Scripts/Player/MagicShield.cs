@@ -17,6 +17,7 @@ namespace HexFall.Player
         [SerializeField] private float deflectBoost = 2.5f;
         [SerializeField] private ParticleSystem wisps; // looping gusts orbiting the wizard while the shield is held
         [SerializeField] private ParticleSystem burst; // one-shot ring of faster gusts on a parried hit
+        [SerializeField] private WindCurrents currents; // horizontal wind currents wrapping the sphere, gated by the build
 
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
         private static readonly int Build = Shader.PropertyToID("_Build");
@@ -49,6 +50,7 @@ namespace HexFall.Player
             _startedAt = Time.time;
             _deflectedAt = float.NegativeInfinity;
             _renderer.enabled = true;
+            if (currents != null) currents.Restart();
             Apply(0f); // first frame already empty: the material default (_Build 1) must never show
             if (wisps != null) wisps.Play(true);
         }
@@ -68,16 +70,18 @@ namespace HexFall.Player
             var t = Time.time - _startedAt;
             if (wisps != null && wisps.isEmitting && !WispsEmitting(t, _holdSeconds))
                 wisps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-            Apply(t);
+            Apply(t, Time.deltaTime);
         }
 
-        // Pushes the build state for `elapsed` seconds since Flash to the renderer. Returns false (and hides the
+        // Pushes the build state for `elapsed` seconds since Flash to the renderer and the wind currents (which advance by
+        // `deltaTime`). Returns false (and hides the
         // renderer) once the shield has fully disassembled.
-        public bool Apply(float elapsed)
+        public bool Apply(float elapsed, float deltaTime = 0f)
         {
             if (_shieldBuild == null || _shieldBuild.IsDone(elapsed))
             {
                 _renderer.enabled = false;
+                if (currents != null) currents.Hide();
                 return false;
             }
 
@@ -87,6 +91,7 @@ namespace HexFall.Player
                 color.a = Mathf.Clamp01(_baseColor.a * Mathf.Lerp(1f, deflectBoost, progress));
             _block.SetColor(BaseColor, color);
             _block.SetFloat(Build, progress);
+            if (currents != null) currents.Step(deltaTime, progress);
             _renderer.SetPropertyBlock(_block);
             return true;
         }
