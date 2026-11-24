@@ -5,7 +5,9 @@ namespace HexFall.Player
     // Air sphere around the wizard: it assembles (spiral build, bottom to top), stays built for the parry window and
     // then disassembles. The timing is a pure function (ShieldBuild) fed to the shader's _Build through a
     // MaterialPropertyBlock; the guard rules live elsewhere and never depend on this visual.
-    // A parried hit makes it pulse brighter (the _BaseColor alpha is boosted for a moment).
+    // A parried hit makes it pulse brighter: the _BaseColor alpha is boosted for deflectSeconds, measured on the same
+    // elapsed clock as the build. The boost is scaled by the build progress, so a hit near the end of the guard window
+    // never over-brightens the shield while it is already dissolving.
     [RequireComponent(typeof(Renderer))]
     public class MagicShield : MonoBehaviour
     {
@@ -25,7 +27,7 @@ namespace HexFall.Player
         private ShieldBuild _shieldBuild;
         private float _startedAt = float.NegativeInfinity;
         private float _holdSeconds;
-        private float _boostUntil = float.NegativeInfinity;
+        private float _deflectedAt = float.NegativeInfinity; // elapsed since Flash when the last parry landed
 
         private void Awake()
         {
@@ -45,13 +47,18 @@ namespace HexFall.Player
             _holdSeconds = holdSeconds;
             _shieldBuild = new ShieldBuild(holdSeconds, assembleSeconds, disassembleSeconds);
             _startedAt = Time.time;
+            _deflectedAt = float.NegativeInfinity;
             _renderer.enabled = true;
+            Apply(0f); // first frame already empty: the material default (_Build 1) must never show
             if (wisps != null) wisps.Play(true);
         }
 
-        public void Deflect()
+        public void Deflect() => Deflect(Time.time - _startedAt);
+
+        // `elapsed` is the time since Flash at which the hit landed.
+        public void Deflect(float elapsed)
         {
-            _boostUntil = Time.time + deflectSeconds;
+            _deflectedAt = elapsed;
             if (burst != null) burst.Play(true);
         }
 
@@ -75,9 +82,11 @@ namespace HexFall.Player
             }
 
             var color = _baseColor;
-            if (Time.time < _boostUntil) color.a = Mathf.Clamp01(_baseColor.a * deflectBoost);
+            float progress = _shieldBuild.Progress(elapsed);
+            if (elapsed >= _deflectedAt && elapsed < _deflectedAt + deflectSeconds)
+                color.a = Mathf.Clamp01(_baseColor.a * Mathf.Lerp(1f, deflectBoost, progress));
             _block.SetColor(BaseColor, color);
-            _block.SetFloat(Build, _shieldBuild.Progress(elapsed));
+            _block.SetFloat(Build, progress);
             _renderer.SetPropertyBlock(_block);
             return true;
         }

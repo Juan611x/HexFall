@@ -84,6 +84,27 @@ namespace HexFall.UI.Tests
             Assert.IsTrue(build.IsDone(0.06f + 0.35f));
         }
 
+        [TestCase(float.NaN, 0.12f, 0.35f)]
+        [TestCase(float.PositiveInfinity, 0.12f, 0.35f)]
+        [TestCase(0.4f, float.NaN, 0.35f)]
+        [TestCase(0.4f, 0.12f, float.NaN)]
+        [TestCase(0.4f, float.PositiveInfinity, 0.35f)]
+        [TestCase(0.4f, 0.12f, float.PositiveInfinity)]
+        public void RejectsNonFiniteConstructorArguments(float hold, float assemble, float disassemble)
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => new ShieldBuild(hold, assemble, disassemble));
+        }
+
+        [Test]
+        public void NaNElapsedIsTreatedAsNotStarted()
+        {
+            var build = Make();
+
+            Assert.AreEqual(ShieldBuildPhase.NotStarted, build.PhaseAt(float.NaN));
+            Assert.AreEqual(0f, build.Progress(float.NaN), Eps);
+            Assert.IsFalse(build.IsDone(float.NaN));
+        }
+
         [Test]
         public void ProgressStaysInRange()
         {

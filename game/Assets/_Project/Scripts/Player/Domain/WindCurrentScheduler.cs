@@ -21,10 +21,14 @@ namespace HexFall.Player
 
     // Keeps a few horizontal wind currents alive around the shield. Lifetimes are staggered so they
     // never appear or vanish together, and a finished current respawns at a new height that keeps a
-    // minimum gap from the other active currents (bounded retries, then the farthest candidate).
+    // minimum gap from the other active currents (several candidates, then the farthest one). A finished
+    // current also carries its leftover time into the next one and picks a lifetime whose expiry stays
+    // apart from the other currents', so a big or hitched delta cannot make them all respawn together.
     public sealed class WindCurrentScheduler
     {
-        private const int MaxPlacementTries = 8;
+        private const int Candidates = 8;
+        private const int MaxCarryRespawns = 16;
+        private const float MinExpiryGap = 0.1f;
 
         private readonly Random _random;
         private readonly float _minHeight;
@@ -35,6 +39,11 @@ namespace HexFall.Player
         private readonly float _maxLifetime;
         private readonly float[] _age;
         private readonly WindCurrentState[] _states;
+        private readonly bool[] _placed;
+        private readonly bool[] _expired;
+        private readonly float[] _candidates = new float[Candidates];
+        private readonly float[] _lifetimes = new float[Candidates];
+        private readonly float[] _others;
 
         public IReadOnlyList<WindCurrentState> Currents => _states;
 
@@ -55,58 +64,129 @@ namespace HexFall.Player
             _maxLifetime = maxLifetime;
             _age = new float[count];
             _states = new WindCurrentState[count];
+            _placed = new bool[count];
+            _expired = new bool[count];
+            _others = new float[count];
 
             for (int i = 0; i < count; i++)
             {
-                float lifetime = NextLifetime();
                 float phase = (i + (float)_random.NextDouble() * 0.5f) / count; // evenly spread life phases
+                float height = PickHeight(i);
+                float lifetime = PickLifetime(i, 0f, NextLifetime());
                 _age[i] = phase * lifetime;
-                _states[i] = new WindCurrentState(phase, PickHeight(i, i), NextTilt(), lifetime);
+                _states[i] = new WindCurrentState(phase, height, NextTilt(), lifetime);
+                _placed[i] = true;
             }
         }
 
+        // Negative, NaN and infinite deltas are ignored.
         public void Tick(float deltaTime)
         {
+            if (float.IsNaN(deltaTime) || float.IsInfinity(deltaTime) || deltaTime <= 0f) return;
+
             for (int i = 0; i < _states.Length; i++)
             {
                 _age[i] += deltaTime;
                 var s = _states[i];
-                if (_age[i] >= s.Lifetime)
-                {
-                    _age[i] = 0f;
-                    _states[i] = new WindCurrentState(0f, PickHeight(i, _states.Length), NextTilt(), NextLifetime());
-                }
+                _expired[i] = _age[i] >= s.Lifetime;
+                if (_expired[i])
+                    _placed[i] = false; // not one of the "others" until it has respawned
                 else
-                {
                     _states[i] = new WindCurrentState(_age[i] / s.Lifetime, s.Height, s.TiltDegrees, s.Lifetime);
-                }
+            }
+
+            for (int i = 0; i < _states.Length; i++)
+            {
+                if (!_expired[i]) continue;
+                Respawn(i);
+                _placed[i] = true;
             }
         }
 
-        // Heights of the active currents: all others, or only the first `placed` while building.
-        private float PickHeight(int self, int placed)
+        // Index of the first candidate at least `gap` away from each of the first `othersCount` values, otherwise the
+        // candidate farthest from them (ties keep the earliest). With no others the first candidate wins.
+        public static int PickIndex(float[] candidates, float[] others, int othersCount, float gap)
         {
-            float best = 0f;
+            int best = 0;
             float bestDistance = -1f;
-            for (int attempt = 0; attempt < MaxPlacementTries; attempt++)
+            for (int c = 0; c < candidates.Length; c++)
             {
-                float candidate = _minHeight + (float)_random.NextDouble() * (_maxHeight - _minHeight);
                 float distance = float.MaxValue;
-                for (int j = 0; j < placed; j++)
-                {
-                    if (j == self) continue;
-                    distance = Math.Min(distance, Math.Abs(candidate - _states[j].Height));
-                }
+                for (int j = 0; j < othersCount; j++)
+                    distance = Math.Min(distance, Math.Abs(candidates[c] - others[j]));
 
-                if (distance >= _minHeightGap) return candidate;
+                if (distance >= gap) return c;
                 if (distance > bestDistance)
                 {
                     bestDistance = distance;
-                    best = candidate;
+                    best = c;
                 }
             }
 
             return best;
+        }
+
+        public static int PickIndex(float[] candidates, float[] others, float gap) =>
+            PickIndex(candidates, others, others.Length, gap);
+
+        private void Respawn(int self)
+        {
+            // Carry the time past the expiry into the new current, consuming whole lifetimes a hitch skipped over.
+            float leftover = _age[self] - _states[self].Lifetime;
+            float lifetime = NextLifetime();
+            for (int guard = 0; leftover >= lifetime; guard++)
+            {
+                if (guard >= MaxCarryRespawns)
+                {
+                    leftover %= lifetime;
+                    break;
+                }
+
+                leftover -= lifetime;
+                lifetime = NextLifetime();
+            }
+
+            float height = PickHeight(self);
+            lifetime = PickLifetime(self, leftover, lifetime);
+            _age[self] = leftover;
+            _states[self] = new WindCurrentState(leftover / lifetime, height, NextTilt(), lifetime);
+        }
+
+        private float PickHeight(int self)
+        {
+            for (int k = 0; k < Candidates; k++)
+                _candidates[k] = _minHeight + (float)_random.NextDouble() * (_maxHeight - _minHeight);
+
+            int n = CollectOthers(self, remaining: false);
+            return _candidates[PickIndex(_candidates, _others, n, _minHeightGap)];
+        }
+
+        // Lifetime whose remaining time (lifetime - age) stays apart from the other currents' remaining time.
+        // `first` is already known to be longer than `age`; redraws that are not are replaced by it.
+        private float PickLifetime(int self, float age, float first)
+        {
+            _lifetimes[0] = first;
+            for (int k = 1; k < Candidates; k++)
+            {
+                float candidate = NextLifetime();
+                _lifetimes[k] = candidate > age ? candidate : first;
+            }
+
+            for (int k = 0; k < Candidates; k++) _candidates[k] = _lifetimes[k] - age;
+            int n = CollectOthers(self, remaining: true);
+            return _lifetimes[PickIndex(_candidates, _others, n, MinExpiryGap)];
+        }
+
+        private int CollectOthers(int self, bool remaining)
+        {
+            int n = 0;
+            for (int j = 0; j < _states.Length; j++)
+            {
+                if (j == self || !_placed[j]) continue;
+                _others[n++] = remaining ? _states[j].Lifetime - _age[j] : _states[j].Height;
+            }
+
+            return n;
         }
 
         private float NextTilt() => ((float)_random.NextDouble() * 2f - 1f) * _maxTiltDegrees;
