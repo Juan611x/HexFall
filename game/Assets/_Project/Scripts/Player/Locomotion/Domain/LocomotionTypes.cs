@@ -96,6 +96,8 @@ namespace HexFall.Player.Locomotion
         public float TimeSinceGrounded;
         public float TimeSinceJumpPressed = float.PositiveInfinity;
         public float JumpCooldown;
+        // Vertical speed for the next Jump entry when it comes from a launch; NaN means an ordinary jump.
+        public float LaunchSpeed = float.NaN;
         public float LastLandingSpeed;
         // Target capsule height the motor applies; set by the states on enter.
         public float BodyHeight;

@@ -55,5 +55,26 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3559876520943724373, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3443462038029246287}
   m_SourcePrefab: {fileID: 100100000, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+--- !u!1 &2294938581771404228 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3559876520943724373, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+  m_PrefabInstance: {fileID: 3368264461491659921}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3443462038029246287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2294938581771404228}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9efd290d651d3ca458393004e5fe7c17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.World::HexFall.World.RuneCircles.LaunchEffect
+  launchHeight: 6

@@ -1,3 +1,4 @@
+using HexFall.World.RuneCircles;
 using UnityEngine;
 
 namespace HexFall.Player.Locomotion
@@ -5,7 +6,7 @@ namespace HexFall.Player.Locomotion
     // Feeds the locomotion machine with the intent and ground sensing each frame and applies the
     // resulting velocity and facing to the CharacterController.
     [RequireComponent(typeof(CharacterController), typeof(PlayerInputReader), typeof(PlayerLook))]
-    public sealed class PlayerMotor : MonoBehaviour
+    public sealed class PlayerMotor : MonoBehaviour, IRuneCircleTarget
     {
         [SerializeField] private LocomotionSettings settings = new LocomotionSettings();
         [Header("Ground check")]
@@ -30,6 +31,11 @@ namespace HexFall.Player.Locomotion
         public float InputMagnitude { get; private set; }
         // The last ledge measured; only refreshed when a jump could start a climb. Used by the gizmos.
         public LedgeMeasurement LastLedge { get; private set; }
+
+        public float GravityMagnitude => -settings.gravity;
+
+        // Throws the body upward (jump state, same animation and landing); ignored while climbing.
+        public void Launch(float verticalSpeed) => Machine.Launch(verticalSpeed);
 
         private void Awake()
         {

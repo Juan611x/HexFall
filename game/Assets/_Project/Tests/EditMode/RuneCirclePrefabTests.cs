@@ -1,4 +1,5 @@
 using System.Linq;
+using HexFall.World.RuneCircles;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -88,6 +89,29 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(Mat($"M_RuneSparks_{kind}"), RendererOf(prefab, "Sparks").sharedMaterial);
             Assert.AreEqual(Mat($"M_RuneEmbers_{kind}"), RendererOf(prefab, "Embers").sharedMaterial);
             Assert.IsTrue(prefab.GetComponent<BoxCollider>().isTrigger);
+        }
+
+        [TestCase("RuneCircle")]
+        [TestCase("RuneCircle_Launch")]
+        [TestCase("RuneCircle_Teleport")]
+        public void EveryCircleHasTheGateWithLaunchFriendlyDefaults(string name)
+        {
+            var circle = Load(name).GetComponent<RuneCircle>();
+            Assert.IsNotNull(circle);
+            Assert.AreEqual(RuneCircleActivationMode.OnEnter, circle.Gate.mode);
+            Assert.AreEqual(0.5f, circle.Gate.cooldownSeconds, 0.0001f);
+            Assert.IsTrue(circle.Gate.requireGrounded);
+        }
+
+        [Test]
+        public void OnlyTheLaunchVariantHasALaunchEffect()
+        {
+            var launch = Load("RuneCircle_Launch").GetComponent<LaunchEffect>();
+            Assert.IsNotNull(launch);
+            Assert.AreEqual(6f, launch.LaunchHeight, 0.0001f);
+            Assert.IsNotNull(Load("RuneCircle_Launch").GetComponent<IRuneCircleEffect>());
+            Assert.IsNull(Load("RuneCircle").GetComponent<IRuneCircleEffect>());
+            Assert.IsNull(Load("RuneCircle_Teleport").GetComponent<IRuneCircleEffect>());
         }
 
         private static bool IsPurple(Color c) => c.b > c.g + 0.1f && c.r > c.g + 0.05f;

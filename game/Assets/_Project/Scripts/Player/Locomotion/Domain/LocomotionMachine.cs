@@ -45,6 +45,21 @@ namespace HexFall.Player.Locomotion
             StateChanged?.Invoke(from, next);
         }
 
+        // Throws the body upward: enters Jump with the given vertical speed instead of the jump-height
+        // speed, keeping the planar velocity. Works from any state but Climb; returns false when ignored.
+        public bool Launch(float verticalSpeed)
+        {
+            if (_current.Id == LocomotionStateId.Climb) return false;
+
+            Context.LaunchSpeed = verticalSpeed;
+            var from = _current.Id;
+            _current.Exit(Context);
+            _current = Find(LocomotionStateId.Jump);
+            _current.Enter(Context);
+            StateChanged?.Invoke(from, LocomotionStateId.Jump);
+            return true;
+        }
+
         private ILocomotionState Find(LocomotionStateId id)
         {
             foreach (var state in _states)
