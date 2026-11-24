@@ -100,6 +100,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: RuneCircle_Teleport
       objectReference: {fileID: 0}
+    - target: {fileID: 4413157206425883334, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+      propertyPath: gate.mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4413157206425883334, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+      propertyPath: gate.standSeconds
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4413157206425883334, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+      propertyPath: gate.cooldownSeconds
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7357118728381780990, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -147,5 +159,28 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3559876520943724373, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5690909122917261028}
   m_SourcePrefab: {fileID: 100100000, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+--- !u!1 &6504689222510560420 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3559876520943724373, guid: a52b0f97c3026b141a392927f98ee17d, type: 3}
+  m_PrefabInstance: {fileID: 7719861043833824241}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5690909122917261028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6504689222510560420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62327778e3ea3c54c873262c9606d4f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.World::HexFall.World.RuneCircles.TeleportEffect
+  destination: {fileID: 0}
+  keepFacing: 1
+  arrivalLift: 0.05

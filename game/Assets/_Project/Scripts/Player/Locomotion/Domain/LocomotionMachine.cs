@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace HexFall.Player.Locomotion
 {
@@ -57,6 +58,30 @@ namespace HexFall.Player.Locomotion
             _current = Find(LocomotionStateId.Jump);
             _current.Enter(Context);
             StateChanged?.Invoke(from, LocomotionStateId.Jump);
+            return true;
+        }
+
+        // Places the body: sets position and facing, clears all motion and enters Grounded (or Fall when
+        // the new spot is not on the ground). Works from any state but Climb; returns false when ignored.
+        public bool Teleport(Vector3 position, float yaw, bool grounded)
+        {
+            if (_current.Id == LocomotionStateId.Climb) return false;
+
+            Context.Position = position;
+            Context.FacingYaw = yaw;
+            Context.YawVelocity = 0f;
+            Context.PlanarSpeed = 0f;
+            Context.Velocity = Vector3.zero;
+            Context.LaunchSpeed = float.NaN;
+            Context.ClimbOverDrop = false;
+            Context.TimeSinceGrounded = grounded ? 0f : Context.TimeSinceGrounded;
+
+            var from = _current.Id;
+            var to = grounded ? LocomotionStateId.Grounded : LocomotionStateId.Fall;
+            _current.Exit(Context);
+            _current = Find(to);
+            _current.Enter(Context);
+            if (from != to) StateChanged?.Invoke(from, to);
             return true;
         }
 

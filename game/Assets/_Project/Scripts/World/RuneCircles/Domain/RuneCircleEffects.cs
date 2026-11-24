@@ -8,10 +8,15 @@ namespace HexFall.World.RuneCircles
         bool IsGrounded { get; }
         // World position of the body's feet (the bottom centre of its collider).
         Vector3 FeetPosition { get; }
+        // Yaw of the body, in degrees.
+        float FacingYaw { get; }
         // Magnitude of the gravity acceleration (positive), in m/s^2.
         float GravityMagnitude { get; }
         // Throws the body upward at the given vertical speed; ignored when the body cannot be launched.
         void Launch(float verticalSpeed);
+        // Places the body with its feet at position, facing yaw degrees, and clears its motion;
+        // ignored when the body cannot be teleported.
+        void Teleport(Vector3 position, float yaw);
     }
 
     public readonly struct RuneCircleActivation

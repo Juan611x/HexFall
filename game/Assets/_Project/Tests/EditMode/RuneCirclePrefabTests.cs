@@ -93,8 +93,7 @@ namespace HexFall.UI.Tests
 
         [TestCase("RuneCircle")]
         [TestCase("RuneCircle_Launch")]
-        [TestCase("RuneCircle_Teleport")]
-        public void EveryCircleHasTheGateWithLaunchFriendlyDefaults(string name)
+        public void BaseAndLaunchUseTheLaunchFriendlyGate(string name)
         {
             var circle = Load(name).GetComponent<RuneCircle>();
             Assert.IsNotNull(circle);
@@ -104,14 +103,47 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void OnlyTheLaunchVariantHasALaunchEffect()
+        public void TeleportGateWaitsForTheWalkerToStopBeforeFiring()
+        {
+            // 0.6 s outlasts a jog across the 1.8 m ring (about 0.5 s), so crossing it does not teleport.
+            var gate = Load("RuneCircle_Teleport").GetComponent<RuneCircle>().Gate;
+            Assert.AreEqual(RuneCircleActivationMode.AfterStanding, gate.mode);
+            Assert.AreEqual(0.6f, gate.standSeconds, 0.0001f);
+            Assert.AreEqual(1f, gate.cooldownSeconds, 0.0001f);
+            Assert.IsTrue(gate.requireGrounded);
+        }
+
+        [TestCase("RuneCircle")]
+        [TestCase("RuneCircle_Launch")]
+        [TestCase("RuneCircle_Teleport")]
+        public void EveryCircleHasAFootprintMatchingTheRing(string name)
+        {
+            var circle = Load(name).GetComponent<RuneCircle>();
+            Assert.AreEqual(0.9f, circle.Radius, 0.0001f);
+        }
+
+        [Test]
+        public void EachVariantHasOnlyItsOwnEffect()
         {
             var launch = Load("RuneCircle_Launch").GetComponent<LaunchEffect>();
             Assert.IsNotNull(launch);
             Assert.AreEqual(6f, launch.LaunchHeight, 0.0001f);
-            Assert.IsNotNull(Load("RuneCircle_Launch").GetComponent<IRuneCircleEffect>());
-            Assert.IsNull(Load("RuneCircle").GetComponent<IRuneCircleEffect>());
-            Assert.IsNull(Load("RuneCircle_Teleport").GetComponent<IRuneCircleEffect>());
+            Assert.IsNull(Load("RuneCircle_Launch").GetComponent<TeleportEffect>());
+            Assert.AreEqual(1, Load("RuneCircle_Launch").GetComponents<IRuneCircleEffect>().Length);
+
+            Assert.IsNotNull(Load("RuneCircle_Teleport").GetComponent<TeleportEffect>());
+            Assert.IsNull(Load("RuneCircle_Teleport").GetComponent<LaunchEffect>());
+            Assert.AreEqual(1, Load("RuneCircle_Teleport").GetComponents<IRuneCircleEffect>().Length);
+
+            Assert.AreEqual(0, Load("RuneCircle").GetComponents<IRuneCircleEffect>().Length);
+        }
+
+        [Test]
+        public void TheTeleportPrefabKeepsTheFacingAndHasNoDestinationUntilPlaced()
+        {
+            var effect = Load("RuneCircle_Teleport").GetComponent<TeleportEffect>();
+            Assert.IsTrue(effect.KeepFacing);
+            Assert.IsNull(effect.Destination, "The pair is wired per instance in the scene.");
         }
 
         private static bool IsPurple(Color c) => c.b > c.g + 0.1f && c.r > c.g + 0.05f;

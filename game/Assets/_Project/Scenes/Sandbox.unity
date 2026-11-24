@@ -4508,6 +4508,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5690909122917261028, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: destination
+      value: 
+      objectReference: {fileID: 2119161535}
     - target: {fileID: 6504689222510560420, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
       propertyPath: m_Name
       value: RuneCircle_Teleport_A
@@ -4517,6 +4521,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+--- !u!114 &1361021403 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6205075932012556599, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+  m_PrefabInstance: {fileID: 1361021401}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c71fb77b74bff2841b66e6d173bd2d8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.World::HexFall.World.RuneCircles.RuneCircle
 --- !u!4 &1361021402 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
@@ -4604,6 +4619,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5690909122917261028, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+      propertyPath: destination
+      value: 
+      objectReference: {fileID: 1361021403}
     - target: {fileID: 6504689222510560420, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
       propertyPath: m_Name
       value: RuneCircle_Teleport_B
@@ -4613,6 +4632,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+--- !u!114 &2119161535 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6205075932012556599, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}
+  m_PrefabInstance: {fileID: 2119161533}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c71fb77b74bff2841b66e6d173bd2d8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.World::HexFall.World.RuneCircles.RuneCircle
 --- !u!4 &2119161534 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1509811012404202053, guid: 9784f1836d51bff45beb647ba5e5f308, type: 3}

@@ -1,4 +1,5 @@
 using System.Linq;
+using HexFall.World.RuneCircles;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -85,6 +86,24 @@ namespace HexFall.UI.Tests
                 var b = Find(scene, "RuneCircle_Teleport_B").position;
                 Assert.GreaterOrEqual(Vector3.Distance(a, b), 15f);
             });
+        }
+
+        [Test]
+        public void TheTeleportPairPointsAtEachOther()
+        {
+            WithSandbox(scene =>
+            {
+                var a = Find(scene, "RuneCircle_Teleport_A");
+                var b = Find(scene, "RuneCircle_Teleport_B");
+                Assert.AreSame(b.GetComponent<RuneCircle>(), a.GetComponent<TeleportEffect>().Destination);
+                Assert.AreSame(a.GetComponent<RuneCircle>(), b.GetComponent<TeleportEffect>().Destination);
+            });
+        }
+
+        [Test]
+        public void TheLaunchCircleHasNoTeleportEffect()
+        {
+            WithSandbox(scene => Assert.IsNull(Find(scene, "RuneCircle_Launch").GetComponent<TeleportEffect>()));
         }
     }
 }

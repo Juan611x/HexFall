@@ -14,10 +14,12 @@ namespace HexFall.UI.Tests
         private sealed class FakeTarget : IRuneCircleTarget
         {
             public Vector3 FeetPosition { get; set; }
+            public float FacingYaw => 0f;
             public bool IsGrounded { get; set; } = true;
             public float GravityMagnitude => 15f;
             public int Launches;
             public void Launch(float verticalSpeed) { Launches++; }
+            public void Teleport(Vector3 position, float yaw) { }
         }
 
         // A destroyable target that, like the player's motor, is a component.
@@ -26,7 +28,9 @@ namespace HexFall.UI.Tests
             public bool IsGrounded => true;
             public float GravityMagnitude => 15f;
             public Vector3 FeetPosition => transform.position;
+            public float FacingYaw => 0f;
             public void Launch(float verticalSpeed) { }
+            public void Teleport(Vector3 position, float yaw) { }
         }
 
         private static readonly List<string> Log = new List<string>();
@@ -38,7 +42,7 @@ namespace HexFall.UI.Tests
         private sealed class CountingEffect : MonoBehaviour, IRuneCircleEffect
         {
             public int Applied;
-            public RuneCircleActivation Last;
+            [System.NonSerialized] public RuneCircleActivation Last;
             public void Apply(RuneCircleActivation a) { Applied++; Last = a; }
         }
 
