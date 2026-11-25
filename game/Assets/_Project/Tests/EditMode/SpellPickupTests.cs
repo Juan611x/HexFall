@@ -367,6 +367,84 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void ADestroyedColliderInsideTheTriggerNoLongerHoldsTheReach()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            var hand = ColliderOnWizard("Hand");
+            var foot = ColliderOnWizard("Foot");
+            water.Reach(hand);
+            water.Reach(foot);
+            Object.DestroyImmediate(hand.gameObject);
+            Object.DestroyImmediate(foot.gameObject);
+
+            Invoke(water, "Update");
+
+            Assert.IsFalse(_interactor.Prompt.Visible);
+            Assert.IsFalse(_interactor.Interact());
+        }
+
+        [Test]
+        public void ADisabledColliderInsideTheTriggerNoLongerHoldsTheReach()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            var hand = ColliderOnWizard("Hand");
+            water.Reach(hand);
+            hand.enabled = false;
+
+            Invoke(water, "Update");
+
+            Assert.IsFalse(_interactor.Prompt.Visible);
+        }
+
+        [Test]
+        public void ADeactivatedColliderObjectInsideTheTriggerNoLongerHoldsTheReach()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            var hand = ColliderOnWizard("Hand");
+            water.Reach(hand);
+            hand.gameObject.SetActive(false);
+
+            Invoke(water, "Update");
+
+            Assert.IsFalse(_interactor.Prompt.Visible);
+        }
+
+        [Test]
+        public void AStaleColliderDoesNotKeepTheReachWhenTheLastRealOneLeaves()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            var hand = ColliderOnWizard("Hand");
+            var foot = ColliderOnWizard("Foot");
+            water.Reach(hand);
+            water.Reach(foot);
+            hand.enabled = false; // never raises an exit
+
+            water.Leave(foot);
+
+            Assert.IsFalse(_interactor.Prompt.Visible);
+        }
+
+        [Test]
+        public void ALiveColliderKeepsTheReachWhileAnotherWasDestroyed()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            var hand = ColliderOnWizard("Hand");
+            var foot = ColliderOnWizard("Foot");
+            water.Reach(hand);
+            water.Reach(foot);
+            Object.DestroyImmediate(hand.gameObject);
+
+            Invoke(water, "Update");
+
+            Assert.IsTrue(_interactor.Prompt.Visible);
+        }
+
+        [Test]
         public void ACollidersRepeatedEnterCountsOnce()
         {
             HoldFire();

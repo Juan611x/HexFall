@@ -52,6 +52,12 @@ namespace HexFall.Player
 
         private void Update()
         {
+            // A collider disabled or destroyed inside the trigger never raises an exit: end the reach here.
+            if (_reachedBy != null && _touching.Prune(IsAlive))
+            {
+                _reachedBy.Leave(this);
+                _reachedBy = null;
+            }
             if (visual == null) return;
             visual.localPosition = _restPosition + Vector3.up * PickupMotion.Bob(Time.time, bobHeight, bobPeriodSeconds);
             visual.localRotation = Quaternion.Euler(0f, PickupMotion.Spin(Time.time, spinDegreesPerSecond), 0f);
@@ -80,9 +86,19 @@ namespace HexFall.Player
         {
             var interactor = collector.GetComponentInParent<SpellInteractor>();
             if (interactor == null) return;
-            if (!_touching.Remove(key) && !_touching.IsEmpty) return; // others of the wizard are still inside
+            var left = _touching.Remove(key);
+            var pruned = _touching.Prune(IsAlive);
+            if (!left && !pruned && !_touching.IsEmpty) return; // others of the wizard are still inside
             interactor.Leave(this);
             if (_reachedBy == interactor) _reachedBy = null;
+        }
+
+        private static bool IsAlive(Object key)
+        {
+            if (key == null) return false;
+            if (key is Collider collider) return collider.enabled && collider.gameObject.activeInHierarchy;
+            if (key is GameObject go) return go.activeInHierarchy;
+            return true;
         }
 
         // Interact swapped: this pickup now holds the spell the wizard put down.
