@@ -177,7 +177,6 @@ namespace HexFall.Player
         private void Update()
         {
             Step(Now, AttackHeld());
-            if (beam != null && beam.IsActive) beam.Refresh(CastOrigin(), AimPoint());
         }
 
         // One frame of the machine. A hold (charge, channel) whose attack input is no longer held lost its
@@ -259,9 +258,9 @@ namespace HexFall.Player
             return _anchors != null ? _anchors.PositionFor(activeSpell != null ? activeSpell.CastAnchor : CastAnchors.Muzzle, fallback) : fallback;
         }
 
-        private void OnChannelStarted() { if (beam != null) beam.Begin(gameObject, activeSpell); }
+        private void OnChannelStarted() { if (beam != null) beam.Begin(gameObject, activeSpell, CastOrigin, AimPoint); }
 
-        private void OnChannelTicked(int damage) { if (beam != null) beam.Pulse(CastOrigin(), AimPoint(), damage); }
+        private void OnChannelTicked(int damage) { if (beam != null) beam.QueuePulse(damage); }
 
         private void OnChannelEnded(float seconds) { if (beam != null) beam.End(); }
 

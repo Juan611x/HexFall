@@ -208,6 +208,7 @@ namespace HexFall.UI.Tests
             Advance(1.0f);
             Assert.IsTrue(_beam.IsActive);
             Invoke(_combat, "Update");
+            _beam.UpdateToFinalPose(); // the beam draws at the end of the frame
 
             var pivot = _beam.transform.GetChild(0);
             var muzzle = _wizard.GetComponent<CastAnchors>().Resolve(CastAnchors.Muzzle).position;

@@ -231,6 +231,7 @@ namespace HexFall.UI.Tests
             Assert.IsTrue(beam.IsActive);
 
             _combat.Machine.Tick(new ActionIntent(false, false), t + 0.55f);
+            beam.UpdateToFinalPose(); // ticks land in the end-of-frame pass
             Assert.AreEqual(5, target.Hits.Count, "10 ticks/s for 0.55 s");
             Assert.AreEqual(4, target.Hits[0].Damage);
             Assert.AreSame(_combat.ActiveSpell, target.Hits[0].Spell);
@@ -246,6 +247,7 @@ namespace HexFall.UI.Tests
             _combat.AttackHeldSource = () => true;
             _combat.StartAttackFromInput();
             Update();
+            beam.UpdateToFinalPose();
             Assert.AreEqual(4.5f, beam.Length, 0.01f, "from the muzzle to the cube face at z 4.5");
         }
 
