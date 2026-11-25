@@ -10,6 +10,17 @@
     color: #5eead4;
 }
 
+/* Spell ring around the crosshair (same centre as the 48px crosshair); the colour is set per spell in code. */
+.hud-spell-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 72px;
+    height: 72px;
+    margin-left: -36px;
+    margin-top: -36px;
+}
+
 /* Player cluster, "ink and runes": a 400x130 design space; label offsets match InkPlayerHudElement. */
 .hud-player {
     position: absolute;

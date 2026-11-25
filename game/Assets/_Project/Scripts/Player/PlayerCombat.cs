@@ -53,7 +53,7 @@ namespace HexFall.Player
         // Test seam: the clock every machine tick uses (Time.time when null).
         internal System.Func<float> ClockOverride { get; set; }
 
-        private float Now => ClockOverride != null ? ClockOverride() : Time.time;
+        internal float Now => ClockOverride != null ? ClockOverride() : Time.time;
 
         // The action state machine; the IK, animator and audio adapters read it. Null before Awake.
         public ActionMachine Machine { get; private set; }

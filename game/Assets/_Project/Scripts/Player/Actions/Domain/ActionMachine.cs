@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HexFall.Player.Spells;
+using HexFall.UI;
 
 namespace HexFall.Player.Actions
 {
@@ -58,6 +59,20 @@ namespace HexFall.Player.Actions
         // 0..1 progress of the charge in progress; 0 in any other state.
         public float ChargeLevel(float now) => Current == ActionStateId.Charging ? _caster.ChargeLevel(now) : 0f;
 
+        // 1..0 of the running cooldown (0 when ready).
+        public float CooldownFraction(float now) => _caster.CooldownFraction(now);
+
+        // The ring around the crosshair at the given time: ready, cooling down, charging or channelling.
+        public SpellRingState SpellRing(float now) => SpellRingModel.Evaluate(new SpellRingInput
+        {
+            Charging = Current == ActionStateId.Charging,
+            Channelling = Current == ActionStateId.Channelling,
+            WindingUp = IsWindingUp,
+            ChargeLevel = ChargeLevel(now),
+            ChannelRemaining = _caster.ChannelRemainingFraction(now),
+            CooldownFraction = _caster.CooldownFraction(now),
+        });
+
         private bool InParry => Current == ActionStateId.Parry || Current == ActionStateId.ParryEmpty;
 
         // True while the wizard turns to the crosshair.
@@ -100,7 +115,7 @@ namespace HexFall.Player.Actions
                 || Current == ActionStateId.Channelling;
             CancelCast(now);
             Unsubscribe(_caster);
-            caster.InheritCooldown(_caster.ReadyAt); // swapping is not a way to skip the cooldown
+            caster.InheritCooldown(_caster.ReadyAt, _caster.CooldownStart); // swapping is not a way to skip the cooldown
             _caster = caster;
             Subscribe(_caster);
             if (casting) Enter(ActionStateId.Ready, now);

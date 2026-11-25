@@ -36,6 +36,9 @@ namespace HexFall.Player
 
         public AudioClip ImpactClip => impactClip;
 
+        // Radius of the sphere the bolt sweeps for hits: base radius x spell size scale x charge scale.
+        internal float SweepRadius => _sweepRadius;
+
         // The prefab this bolt was pooled from; null for a bolt created outside the pool.
         internal Bolt PoolKey { get; set; }
 
