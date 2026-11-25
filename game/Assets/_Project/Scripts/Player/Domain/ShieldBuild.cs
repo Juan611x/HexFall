@@ -17,9 +17,9 @@ namespace HexFall.Player
 
         public ShieldBuild(float holdSeconds, float assembleSeconds = 0.12f, float disassembleSeconds = 0.35f)
         {
-            if (holdSeconds < 0f) throw new ArgumentOutOfRangeException(nameof(holdSeconds));
-            if (assembleSeconds <= 0f) throw new ArgumentOutOfRangeException(nameof(assembleSeconds));
-            if (disassembleSeconds <= 0f) throw new ArgumentOutOfRangeException(nameof(disassembleSeconds));
+            if (!IsFinite(holdSeconds) || holdSeconds < 0f) throw new ArgumentOutOfRangeException(nameof(holdSeconds));
+            if (!IsFinite(assembleSeconds) || assembleSeconds <= 0f) throw new ArgumentOutOfRangeException(nameof(assembleSeconds));
+            if (!IsFinite(disassembleSeconds) || disassembleSeconds <= 0f) throw new ArgumentOutOfRangeException(nameof(disassembleSeconds));
 
             _holdSeconds = holdSeconds;
             _assembleSeconds = assembleSeconds;
@@ -27,10 +27,10 @@ namespace HexFall.Player
             _peak = Math.Min(1f, holdSeconds / assembleSeconds);
         }
 
-        // Negative elapsed means "not raised yet": empty and not done.
+        // Negative or NaN elapsed means "not raised yet": empty and not done.
         public ShieldBuildPhase PhaseAt(float elapsed)
         {
-            if (elapsed < 0f) return ShieldBuildPhase.NotStarted;
+            if (float.IsNaN(elapsed) || elapsed < 0f) return ShieldBuildPhase.NotStarted;
             if (elapsed >= _holdSeconds + _disassembleSeconds) return ShieldBuildPhase.Done;
             if (elapsed >= _holdSeconds) return ShieldBuildPhase.Disassembling;
             if (elapsed < _assembleSeconds) return ShieldBuildPhase.Assembling;
@@ -55,6 +55,8 @@ namespace HexFall.Player
                     return Smooth(_peak * (1f - (elapsed - _holdSeconds) / _disassembleSeconds));
             }
         }
+
+        private static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
 
         private static float Smooth(float t)
         {

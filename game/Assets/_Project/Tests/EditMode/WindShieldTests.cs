@@ -166,16 +166,87 @@ namespace HexFall.UI.Tests
             {
                 var material = renderer.sharedMaterial;
                 shield.Flash(1f);
-                Invoke(shield, "Update");
+                shield.Apply(0.5f);
                 var block = new MaterialPropertyBlock();
                 renderer.GetPropertyBlock(block);
                 var baseAlpha = material.GetColor("_BaseColor").a;
                 Assert.AreEqual(baseAlpha, block.GetColor("_BaseColor").a, 0.001f);
 
-                shield.Deflect();
-                Invoke(shield, "Update");
+                shield.Deflect(0.5f);
+                shield.Apply(0.55f);
                 renderer.GetPropertyBlock(block);
-                Assert.AreEqual(Mathf.Min(1f, baseAlpha * 2.5f), block.GetColor("_BaseColor").a, 0.001f);
+                Assert.AreEqual(Mathf.Min(1f, baseAlpha * Serialized(shield, "deflectBoost")), block.GetColor("_BaseColor").a, 0.001f);
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void Flash_pushes_an_empty_build_and_the_base_colour_before_the_first_Update()
+        {
+            var (go, shield, renderer) = NewShield();
+            try
+            {
+                var material = renderer.sharedMaterial;
+                Assert.AreEqual(1f, material.GetFloat("_Build"), "the material default is a complete sphere");
+
+                shield.Flash(1f);
+
+                var block = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(block);
+                Assert.IsTrue(renderer.enabled);
+                Assert.AreEqual(0f, block.GetFloat("_Build"), 1e-5f, "no first frame with the full sphere");
+                Assert.AreEqual(material.GetColor("_BaseColor"), block.GetColor("_BaseColor"));
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void Deflect_boost_is_elapsed_based_and_lasts_deflectSeconds()
+        {
+            var (go, shield, renderer) = NewShield();
+            try
+            {
+                var baseAlpha = renderer.sharedMaterial.GetColor("_BaseColor").a;
+                float boost = Serialized(shield, "deflectBoost");
+                float seconds = Serialized(shield, "deflectSeconds");
+                shield.Flash(1f);
+                shield.Deflect(0.5f);
+                var block = new MaterialPropertyBlock();
+
+                shield.Apply(0.49f);
+                renderer.GetPropertyBlock(block);
+                Assert.AreEqual(baseAlpha, block.GetColor("_BaseColor").a, 1e-4f, "before the deflect");
+
+                shield.Apply(0.5f + seconds * 0.5f);
+                renderer.GetPropertyBlock(block);
+                Assert.AreEqual(Mathf.Clamp01(baseAlpha * boost), block.GetColor("_BaseColor").a, 1e-4f, "during the boost");
+
+                shield.Apply(0.5f + seconds + 0.01f);
+                renderer.GetPropertyBlock(block);
+                Assert.AreEqual(baseAlpha, block.GetColor("_BaseColor").a, 1e-4f, "after the boost");
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void Deflect_boost_does_not_over_brighten_a_disassembling_shield()
+        {
+            var (go, shield, renderer) = NewShield();
+            try
+            {
+                var baseAlpha = renderer.sharedMaterial.GetColor("_BaseColor").a;
+                float boost = Serialized(shield, "deflectBoost");
+                shield.Flash(1f);
+                shield.Deflect(0.99f);
+                var block = new MaterialPropertyBlock();
+
+                shield.Apply(1.1f);
+                renderer.GetPropertyBlock(block);
+                float progress = block.GetFloat("_Build");
+
+                Assert.Less(progress, 1f, "disassembling");
+                Assert.AreEqual(Mathf.Clamp01(baseAlpha * Mathf.Lerp(1f, boost, progress)), block.GetColor("_BaseColor").a, 1e-4f,
+                    "the boost fades with the build progress");
             }
             finally { Object.DestroyImmediate(go); }
         }
@@ -194,7 +265,7 @@ namespace HexFall.UI.Tests
                 Assert.IsTrue(renderer.enabled, "renderer stays on");
                 var block = new MaterialPropertyBlock();
                 renderer.GetPropertyBlock(block);
-                Assert.AreEqual(new ShieldBuild(1f).Progress(elapsed), block.GetFloat("_Build"), 1e-5f);
+                Assert.AreEqual(BuildOf(shield, 1f).Progress(elapsed), block.GetFloat("_Build"), 1e-5f);
             }
             finally { Object.DestroyImmediate(go); }
         }
@@ -207,13 +278,13 @@ namespace HexFall.UI.Tests
             {
                 shield.Flash(1f);
                 var block = new MaterialPropertyBlock();
-                shield.Apply(0.06f);
+                shield.Apply(Serialized(shield, "assembleSeconds") * 0.5f);
                 renderer.GetPropertyBlock(block);
                 Assert.That(block.GetFloat("_Build"), Is.GreaterThan(0f).And.LessThan(1f), "assembling");
                 shield.Apply(0.5f);
                 renderer.GetPropertyBlock(block);
                 Assert.AreEqual(1f, block.GetFloat("_Build"), 1e-5f, "held");
-                shield.Apply(1.2f);
+                shield.Apply(1f + Serialized(shield, "disassembleSeconds") * 0.5f);
                 renderer.GetPropertyBlock(block);
                 Assert.That(block.GetFloat("_Build"), Is.GreaterThan(0f).And.LessThan(1f), "disassembling past the guard window");
             }
@@ -227,8 +298,9 @@ namespace HexFall.UI.Tests
             try
             {
                 shield.Flash(1f);
-                Assert.IsTrue(shield.Apply(1.34f), "still disassembling");
-                Assert.IsFalse(shield.Apply(1.36f), "done");
+                float end = 1f + Serialized(shield, "disassembleSeconds");
+                Assert.IsTrue(shield.Apply(end - 0.01f), "still disassembling");
+                Assert.IsFalse(shield.Apply(end + 0.01f), "done");
                 Assert.IsFalse(renderer.enabled);
             }
             finally { Object.DestroyImmediate(go); }
@@ -257,6 +329,15 @@ namespace HexFall.UI.Tests
             Invoke(shield, "Awake"); // EditMode does not run Awake on a runtime-only component
             return (go, shield, renderer);
         }
+
+        private static float Serialized(MagicShield shield, string field)
+        {
+            using (var so = new SerializedObject(shield))
+                return so.FindProperty(field).floatValue;
+        }
+
+        private static ShieldBuild BuildOf(MagicShield shield, float hold) =>
+            new ShieldBuild(hold, Serialized(shield, "assembleSeconds"), Serialized(shield, "disassembleSeconds"));
 
         private static void Invoke(MagicShield shield, string method) =>
             typeof(MagicShield).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(shield, null);

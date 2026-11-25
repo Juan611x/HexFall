@@ -5,7 +5,9 @@ namespace HexFall.Player
     // Air sphere around the wizard: it assembles (spiral build, bottom to top), stays built for the parry window and
     // then disassembles. The timing is a pure function (ShieldBuild) fed to the shader's _Build through a
     // MaterialPropertyBlock; the guard rules live elsewhere and never depend on this visual.
-    // A parried hit makes it pulse brighter (the _BaseColor alpha is boosted for a moment).
+    // A parried hit makes it pulse brighter: the _BaseColor alpha is boosted for deflectSeconds, measured on the same
+    // elapsed clock as the build. The boost is scaled by the build progress, so a hit near the end of the guard window
+    // never over-brightens the shield while it is already dissolving.
     [RequireComponent(typeof(Renderer))]
     public class MagicShield : MonoBehaviour
     {
@@ -15,6 +17,7 @@ namespace HexFall.Player
         [SerializeField] private float deflectBoost = 2.5f;
         [SerializeField] private ParticleSystem wisps; // looping gusts orbiting the wizard while the shield is held
         [SerializeField] private ParticleSystem burst; // one-shot ring of faster gusts on a parried hit
+        [SerializeField] private WindCurrents currents; // horizontal wind currents wrapping the sphere, gated by the build
 
         private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
         private static readonly int Build = Shader.PropertyToID("_Build");
@@ -25,7 +28,7 @@ namespace HexFall.Player
         private ShieldBuild _shieldBuild;
         private float _startedAt = float.NegativeInfinity;
         private float _holdSeconds;
-        private float _boostUntil = float.NegativeInfinity;
+        private float _deflectedAt = float.NegativeInfinity; // elapsed since Flash when the last parry landed
 
         private void Awake()
         {
@@ -45,13 +48,19 @@ namespace HexFall.Player
             _holdSeconds = holdSeconds;
             _shieldBuild = new ShieldBuild(holdSeconds, assembleSeconds, disassembleSeconds);
             _startedAt = Time.time;
+            _deflectedAt = float.NegativeInfinity;
             _renderer.enabled = true;
+            if (currents != null) currents.Restart();
+            Apply(0f); // first frame already empty: the material default (_Build 1) must never show
             if (wisps != null) wisps.Play(true);
         }
 
-        public void Deflect()
+        public void Deflect() => Deflect(Time.time - _startedAt);
+
+        // `elapsed` is the time since Flash at which the hit landed.
+        public void Deflect(float elapsed)
         {
-            _boostUntil = Time.time + deflectSeconds;
+            _deflectedAt = elapsed;
             if (burst != null) burst.Play(true);
         }
 
@@ -61,23 +70,28 @@ namespace HexFall.Player
             var t = Time.time - _startedAt;
             if (wisps != null && wisps.isEmitting && !WispsEmitting(t, _holdSeconds))
                 wisps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-            Apply(t);
+            Apply(t, Time.deltaTime);
         }
 
-        // Pushes the build state for `elapsed` seconds since Flash to the renderer. Returns false (and hides the
+        // Pushes the build state for `elapsed` seconds since Flash to the renderer and the wind currents (which advance by
+        // `deltaTime`). Returns false (and hides the
         // renderer) once the shield has fully disassembled.
-        public bool Apply(float elapsed)
+        public bool Apply(float elapsed, float deltaTime = 0f)
         {
             if (_shieldBuild == null || _shieldBuild.IsDone(elapsed))
             {
                 _renderer.enabled = false;
+                if (currents != null) currents.Hide();
                 return false;
             }
 
             var color = _baseColor;
-            if (Time.time < _boostUntil) color.a = Mathf.Clamp01(_baseColor.a * deflectBoost);
+            float progress = _shieldBuild.Progress(elapsed);
+            if (elapsed >= _deflectedAt && elapsed < _deflectedAt + deflectSeconds)
+                color.a = Mathf.Clamp01(_baseColor.a * Mathf.Lerp(1f, deflectBoost, progress));
             _block.SetColor(BaseColor, color);
-            _block.SetFloat(Build, _shieldBuild.Progress(elapsed));
+            _block.SetFloat(Build, progress);
+            if (currents != null) currents.Step(deltaTime, progress);
             _renderer.SetPropertyBlock(_block);
             return true;
         }

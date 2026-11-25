@@ -1,7 +1,7 @@
 // Math of the air shield (SG_WindShield), kept out of the graph so the graph stays three nodes wide.
 // Called from Custom Function nodes in File mode: the function names below are the node names plus "_float".
 //
-//  WindShield_Snap     vertex stage. PSX vertex snapping (same grid rule as HexFall/PSX Lit): the vertex is snapped in
+//  WindShield_Snap     (now in WindShieldShared.hlsl) vertex stage: PSX vertex snapping, same grid rule as HexFall/PSX Lit. The vertex is snapped in
 //                      clip space, then carried back to object space, because the Shader Graph Position block is
 //                      object space and the pipeline transforms it again. The round trip is exact apart from the snap.
 //  WindShield_Surface  fragment stage. The air is two low-res wind-twirl images (Kenney Particle Pack, CC0, alpha =
@@ -17,30 +17,7 @@
 
 #define WS_TWO_PI 6.28318530718
 
-float WS_Hash(float3 p)
-{
-    p = frac(p * 0.3183099 + float3(0.71, 0.113, 0.419));
-    p *= 17.0;
-    return frac(p.x * p.y * p.z * (p.x + p.y + p.z));
-}
-
-// Smooth 3D value noise in [0,1].
-float WS_Noise(float3 p)
-{
-    float3 i = floor(p);
-    float3 f = frac(p);
-    f = f * f * (3.0 - 2.0 * f);
-    float n000 = WS_Hash(i);
-    float n100 = WS_Hash(i + float3(1, 0, 0));
-    float n010 = WS_Hash(i + float3(0, 1, 0));
-    float n110 = WS_Hash(i + float3(1, 1, 0));
-    float n001 = WS_Hash(i + float3(0, 0, 1));
-    float n101 = WS_Hash(i + float3(1, 0, 1));
-    float n011 = WS_Hash(i + float3(0, 1, 1));
-    float n111 = WS_Hash(i + float3(1, 1, 1));
-    return lerp(lerp(lerp(n000, n100, f.x), lerp(n010, n110, f.x), f.y),
-                lerp(lerp(n001, n101, f.x), lerp(n011, n111, f.x), f.y), f.z);
-}
+#include "Assets/_Project/VFX/WindShield/Shaders/WindShieldShared.hlsl"
 
 // Twirl UV: u = turns around the Y axis times a WHOLE tile count, so the atan2 seam (around jumps by 1) lands on a
 // whole number of tiles and the image repeats seamlessly; v = latitude. The sample uses an explicit mip 0 (the textures
@@ -48,21 +25,6 @@ float WS_Noise(float3 p)
 float2 WS_TwirlUV(float around, float height, float2 tiling, float turns, float2 warp)
 {
     return float2((around + turns) * tiling.x, height * tiling.y) + warp;
-}
-
-void WindShield_Snap_float(float3 positionOS, float2 resolution, out float3 snappedOS)
-{
-#ifdef SHADERGRAPH_PREVIEW
-    snappedOS = positionOS;
-#else
-    float4 clip = TransformObjectToHClip(positionOS);
-    float2 grid = max(resolution, 1.0) * 0.5;
-    float2 ndc = clip.xy / clip.w;
-    ndc = round(ndc * grid) / grid;
-    clip.xy = ndc * clip.w;
-    float4 world = mul(UNITY_MATRIX_I_VP, clip);
-    snappedOS = TransformWorldToObject(world.xyz / world.w);
-#endif
 }
 
 void WindShield_Surface_float(
@@ -100,8 +62,8 @@ void WindShield_Surface_float(
 
     // Two layers scrolling around the sphere in opposite directions; building makes the swirl spin faster.
     float spin = (1.0 - build) * buildSpin;
-    float2 uvA = WS_TwirlUV(around, height, tilingA, time * flowSpeed + spin, warp);
-    float2 uvB = WS_TwirlUV(around, height, tilingB, -time * flowSpeed * 0.6 - spin * 0.6, warp.yx);
+    float2 uvA = WS_TwirlUV(around, height, tilingA, frac(time * flowSpeed) + spin, warp);
+    float2 uvB = WS_TwirlUV(around, height, tilingB, frac(-time * flowSpeed * 0.6) - spin * 0.6, warp.yx);
     float strokesA = SAMPLE_TEXTURE2D_LOD(twirlA.tex, twirlA.samplerstate, uvA, 0).a;
     float strokesB = SAMPLE_TEXTURE2D_LOD(twirlB.tex, twirlB.samplerstate, uvB, 0).a;
     float pattern = 1.0 - (1.0 - strokesA) * (1.0 - strokesB * 0.8); // screen blend: overlaps brighten, never exceed 1
