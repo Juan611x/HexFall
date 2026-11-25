@@ -326,6 +326,27 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void ParryEmptyDuringAnAttackCancelsTheUnfiredBolt()
+        {
+            var settings = new ActionSettings();
+            var machine = CreateOutOfCharges();
+            var fired = 0;
+            machine.BoltFired += () => fired++;
+
+            machine.Tick(Attack, 4f);
+            Assert.AreEqual(ActionStateId.Attack, machine.Current);
+            machine.Tick(Parry, 4f + settings.boltDelaySeconds * 0.5f);
+            Assert.AreEqual(ActionStateId.ParryEmpty, machine.Current);
+
+            machine.Tick(None, 4f + settings.boltDelaySeconds + 0.05f); // past the original bolt time
+            machine.Tick(None, 4f + settings.boltDelaySeconds + settings.faceAimHoldSeconds + 0.05f);
+            machine.Tick(None, 4f + settings.boltDelaySeconds + settings.faceAimHoldSeconds + settings.guardSeconds + 0.1f);
+
+            Assert.AreEqual(0, fired, "the interrupted attack's bolt never leaves");
+            Assert.AreEqual(ActionStateId.Ready, machine.Current);
+        }
+
+        [Test]
         public void ParryEmptyLastsTheGuardTimeThenReturnsToReady()
         {
             var machine = CreateOutOfCharges();

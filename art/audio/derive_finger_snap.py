@@ -40,6 +40,8 @@ def read_mono(path):
 
 
 def derive(samples, rate):
+    if not samples:
+        raise SystemExit("The source has no audio samples")
     loudest = max(range(len(samples)), key=lambda i: abs(samples[i]))
     start = max(0, loudest - int(PRE_ROLL * rate))
     clip = samples[start:start + int(KEEP * rate)]
@@ -50,6 +52,8 @@ def derive(samples, rate):
         if remaining < fade:
             clip[i] *= remaining / fade
     peak = max(abs(v) for v in clip)
+    if peak == 0:
+        raise SystemExit("The source is silent: nothing to normalise")
     gain = PEAK * 32768.0 / peak
     return [max(-32768, min(32767, int(round(v * gain)))) for v in clip]
 

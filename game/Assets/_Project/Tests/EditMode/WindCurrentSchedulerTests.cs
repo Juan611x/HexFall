@@ -53,9 +53,13 @@ namespace HexFall.UI.Tests
             Assert.Less(min, -0.8f, "reaches the bottom of the band");
         }
 
+        // Bounds are measured over these 20 seeds (60 fps, 25 s each): the closest pair of heights ever seen is
+        // 0.055 (the farthest-of-eight fallback has no hard guarantee), 73 % of the adjacent pairs keep the full
+        // 0.22 gap, and the closest pair of expiries on any tick is 0.027 s (the configured target is 0.06 s).
         [Test]
         public void SixFastCurrentsKeepTheirHeightsApartAndTheirExpiriesApart()
         {
+            int pairs = 0, pairsAtTheGap = 0;
             for (int seed = 1; seed <= 20; seed++)
             {
                 var scheduler = new WindCurrentScheduler(new Random(seed), 6, -0.85f, 0.85f, 0.22f, 12f, 0.6f, 0.8f, 0.06f);
@@ -64,13 +68,28 @@ namespace HexFall.UI.Tests
                     scheduler.Tick(1f / 60f);
                     var heights = scheduler.Currents.Select(c => c.Height).OrderBy(x => x).ToArray();
                     for (int i = 1; i < heights.Length; i++)
-                        Assert.Greater(heights[i] - heights[i - 1], 0.05f, "seed " + seed + " step " + step + ": heights apart");
-                }
+                    {
+                        pairs++;
+                        if (heights[i] - heights[i - 1] >= 0.22f - 1e-4f) pairsAtTheGap++;
+                        Assert.GreaterOrEqual(heights[i] - heights[i - 1], 0.05f, "seed " + seed + " step " + step + ": heights apart");
+                    }
 
-                var remaining = scheduler.Currents.Select(c => c.Lifetime * (1f - c.Progress)).OrderBy(x => x).ToArray();
-                for (int i = 1; i < remaining.Length; i++)
-                    Assert.Greater(remaining[i] - remaining[i - 1], 0.02f, "seed " + seed + ": expiries apart");
+                    var remaining = scheduler.Currents.Select(c => c.Lifetime * (1f - c.Progress)).OrderBy(x => x).ToArray();
+                    for (int i = 1; i < remaining.Length; i++)
+                        Assert.GreaterOrEqual(remaining[i] - remaining[i - 1], 0.025f, "seed " + seed + " step " + step + ": expiries apart");
+                }
             }
+
+            Assert.GreaterOrEqual(pairsAtTheGap / (float)pairs, 0.65f, "most neighbours keep the configured gap, not only the floor");
+        }
+
+        [Test]
+        public void RejectsANegativeOrNonFiniteMinExpiryGap()
+        {
+            foreach (var gap in new[] { -0.01f, float.NaN, float.PositiveInfinity, float.NegativeInfinity })
+                Assert.Throws<ArgumentOutOfRangeException>(
+                    () => new WindCurrentScheduler(new Random(1), 6, -0.85f, 0.85f, 0.22f, 12f, 0.6f, 0.8f, gap), "gap " + gap);
+            Assert.DoesNotThrow(() => new WindCurrentScheduler(new Random(1), 6, -0.85f, 0.85f, 0.22f, 12f, 0.6f, 0.8f, 0f));
         }
 
         [Test]

@@ -445,9 +445,10 @@ namespace HexFall.UI.Tests
                 shield.Apply(0.5f, 0.1f);
                 Assert.AreEqual(1f, currents.BuildProgress, 1e-5f, "held");
 
-                shield.Apply(1f + 1f, 0.1f); // past disassembly: the live currents keep fading
+                float gone = 1f + SerializedSeconds(shield, "disassembleSeconds") + 0.05f;
+                shield.Apply(gone, 0.1f); // past disassembly: the live currents keep fading
                 Assert.IsTrue(currents.IsLingering, "lingering after the sphere is gone");
-                for (int i = 0; i < 40; i++) shield.Apply(2f + i * 0.1f, 0.1f);
+                for (int i = 0; i < 40; i++) shield.Apply(gone + 0.1f + i * 0.1f, 0.1f);
                 Assert.IsTrue(rings.All(r => !r.enabled), "hidden once they have faded out");
                 Assert.IsFalse(currents.IsLingering);
             }
@@ -480,6 +481,12 @@ namespace HexFall.UI.Tests
         {
             using (var so = new SerializedObject(shield))
                 return new ShieldBuild(hold, so.FindProperty("assembleSeconds").floatValue, so.FindProperty("disassembleSeconds").floatValue);
+        }
+
+        private static float SerializedSeconds(Object target, string field)
+        {
+            using (var so = new SerializedObject(target))
+                return so.FindProperty(field).floatValue;
         }
 
         private static float RingFade(Renderer ring, MaterialPropertyBlock block)
@@ -546,8 +553,9 @@ namespace HexFall.UI.Tests
             var (shieldGo, shield, go, currents, rings) = NewWiredShield(4);
             try
             {
+                float disassemble = SerializedSeconds(shield, "disassembleSeconds");
                 shield.Flash(0.4f);
-                for (float t = 0.02f; t < 0.9f; t += 0.02f) shield.Apply(t, 0.02f);
+                for (float t = 0.02f; t < 0.4f + disassemble + 0.15f; t += 0.02f) shield.Apply(t, 0.02f);
                 Assert.IsTrue(currents.IsLingering, "setup: lingering");
 
                 shield.Flash(0.4f);
@@ -555,7 +563,8 @@ namespace HexFall.UI.Tests
                 Assert.IsFalse(currents.IsLingering, "a fresh scheduler is not draining");
                 shield.Apply(0.1f, 0.1f);
                 Assert.IsTrue(rings.Any(r => r.enabled), "new currents show for the new shield");
-                for (float t = 0.2f; t < 2f; t += 0.02f) shield.Apply(t, 0.02f);
+                float lingerEnd = 0.2f + disassemble + SerializedSeconds(currents, "maxLifetime") + 1f;
+                for (float t = 0.2f; t < lingerEnd; t += 0.02f) shield.Apply(t, 0.02f);
                 Assert.IsTrue(rings.All(r => !r.enabled), "no ring stuck after the second linger");
             }
             finally

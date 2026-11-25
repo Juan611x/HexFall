@@ -55,8 +55,18 @@ def box_downscale(a, size):
     return a.reshape(size, h // size, size, w // size).mean(axis=(1, 3))
 
 
-def to_rgba(lum):
-    alpha = np.clip(lum / lum.max(), 0.0, 1.0) ** GAMMA
+def peak_of(a, what):
+    """The brightest value of `a`; exits with a clear message for empty or all-black input (nothing to normalise)."""
+    if a.size == 0:
+        raise SystemExit("Empty image: " + what)
+    peak = float(a.max())
+    if not peak > 0.0:
+        raise SystemExit("Black image, nothing to normalise: " + what)
+    return peak
+
+
+def to_rgba(lum, what="image"):
+    alpha = np.clip(lum / peak_of(lum, what), 0.0, 1.0) ** GAMMA
     rgba = np.ones((*alpha.shape, 4), dtype=np.float32)
     rgba[..., 3] = alpha
     return rgba
@@ -91,8 +101,8 @@ def mote_flipbook(src):
             cache[original] = read_luminance(os.path.join(src, original))
         crop = cache[original][r0:r1, c0:c1]
         crop = crop * edge_window(*crop.shape)
-        crop = (crop / crop.max()) ** MOTE_CONTRAST
-        frames.append(to_rgba(box_downscale(crop, MOTE_SIZE)))
+        crop = (crop / peak_of(crop, "mote crop of " + original)) ** MOTE_CONTRAST
+        frames.append(to_rgba(box_downscale(crop, MOTE_SIZE), "mote frame of " + original))
     return np.concatenate(frames, axis=1)
 
 
@@ -101,7 +111,7 @@ def main():
     src, out = (os.path.abspath(p) for p in args[:2])
     for original, derived in JOBS:
         lum = box_downscale(read_luminance(os.path.join(src, original)), SIZE)
-        save_png(to_rgba(lum), os.path.join(out, derived))
+        save_png(to_rgba(lum, original), os.path.join(out, derived))
         print("derived", derived, lum.shape)
     save_png(mote_flipbook(src), os.path.join(out, "T_AirMote.png"))
     print("derived T_AirMote.png", len(MOTE_FRAMES), "frames")
