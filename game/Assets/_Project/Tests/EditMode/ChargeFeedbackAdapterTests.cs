@@ -36,7 +36,7 @@ namespace HexFall.UI.Tests
 
         private static SpellDefinition.ChargeSettings FireCharge() => new SpellDefinition.ChargeSettings
         {
-            maxChargeSeconds = 1.2f, minDamage = 18, maxDamage = 45,
+            maxChargeSeconds = 1.2f, baseDamage = 18, damageMode = ChargeDamageMode.Curve,
             minSizeScale = 0.5f, maxSizeScale = 2f, fullChargeColor = new Color(1f, 1f, 0.5f), colorBlend = 1f,
             speedScaleAtMax = 1.5f, showOrb = true, orbSize = 0.4f, windUpState = "Charge", windUpHoldNormalized = 0.5f,
         };

@@ -52,8 +52,7 @@ namespace HexFall.Player.Spells
             if (!_charging) return;
             _charging = false;
             var charge = ChargeFeedback.Level(now - _start, _c.MaxChargeSeconds);
-            var damage = (int)Math.Round(_c.MinDamage + (_c.MaxDamage - _c.MinDamage) * charge,
-                MidpointRounding.AwayFromZero);
+            var damage = ChargeDamage.Damage(_c, charge);
             // State and cooldown advance before the event so a throwing subscriber cannot re-fire or skip it.
             sink.StartCooldown(now, _c.CooldownSeconds);
             sink.Fire(new ProjectileShot(0, damage, 0f, charge));

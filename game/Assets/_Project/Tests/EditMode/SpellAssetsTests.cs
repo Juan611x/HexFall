@@ -40,14 +40,47 @@ namespace HexFall.UI.Tests
             Assert.IsNull(spell.Effects.chargeOrLoopClip);
         }
 
+        [TestCase(0f, 18)]
+        [TestCase(0.5f, 32)]
+        [TestCase(1f, 45)]
+        public void FireCurveGivesTheOriginalChargedDamage(float charge, int expected) =>
+            Assert.AreEqual(expected, ChargeDamage.Damage(Load("Fire").ToCastConfig().Sanitized(), charge));
+
+        [Test]
+        public void FireThroughTheActionMachineDoes18OnATapAnd45AtFullCharge()
+        {
+            var damages = new System.Collections.Generic.List<int>();
+            var machine = new HexFall.Player.Actions.ActionMachine(
+                new HexFall.Player.Actions.ActionSettings(), new SpellCaster(Load("Fire").ToCastConfig()));
+            machine.ShotFired += s => damages.Add(s.Damage);
+            var press = new HexFall.Player.Actions.ActionIntent(true, false);
+            var release = new HexFall.Player.Actions.ActionIntent(false, false, true);
+            var none = new HexFall.Player.Actions.ActionIntent(false, false);
+
+            machine.Tick(press, 1f);
+            machine.Tick(release, 1f);
+            for (var i = 1; i <= 100; i++) machine.Tick(none, 1f + i * 0.02f);
+
+            machine.Tick(press, 4f);
+            for (var i = 1; i <= 60; i++) machine.Tick(none, 4f + i * 0.02f);
+            machine.Tick(release, 5.4f);
+            for (var i = 1; i <= 100; i++) machine.Tick(none, 5.4f + i * 0.02f);
+
+            CollectionAssert.AreEqual(new[] { 18, 45 }, damages);
+        }
+
         [Test]
         public void FireIsAChargedOrangeRedBolt()
         {
             var fire = Load("Fire");
             Assert.AreEqual(CastPattern.Charged, fire.Pattern);
             Assert.AreEqual(1.2f, fire.Charge.maxChargeSeconds, 1e-4f);
-            Assert.AreEqual(18, fire.Charge.minDamage);
-            Assert.AreEqual(45, fire.Charge.maxDamage);
+            Assert.AreEqual(ChargeDamageMode.Curve, fire.Charge.damageMode);
+            Assert.AreEqual(18, fire.Charge.baseDamage);
+            Assert.AreEqual(2.5f, fire.Charge.constantMultiplier, 1e-4f);
+            Assert.AreEqual(1f, fire.Charge.damageCurve.Evaluate(0f), 1e-4f);
+            Assert.AreEqual(1.75f, fire.Charge.damageCurve.Evaluate(0.5f), 1e-3f);
+            Assert.AreEqual(2.5f, fire.Charge.damageCurve.Evaluate(1f), 1e-4f);
             Assert.AreEqual(0.6f, fire.CooldownSeconds, 1e-4f);
             Assert.AreEqual(26f, fire.Projectile.speed, 1e-4f);
             Assert.That(fire.Projectile.gravity, Is.InRange(0.5f, 4f), "a slight drop");

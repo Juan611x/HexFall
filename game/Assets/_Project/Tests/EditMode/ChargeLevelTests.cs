@@ -9,7 +9,7 @@ namespace HexFall.UI.Tests
     {
         private static CastConfig Charged(float max = 1.2f) => new CastConfig
         {
-            Pattern = CastPattern.Charged, CooldownSeconds = 0.6f, MaxChargeSeconds = max, MinDamage = 18, MaxDamage = 45,
+            Pattern = CastPattern.Charged, CooldownSeconds = 0.6f, MaxChargeSeconds = max, BaseDamage = 18, ChargeMode = ChargeDamageMode.Curve, ChargeCurve = ChargeDamage.Bake(x => 1f + 1.5f * x),
         };
 
         [Test]
