@@ -153,9 +153,19 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(0.5f, mesh.bounds.extents.x, 0.01f, "radius along X");
             Assert.AreEqual(0.5f, mesh.bounds.extents.z, 0.01f, "radius along Z");
             var vertices = mesh.vertices;
+            var top = vertices.OrderByDescending(v => v.y).First();
+            var bottom = vertices.OrderBy(v => v.y).First();
+            Assert.AreEqual(0.5f, top.y, 1e-3f, "highest vertex is the top pole");
+            Assert.AreEqual(-0.5f, bottom.y, 1e-3f, "lowest vertex is the bottom pole");
+            Assert.That(new Vector2(top.x, top.z).magnitude, Is.LessThan(1e-3f), "top pole on the Y axis");
+            Assert.That(new Vector2(bottom.x, bottom.z).magnitude, Is.LessThan(1e-3f), "bottom pole on the Y axis");
+            // An equator vertex can also sit at (0, +-0.5, 0) when the poles are on another axis, so also require the
+            // 32-vertex ring that surrounds a real pole (0.5 * sin(11.25 deg) = 0.098 from the axis).
             foreach (var sign in new[] { 1f, -1f })
-                Assert.IsTrue(vertices.Any(v => Mathf.Abs(v.x) < 1e-3f && Mathf.Abs(v.z) < 1e-3f && Mathf.Abs(v.y - 0.5f * sign) < 1e-3f),
-                    "a pole vertex on the Y axis at " + sign);
+            {
+                var cap = vertices.Where(v => v.y * sign > 0.485f).Select(v => new Vector3(Mathf.Round(v.x * 1000f), Mathf.Round(v.y * 1000f), Mathf.Round(v.z * 1000f))).Distinct().ToArray();
+                Assert.GreaterOrEqual(cap.Length, 33, "pole vertex plus its ring of 32 at " + sign);
+            }
         }
 
         [Test]
@@ -240,7 +250,7 @@ namespace HexFall.UI.Tests
                 shield.Deflect(0.99f);
                 var block = new MaterialPropertyBlock();
 
-                shield.Apply(1.1f);
+                shield.Apply(1f + Serialized(shield, "disassembleSeconds") * 0.3f);
                 renderer.GetPropertyBlock(block);
                 float progress = block.GetFloat("_Build");
 

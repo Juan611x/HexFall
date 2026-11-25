@@ -4,9 +4,9 @@ Mesh and textures of the parry shield (an air sphere around the wizard), in the 
 
 | File | Role |
 |---|---|
-| `build_air_shield_mesh.py` | Blender headless: builds `AirShield.fbx`, a 32 x 16 UV sphere (960 triangles, smooth shading, radius 0.5) with its poles on the vertical (Unity Y) axis, which is the shield's spin axis. |
+| `build_air_shield_mesh.py` | Blender headless: builds `AirShield.fbx`, a 32 x 16 UV sphere (960 triangles, smooth shading, radius 0.5) with its poles on Blender's Y axis, which Unity reads as its vertical Y (the importer keeps the mesh's local axes): the shield's spin axis. |
 | `build_current_ring_mesh.py` | Blender headless: builds `AirCurrentRing.fbx`, the band (256 triangles, radius 0.5, 0.338 tall, U around, V across) that each wind current is drawn on. Its axis is on Unity Y. |
-| `derive_air_twirls.py` | Deterministic (Blender headless, numpy;): derives `T_AirTwirl_A.png`, `T_AirTwirl_B.png`, `T_AirTrace.png` (128x128, white RGB, real alpha from luminance, smooth gradient) and `T_AirMote.png` (64x16: a 4-frame flipbook of 16x16 open arc fragments cropped from the twirl arms and the trace_04 streak, faded at the crop border, never a whole twirl) from the Kenney originals in `game/Assets/ThirdParty/Kenney/ParticlePack/`. |
+| `derive_air_twirls.py` | Deterministic (Blender headless, numpy): derives `T_AirTwirl_A.png`, `T_AirTwirl_B.png`, `T_AirTrace.png` (128x128, white RGB, real alpha from luminance, smooth gradient) and `T_AirMote.png` (64x16: a 4-frame flipbook of 16x16 open arc fragments cropped from the twirl arms and the trace_04 streak, faded at the crop border, never a whole twirl) from the Kenney originals in `game/Assets/ThirdParty/Kenney/ParticlePack/`; it exits with a clear message on an empty or black source. |
 
 The shield look lives in Unity, not here: `game/Assets/_Project/VFX/WindShield/Shaders/SG_WindShield.shadergraph` (URP Unlit, additive, ZWrite off) with its math in `WindShieldCore.hlsl`, called from two Custom Function nodes in File mode.
 
