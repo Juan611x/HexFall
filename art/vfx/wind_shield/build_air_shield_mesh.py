@@ -1,8 +1,9 @@
 """Builds the air shield sphere: a 32 x 16 UV sphere (960 triangles, smooth shading).
 
-The poles sit on the vertical axis (Blender Z becomes Unity Y through the FBX axis conversion), which is the
-shield's spin axis. The shader derives its wind veins from the object-space direction, not from the UVs, so the
-UVs are only a by-product. Radius 0.5 matches Unity's built-in Sphere.
+The poles sit on Blender's Y axis, which Unity reads as its vertical Y: the FBX importer keeps the mesh's local
+axes (the Z-up to Y-up conversion lands on the node rotation, which a MeshFilter ignores), so the sphere is built
+with its poles on Blender Y, the same way as the current ring. That is the shield's spin axis.
+The shader derives its wind veins from the object-space direction, not from the UVs, so the UVs are only a by-product. Radius 0.5 matches Unity's built-in Sphere.
 
 Run headless from the repository root:
 
@@ -17,6 +18,7 @@ import os
 
 import bmesh
 import bpy
+from mathutils import Matrix
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 OUT = os.path.join(ROOT, "game", "Assets", "_Project", "VFX", "WindShield", "Models", "AirShield.fbx")
@@ -30,6 +32,8 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 bm = bmesh.new()
 bm.loops.layers.uv.new("UVMap")  # create_uvsphere only fills an existing UV layer
 bmesh.ops.create_uvsphere(bm, u_segments=SEGMENTS, v_segments=RINGS, radius=RADIUS, calc_uvs=True)
+# create_uvsphere puts the poles on Z; turn them onto Y (x, y, z) -> (x, -z, y), a +90 degree rotation about X (the +Z pole lands on +Y)
+bmesh.ops.rotate(bm, verts=bm.verts[:], cent=(0.0, 0.0, 0.0), matrix=Matrix.Rotation(math.radians(90.0), 3, "X"))
 bmesh.ops.triangulate(bm, faces=bm.faces[:])
 for face in bm.faces:
     face.smooth = True

@@ -1,0 +1,21 @@
+FINGER SNAPS (source of Snap.wav)
+
+File: 177496_snapper4298.wav
+  Original stereo sample (44.1 kHz, 16-bit, 0.558 s) extracted unchanged from the soundfont
+  "Finger Snaps" (sample headers 177496__snapper4298L / 177496__snapper4298R, interleaved here as
+  left/right). Kept as source art; the game uses the derived mono clip
+  game/Assets/_Project/Audio/Sfx/Snap.wav (made by art/audio/derive_finger_snap.py).
+
+Chain of origin
+  - Freesound sound 177496 by Snapper4298, part of the pack
+    https://freesound.org/people/Snapper4298/packs/11176/
+  - Packed as the SF2 soundfont "Finger Snaps" (INAM "Finger Snaps", IENG "Matt Jenkins",
+    ICMT "Finger Snaps by Snapper4928 / https://freesound.org/people/Snapper4298/packs/11176/")
+  - Shared on Polyphone by "Majenko":
+    https://www.polyphone.io/en/soundfonts/unpitched-percussion/529-finger-snaps
+
+License
+  The Polyphone page states the license of the soundfont as "public domain".
+  The original Freesound license of sound 177496 could NOT be verified (freesound.org was not
+  reachable when this was added). Credit given regardless: Snapper4298 (Freesound), soundfont by
+  Matt Jenkins / Majenko. Re-check the Freesound page before any commercial release.

@@ -65,6 +65,12 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void EnteringParryEmptyPlaysNoShieldSound()
+        {
+            Assert.AreEqual(WizardSfxCue.None, WizardSfxCues.ForStateChange(ActionStateId.Ready, ActionStateId.ParryEmpty));
+        }
+
+        [Test]
         public void PerfectParryPlaysParryPerfect()
         {
             Assert.AreEqual(WizardSfxCue.ParryPerfect, WizardSfxCues.ForHit(new HitResult(ParryGrade.Perfect, 0, 10)));

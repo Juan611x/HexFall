@@ -75,6 +75,9 @@ namespace HexFall.Player
             return true;
         }
 
+        // True while at least one charge is available, whether or not a guard is still running.
+        public bool HasCharge(float now) => Charges(now) > 0;
+
         public bool IsGuarding(float now) => now >= _raisedAt && now < _raisedAt + _guardSeconds;
 
         public ParryGrade GradeAt(float hitTime)

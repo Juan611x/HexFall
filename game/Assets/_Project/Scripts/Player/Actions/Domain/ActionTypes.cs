@@ -2,7 +2,7 @@ using System;
 
 namespace HexFall.Player.Actions
 {
-    public enum ActionStateId { Ready, Attack, Parry }
+    public enum ActionStateId { Ready, Attack, Parry, ParryEmpty }
 
     // What the player asked for this tick.
     public readonly struct ActionIntent

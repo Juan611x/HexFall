@@ -73,6 +73,8 @@ namespace HexFall.Player
             if (count < 3 || count > 8) throw new ArgumentOutOfRangeException(nameof(count));
             if (maxHeight < minHeight) throw new ArgumentException("maxHeight must not be below minHeight");
             if (minLifetime <= 0f || maxLifetime < minLifetime) throw new ArgumentException("invalid lifetime range");
+            if (float.IsNaN(minExpiryGap) || float.IsInfinity(minExpiryGap) || minExpiryGap < 0f)
+                throw new ArgumentOutOfRangeException(nameof(minExpiryGap), "must be a finite value >= 0");
 
             _random = random;
             _minHeight = minHeight;

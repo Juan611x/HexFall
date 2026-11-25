@@ -11621,6 +11621,8 @@ MonoBehaviour:
     stateName: Attack
   - state: 2
     stateName: Parry
+  - state: 3
+    stateName: Parry
 --- !u!114 &6622073613239534261
 MonoBehaviour:
   m_ObjectHideFlags: 0
