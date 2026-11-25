@@ -76,7 +76,8 @@ namespace HexFall.Player.Actions
 
         public bool RefillShield(float now) => _shield.Refill(now);
 
-        // Swaps the spell. A cast in progress is cancelled (its pending shots are dropped).
+        // Swaps the spell. A cast in progress is cancelled (its pending shots are dropped); the cooldown still
+        // running carries over to the new spell.
         public void SetCaster(SpellCaster caster, float now)
         {
             if (caster == null) throw new ArgumentNullException(nameof(caster));
@@ -85,6 +86,7 @@ namespace HexFall.Player.Actions
                 || Current == ActionStateId.Channelling;
             CancelCast(now);
             Unsubscribe(_caster);
+            caster.InheritCooldown(_caster.ReadyAt); // swapping is not a way to skip the cooldown
             _caster = caster;
             Subscribe(_caster);
             if (casting) Enter(ActionStateId.Ready, now);

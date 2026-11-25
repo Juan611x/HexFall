@@ -247,7 +247,7 @@ namespace HexFall.Player
             var bestDistance = aimDistance;
             foreach (var hit in Physics.RaycastAll(ray, aimDistance, ~0, QueryTriggerInteraction.Ignore))
             {
-                if (hit.collider.transform.root == transform.root || hit.distance >= bestDistance) continue;
+                if (hit.collider.transform.IsChildOf(transform) || hit.distance >= bestDistance) continue;
                 best = hit.point;
                 bestDistance = hit.distance;
             }
