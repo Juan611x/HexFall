@@ -10158,8 +10158,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d471a9578ed6be43bf4b118d895788f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HexFall.Player::HexFall.Player.MagicShield
-  popSeconds: 0.06
-  fadeSeconds: 0.15
+  assembleSeconds: 0.12
+  disassembleSeconds: 0.35
+  deflectSeconds: 0.15
   deflectBoost: 2.5
   wisps: {fileID: 8575418631798751924}
   burst: {fileID: 3108565900525345847}
