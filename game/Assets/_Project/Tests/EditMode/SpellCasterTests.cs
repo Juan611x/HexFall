@@ -434,5 +434,106 @@ namespace HexFall.UI.Tests
             Assert.IsFalse(caster.IsBusy);
             Assert.IsTrue(caster.IsReady(1f));
         }
+
+        // ---- Advisories: state advances before the event, bad floats are clamped ----
+
+        private static void Throwing(SpellCaster caster) =>
+            caster.ProjectileFired += _ => throw new System.InvalidOperationException("subscriber");
+
+        [Test]
+        public void SingleCooldownStartsEvenWhenASubscriberThrows()
+        {
+            var caster = new SpellCaster(Single(cooldown: 0.5f));
+            Throwing(caster);
+
+            Assert.Throws<System.InvalidOperationException>(() => caster.Press(1f));
+
+            Assert.IsFalse(caster.IsReady(1.2f));
+            Assert.IsTrue(caster.IsReady(1.5f));
+        }
+
+        [Test]
+        public void BurstDoesNotRefireTheSameShotWhenASubscriberThrows()
+        {
+            var caster = new SpellCaster(Burst());
+            var calls = 0;
+            caster.ProjectileFired += _ =>
+            {
+                calls++;
+                if (calls == 1) throw new System.InvalidOperationException("subscriber");
+            };
+
+            Assert.Throws<System.InvalidOperationException>(() => caster.Press(1f));
+            caster.Tick(1.2f);
+
+            Assert.AreEqual(3, calls, "shots 0, 1 and 2 once each");
+            Assert.IsFalse(caster.IsBusy);
+        }
+
+        [Test]
+        public void ChargedCooldownStartsEvenWhenASubscriberThrows()
+        {
+            var caster = new SpellCaster(Charged());
+            caster.Press(1f);
+            Throwing(caster);
+
+            Assert.Throws<System.InvalidOperationException>(() => caster.Release(1.6f));
+
+            Assert.IsFalse(caster.IsBusy);
+            Assert.IsFalse(caster.IsReady(1.9f));
+            Assert.IsTrue(caster.IsReady(2.2f));
+        }
+
+        [Test]
+        public void ChannelCooldownStartsEvenWhenTheEndSubscriberThrows()
+        {
+            var caster = new SpellCaster(Channel());
+            caster.ChannelEnded += _ => throw new System.InvalidOperationException("subscriber");
+            caster.Press(1f);
+
+            Assert.Throws<System.InvalidOperationException>(() => caster.Release(1.5f));
+
+            Assert.IsFalse(caster.IsReady(1.6f));
+        }
+
+        [Test]
+        public void SanitizedClampsNonFiniteValuesToSafeOnes()
+        {
+            var inf = float.PositiveInfinity;
+            var c = new CastConfig
+            {
+                Pattern = CastPattern.Channel,
+                CooldownSeconds = inf, MaxChargeSeconds = float.NaN,
+                BurstIntervalSeconds = inf, BurstSpreadDegrees = float.NegativeInfinity,
+                ChannelDurationSeconds = inf, ChannelTicksPerSecond = inf,
+                ChannelCooldownPerSecond = float.NaN,
+            }.Sanitized();
+
+            foreach (var v in new[]
+            {
+                c.CooldownSeconds, c.MaxChargeSeconds, c.BurstIntervalSeconds, c.BurstSpreadDegrees,
+                c.ChannelDurationSeconds, c.ChannelTicksPerSecond, c.ChannelCooldownPerSecond,
+            })
+            {
+                Assert.IsFalse(float.IsNaN(v) || float.IsInfinity(v));
+                Assert.GreaterOrEqual(v, 0f);
+            }
+            Assert.Greater(c.ChannelTicksPerSecond, 0f);
+        }
+
+        [Test]
+        public void ANonFiniteCooldownDoesNotLockTheSpell()
+        {
+            var caster = new SpellCaster(Single(cooldown: float.PositiveInfinity));
+
+            Assert.IsTrue(caster.Press(1f));
+            Assert.IsTrue(caster.IsReady(1.1f));
+        }
+
+        [Test]
+        public void CasterExposesItsPattern()
+        {
+            Assert.AreEqual(CastPattern.Burst, new SpellCaster(Burst()).Pattern);
+        }
     }
 }

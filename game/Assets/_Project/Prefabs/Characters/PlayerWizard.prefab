@@ -11395,12 +11395,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc9be1b514c92924284871b583da6aa4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HexFall.Player::HexFall.Player.PlayerCombat
-  attackCooldownSeconds: 0.5
+  activeSpell: {fileID: 11400000, guid: bd2bd9b68d313944bbd765af49a56ba8, type: 2}
   boltPrefab: {fileID: 7002432141726339229, guid: fa53d1371e84db74588fc2dade9d689c, type: 3}
   muzzle: {fileID: 6374242125366786581}
   boltDelaySeconds: 0.2
-  boltSpeed: 30
-  boltDamage: 18
   aimDistance: 100
   faceAimHoldSeconds: 0.3
   faceAimDegreesPerSecond: 1800
@@ -11623,6 +11621,10 @@ MonoBehaviour:
     stateName: Parry
   - state: 3
     stateName: Parry
+  - state: 4
+    stateName: Attack
+  - state: 5
+    stateName: Attack
 --- !u!114 &6622073613239534261
 MonoBehaviour:
   m_ObjectHideFlags: 0

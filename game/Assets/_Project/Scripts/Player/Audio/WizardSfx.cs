@@ -1,5 +1,6 @@
 using HexFall.Player.Actions;
 using HexFall.Player.Locomotion;
+using HexFall.Player.Spells;
 using UnityEngine;
 
 namespace HexFall.Player
@@ -43,7 +44,7 @@ namespace HexFall.Player
             _subscribed = _combat.Machine;
             _subscribed.StateChanged += OnStateChanged;
             _subscribed.HitResolved += OnHitResolved;
-            _subscribed.BoltFired += OnBoltFired;
+            _subscribed.ShotFired += OnShotFired;
             _subscribed.AttackPressed += OnAttackPressed;
             _subscribed.ParryPressed += OnParryPressed;
         }
@@ -75,7 +76,7 @@ namespace HexFall.Player
             if (_subscribed == null) return;
             _subscribed.StateChanged -= OnStateChanged;
             _subscribed.HitResolved -= OnHitResolved;
-            _subscribed.BoltFired -= OnBoltFired;
+            _subscribed.ShotFired -= OnShotFired;
             _subscribed.AttackPressed -= OnAttackPressed;
             _subscribed.ParryPressed -= OnParryPressed;
             _subscribed = null;
@@ -87,7 +88,7 @@ namespace HexFall.Player
 
         private void OnHitResolved(HitResult hit) => Play(WizardSfxCues.ForHit(hit));
 
-        private void OnBoltFired() => Play(WizardSfxCues.ForBoltFired());
+        private void OnShotFired(ProjectileShot shot) => Play(WizardSfxCues.ForBoltFired());
 
         private void OnAttackPressed() => Play(WizardSfxCues.ForAttackPress());
 

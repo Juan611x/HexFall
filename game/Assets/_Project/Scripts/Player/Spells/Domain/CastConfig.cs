@@ -37,13 +37,16 @@ namespace HexFall.Player.Spells
             c.BurstIntervalSeconds = NonNegative(c.BurstIntervalSeconds);
             c.BurstSpreadDegrees = NonNegative(c.BurstSpreadDegrees);
             c.ChannelDurationSeconds = NonNegative(c.ChannelDurationSeconds);
-            c.ChannelTicksPerSecond = float.IsNaN(c.ChannelTicksPerSecond) || c.ChannelTicksPerSecond <= 0f
+            c.ChannelTicksPerSecond = !IsFinite(c.ChannelTicksPerSecond) || c.ChannelTicksPerSecond <= 0f
                 ? 1f : c.ChannelTicksPerSecond;
             c.ChannelDamagePerTick = Math.Max(0, c.ChannelDamagePerTick);
             c.ChannelCooldownPerSecond = NonNegative(c.ChannelCooldownPerSecond);
             return c;
         }
 
-        private static float NonNegative(float v) => float.IsNaN(v) || v < 0f ? 0f : v;
+        // NaN and +/-Infinity fall back to 0: an infinite interval or cooldown would lock the spell.
+        private static float NonNegative(float v) => !IsFinite(v) || v < 0f ? 0f : v;
+
+        private static bool IsFinite(float v) => !float.IsNaN(v) && !float.IsInfinity(v);
     }
 }

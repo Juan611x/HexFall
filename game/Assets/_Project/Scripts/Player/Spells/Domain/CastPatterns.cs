@@ -17,8 +17,8 @@ namespace HexFall.Player.Spells
 
         public void Press(float now, ICastSink sink)
         {
-            sink.Fire(new ProjectileShot(0, _c.Damage, 0f, 0f));
             sink.StartCooldown(now, _c.CooldownSeconds);
+            sink.Fire(new ProjectileShot(0, _c.Damage, 0f, 0f));
         }
 
         public void Release(float now, ICastSink sink) { }
@@ -50,8 +50,9 @@ namespace HexFall.Player.Spells
             var charge = _c.MaxChargeSeconds <= 0f ? 1f : Math.Min(1f, held / _c.MaxChargeSeconds);
             var damage = (int)Math.Round(_c.MinDamage + (_c.MaxDamage - _c.MinDamage) * charge,
                 MidpointRounding.AwayFromZero);
-            sink.Fire(new ProjectileShot(0, damage, 0f, charge));
+            // State and cooldown advance before the event so a throwing subscriber cannot re-fire or skip it.
             sink.StartCooldown(now, _c.CooldownSeconds);
+            sink.Fire(new ProjectileShot(0, damage, 0f, charge));
         }
 
         public void Tick(float now, ICastSink sink) { }
@@ -101,13 +102,14 @@ namespace HexFall.Player.Spells
                 var due = _start + _next * _c.BurstIntervalSeconds;
                 if (now < due - CastTime.Eps) return;
                 var spread = (_next - (_c.BurstCount - 1) * 0.5f) * _c.BurstSpreadDegrees;
-                sink.Fire(new ProjectileShot(_next, _c.Damage, spread, 0f));
+                var shot = new ProjectileShot(_next, _c.Damage, spread, 0f);
                 _next++;
                 if (_next == _c.BurstCount)
                 {
                     _active = false;
                     sink.StartCooldown(due, _c.CooldownSeconds);
                 }
+                sink.Fire(shot);
             }
         }
     }
@@ -170,8 +172,8 @@ namespace HexFall.Player.Spells
         {
             _active = false;
             channelled = Math.Max(0f, Math.Min(channelled, _c.ChannelDurationSeconds));
-            sink.ChannelEnd(channelled);
             sink.StartCooldown(at, _c.CooldownSeconds + channelled * _c.ChannelCooldownPerSecond);
+            sink.ChannelEnd(channelled);
         }
     }
 

@@ -90,5 +90,41 @@ namespace HexFall.UI.Tests
             Assert.Greater(c.ChannelTicksPerSecond, 0f);
             Assert.Greater(_spell.Projectile.lifetimeSeconds, 0f);
         }
+
+        [Test]
+        public void SanitizeClampsNonFiniteValues()
+        {
+            Set("cooldownSeconds", p => p.floatValue = float.PositiveInfinity);
+            Set("projectile.speed", p => p.floatValue = float.NaN);
+            Set("projectile.gravity", p => p.floatValue = float.PositiveInfinity);
+            Set("projectile.curveDegreesPerSecond", p => p.floatValue = float.NaN);
+            Set("projectile.sizeScale", p => p.floatValue = float.NaN);
+            Set("projectile.lifetimeSeconds", p => p.floatValue = float.PositiveInfinity);
+            Set("charge.maxChargeSeconds", p => p.floatValue = float.NaN);
+            Set("burst.intervalSeconds", p => p.floatValue = float.PositiveInfinity);
+            Set("burst.spreadDegrees", p => p.floatValue = float.NaN);
+            Set("channel.durationSeconds", p => p.floatValue = float.PositiveInfinity);
+            Set("channel.ticksPerSecond", p => p.floatValue = float.NaN);
+            Set("channel.rangeMeters", p => p.floatValue = float.PositiveInfinity);
+            Set("channel.cooldownPerChannelSecond", p => p.floatValue = float.NaN);
+
+            _spell.Sanitize();
+
+            foreach (var v in new[]
+            {
+                _spell.CooldownSeconds, _spell.Projectile.speed, _spell.Projectile.gravity,
+                _spell.Projectile.curveDegreesPerSecond, _spell.Projectile.sizeScale,
+                _spell.Projectile.lifetimeSeconds, _spell.Charge.maxChargeSeconds,
+                _spell.Burst.intervalSeconds, _spell.Burst.spreadDegrees,
+                _spell.Channel.durationSeconds, _spell.Channel.ticksPerSecond,
+                _spell.Channel.rangeMeters, _spell.Channel.cooldownPerChannelSecond,
+            })
+            {
+                Assert.IsFalse(float.IsNaN(v) || float.IsInfinity(v));
+            }
+            Assert.Greater(_spell.Projectile.sizeScale, 0f);
+            Assert.Greater(_spell.Projectile.lifetimeSeconds, 0f);
+            Assert.Greater(_spell.Channel.ticksPerSecond, 0f);
+        }
     }
 }

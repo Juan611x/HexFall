@@ -8,7 +8,13 @@ namespace HexFall.Player.Spells
         private readonly ICastPattern _pattern;
         private float _readyAt = float.NegativeInfinity;
 
-        public SpellCaster(CastConfig config) => _pattern = CastPatternFactory.Create(config);
+        public SpellCaster(CastConfig config)
+        {
+            Pattern = config.Pattern;
+            _pattern = CastPatternFactory.Create(config);
+        }
+
+        public CastPattern Pattern { get; }
 
         public event Action<ProjectileShot> ProjectileFired;
         public event Action ChannelStarted;

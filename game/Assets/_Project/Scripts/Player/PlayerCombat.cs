@@ -1,4 +1,5 @@
 using HexFall.Player.Actions;
+using HexFall.Player.Spells;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,13 +10,13 @@ namespace HexFall.Player
     // ResolveHit, which says how much of it the shield absorbed.
     public class PlayerCombat : MonoBehaviour
     {
-        [SerializeField] private float attackCooldownSeconds = 0.5f;
+        [Header("Spell")]
+        [Tooltip("The spell the attack casts; the Base spell by default. Cooldown, damage and projectile speed come from it.")]
+        [SerializeField] private SpellDefinition activeSpell;
         [Header("Bolt")]
         [SerializeField] private Bolt boltPrefab;
         [SerializeField] private Transform muzzle;
         [SerializeField] private float boltDelaySeconds = 0.2f;
-        [SerializeField] private float boltSpeed = 30f;
-        [SerializeField] private int boltDamage = 18;
         [SerializeField] private float aimDistance = 100f;
         [Tooltip("How long after the bolt leaves the wizard keeps facing the crosshair.")]
         [SerializeField] private float faceAimHoldSeconds = 0.3f;
@@ -29,7 +30,7 @@ namespace HexFall.Player
         [SerializeField, Range(0f, 1f)] private float partialBlock = 0.5f;
         [SerializeField] private MagicShield shield;
 
-        // Counts entries into Attack, so Attack() also reports an attack chained on the tick the last one ended.
+        // Counts cast starts (Attack, Charging, Channelling), so Attack() also reports an attack chained on the tick the last one ended.
         private int _attackStarts;
 
         // The action state machine; the IK, animator and audio adapters read it. Null before Awake.
@@ -46,7 +47,6 @@ namespace HexFall.Player
         {
             Machine = new ActionMachine(new ActionSettings
             {
-                attackCooldownSeconds = attackCooldownSeconds,
                 boltDelaySeconds = boltDelaySeconds,
                 faceAimHoldSeconds = faceAimHoldSeconds,
                 shieldCharges = shieldCharges,
@@ -54,9 +54,9 @@ namespace HexFall.Player
                 perfectParrySeconds = perfectParrySeconds,
                 guardSeconds = guardSeconds,
                 partialBlock = partialBlock,
-            });
+            }, CasterFor(activeSpell));
             Machine.StateChanged += OnActionChanged;
-            Machine.BoltFired += FireBolt;
+            Machine.ShotFired += FireShot;
             Machine.HitResolved += OnHitResolved;
         }
 
@@ -64,14 +64,14 @@ namespace HexFall.Player
         {
             if (Machine == null) return;
             Machine.StateChanged -= OnActionChanged;
-            Machine.BoltFired -= FireBolt;
+            Machine.ShotFired -= FireShot;
             Machine.HitResolved -= OnHitResolved;
         }
 
         // The shield flash follows the action state; the animator follows it in ActionAnimatorBridge.
         private void OnActionChanged(ActionStateId from, ActionStateId to)
         {
-            if (to == ActionStateId.Attack)
+            if (to == ActionStateId.Attack && from != ActionStateId.Charging || to == ActionStateId.Charging || to == ActionStateId.Channelling)
             {
                 _attackStarts++;
             }
@@ -86,10 +86,36 @@ namespace HexFall.Player
             if (hit.Grade != ParryGrade.None && shield != null) shield.Deflect();
         }
 
+        // The Attack action is Press-and-Release: it reports the press and the release, which a charge
+        // and a channel need.
         public void OnAttack(InputValue value)
         {
             if (value.isPressed) Attack();
+            else ReleaseAttack();
         }
+
+        public void ReleaseAttack()
+        {
+            Machine.Tick(new ActionIntent(false, false, true), Time.time);
+        }
+
+        // The spell the attack casts. Null means the Base default of the action machine.
+        public SpellDefinition ActiveSpell => activeSpell;
+
+        // Swaps the spell; a cast in progress is cancelled.
+        public void SetSpell(SpellDefinition spell)
+        {
+            activeSpell = spell;
+            if (Machine != null) Machine.SetCaster(CasterFor(spell) ?? new SpellCaster(BaseConfig), Time.time);
+        }
+
+        private static readonly CastConfig BaseConfig = new CastConfig
+        {
+            Pattern = CastPattern.Single, Damage = 18, CooldownSeconds = 0.5f,
+        };
+
+        private static SpellCaster CasterFor(SpellDefinition spell) =>
+            spell != null ? new SpellCaster(spell.ToCastConfig()) : null;
 
         public void OnParry(InputValue value)
         {
@@ -123,13 +149,18 @@ namespace HexFall.Player
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
         }
 
-        private void FireBolt()
+        // Speed comes from the active spell, damage and spread from the shot.
+        private void FireShot(ProjectileShot shot)
         {
             if (boltPrefab == null) return;
             var origin = muzzle != null ? muzzle.position : transform.position + Vector3.up * 1.3f;
             var bolt = Instantiate(boltPrefab, origin, Quaternion.identity);
-            bolt.Launch(gameObject, AimPoint() - origin, boltSpeed, boltDamage);
+            var speed = activeSpell != null ? activeSpell.Projectile.speed : BaseBoltSpeed;
+            var direction = ShotAim.Offset(AimPoint() - origin, shot.SpreadDegrees);
+            bolt.Launch(gameObject, direction, speed, shot.Damage);
         }
+
+        private const float BaseBoltSpeed = 30f;
 
         // The point under the crosshair: the first thing the camera's centre ray hits that is not the
         // wizard, or a far point along that ray.
