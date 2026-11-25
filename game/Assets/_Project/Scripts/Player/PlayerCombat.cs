@@ -247,7 +247,7 @@ namespace HexFall.Player
         // Ballistics of the default Base spell: 30 m/s, straight.
         private static readonly SpellDefinition.ProjectileSettings BaseProjectile = new SpellDefinition.ProjectileSettings
         {
-            speed = 30f, gravity = 0f, curveDegreesPerSecond = 0f, sizeScale = 1f, lifetimeSeconds = 3f,
+            speed = 30f, weight = 0f, drag = 0f, curveDegreesPerSecond = 0f, sizeScale = 1f, lifetimeSeconds = 3f,
         };
 
         // The point under the crosshair: the first thing the camera's centre ray hits that is not the

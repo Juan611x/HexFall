@@ -176,7 +176,7 @@ namespace HexFall.UI.Tests
 
             var spell = Spell(CastPattern.Single);
             var projectile = spell.Projectile;
-            projectile.gravity = float.NaN; // ProjectileFlight refuses it
+            projectile.weight = float.NaN; // ProjectileFlight refuses it
             typeof(SpellDefinition).GetField("projectile", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(spell, projectile);
             _combat.SetSpell(spell);
 

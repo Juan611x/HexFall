@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace HexFall.Player
 {
-    // A spell projectile. Flies a ProjectileFlight (speed, gravity, curve, lifetime from the spell) and
+    // A spell projectile. Flies a ProjectileFlight (speed, weight x world gravity, drag, curve, lifetime from the spell) and
     // sweeps a sphere along each frame's segment so it cannot tunnel through thin targets; the first
     // collider that does not belong to its owner ends it, hitting it with a HitInfo when that collider
     // has an IDamageable. Pooled: it goes back to BoltPool on a hit or at the end of its life.
@@ -44,7 +44,7 @@ namespace HexFall.Player
         {
             Launch(owner, direction, new SpellDefinition.ProjectileSettings
             {
-                speed = speed, gravity = 0f, curveDegreesPerSecond = 0f, sizeScale = 1f, lifetimeSeconds = lifetimeSeconds,
+                speed = speed, weight = 0f, drag = 0f, curveDegreesPerSecond = 0f, sizeScale = 1f, lifetimeSeconds = lifetimeSeconds,
             }, damage, null);
         }
 
@@ -61,8 +61,9 @@ namespace HexFall.Player
             var scale = (projectile.sizeScale > 0f ? projectile.sizeScale : 1f) * look.Scale;
             _sweepRadius = radius * scale;
             var velocity = direction.normalized * (Usable(projectile.speed, FallbackSpeed) * look.SpeedScale);
-            _flight = new ProjectileFlight(transform.position, velocity, projectile.gravity,
-                projectile.curveDegreesPerSecond, Usable(projectile.lifetimeSeconds, lifetimeSeconds));
+            // The domain takes an acceleration: the spell's weight times the world gravity (read here, not in the domain).
+            _flight = new ProjectileFlight(transform.position, velocity, projectile.weight * Physics.gravity.magnitude,
+                projectile.curveDegreesPerSecond, Usable(projectile.lifetimeSeconds, lifetimeSeconds), projectile.drag);
             if (velocity.sqrMagnitude > 0f) transform.rotation = Quaternion.LookRotation(velocity);
             ApplyLook(scale, spell, new Color(look.Color.R, look.Color.G, look.Color.B, spell != null ? spell.Color.a : 1f));
         }

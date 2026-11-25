@@ -36,7 +36,7 @@ namespace HexFall.Player.Spells
             c.CooldownSeconds = NonNegative(c.CooldownSeconds);
             c.MaxChargeSeconds = NonNegative(c.MaxChargeSeconds);
             c.BaseDamage = Math.Max(0, c.BaseDamage);
-            c.ChargeMultiplier = Multiplier(c.ChargeMultiplier);
+            c.ChargeMultiplier = ChargeDamage.ConstantMultiplier(c.ChargeMultiplier);
             c.ChargeCurve = SanitizedCurve(c.ChargeCurve);
             c.BurstCount = Math.Max(1, c.BurstCount);
             c.BurstIntervalSeconds = NonNegative(c.BurstIntervalSeconds);

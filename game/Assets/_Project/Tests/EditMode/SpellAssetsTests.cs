@@ -41,13 +41,13 @@ namespace HexFall.UI.Tests
         }
 
         [TestCase(0f, 18)]
-        [TestCase(0.5f, 32)]
-        [TestCase(1f, 45)]
-        public void FireCurveGivesTheOriginalChargedDamage(float charge, int expected) =>
+        [TestCase(0.5f, 27)]
+        [TestCase(1f, 36)]
+        public void FireCurveGivesTheTunedChargedDamage(float charge, int expected) =>
             Assert.AreEqual(expected, ChargeDamage.Damage(Load("Fire").ToCastConfig().Sanitized(), charge));
 
         [Test]
-        public void FireThroughTheActionMachineDoes18OnATapAnd45AtFullCharge()
+        public void FireThroughTheActionMachineDoes18OnATapAnd36AtFullCharge()
         {
             var damages = new System.Collections.Generic.List<int>();
             var machine = new HexFall.Player.Actions.ActionMachine(
@@ -66,7 +66,7 @@ namespace HexFall.UI.Tests
             machine.Tick(release, 5.4f);
             for (var i = 1; i <= 100; i++) machine.Tick(none, 5.4f + i * 0.02f);
 
-            CollectionAssert.AreEqual(new[] { 18, 45 }, damages);
+            CollectionAssert.AreEqual(new[] { 18, 36 }, damages);
         }
 
         [Test]
@@ -79,11 +79,13 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(18, fire.Charge.baseDamage);
             Assert.AreEqual(2.5f, fire.Charge.constantMultiplier, 1e-4f);
             Assert.AreEqual(1f, fire.Charge.damageCurve.Evaluate(0f), 1e-4f);
-            Assert.AreEqual(1.75f, fire.Charge.damageCurve.Evaluate(0.5f), 1e-3f);
-            Assert.AreEqual(2.5f, fire.Charge.damageCurve.Evaluate(1f), 1e-4f);
+            Assert.AreEqual(1.5f, fire.Charge.damageCurve.Evaluate(0.5f), 1e-3f);
+            Assert.AreEqual(2f, fire.Charge.damageCurve.Evaluate(1f), 1e-4f);
             Assert.AreEqual(0.6f, fire.CooldownSeconds, 1e-4f);
-            Assert.AreEqual(26f, fire.Projectile.speed, 1e-4f);
-            Assert.That(fire.Projectile.gravity, Is.InRange(0.5f, 4f), "a slight drop");
+            Assert.AreEqual(42f, fire.Projectile.speed, 1e-4f);
+            Assert.AreEqual(0.1f, fire.Projectile.weight, 1e-4f, "a slight drop");
+            Assert.AreEqual(0f, fire.Projectile.drag, 1e-4f);
+            Assert.AreEqual(1.4f, fire.Charge.speedScaleAtMax, 1e-4f);
             Assert.AreEqual(0f, fire.Projectile.curveDegreesPerSecond);
             Assert.AreEqual(1f, fire.Projectile.sizeScale, 1e-4f, "the size comes from the charge feedback");
             Assert.AreEqual(3f, fire.Projectile.lifetimeSeconds, 1e-4f);
@@ -102,8 +104,9 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(8, earth.Damage);
             Assert.AreEqual(0.6f, earth.Projectile.sizeScale, 1e-4f);
             Assert.AreEqual(0.7f, earth.CooldownSeconds, 1e-4f);
-            Assert.AreEqual(34f, earth.Projectile.speed, 1e-4f);
-            Assert.That(earth.Projectile.gravity, Is.InRange(3f, 10f), "a drop");
+            Assert.AreEqual(20f, earth.Projectile.speed, 1e-4f);
+            Assert.AreEqual(1f, earth.Projectile.weight, 1e-4f, "falls like a normal object");
+            Assert.AreEqual(0.3f, earth.Projectile.drag, 1e-4f);
             Assert.AreEqual(2.5f, earth.Projectile.lifetimeSeconds, 1e-4f);
             Assert.Greater(earth.Color.r, earth.Color.g);
             Assert.Greater(earth.Color.g, earth.Color.b);
@@ -122,6 +125,47 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(0.6f, water.Channel.cooldownPerChannelSecond, 1e-4f);
             Assert.Greater(water.Color.b, water.Color.r);
             Assert.Greater(water.Color.b, 0.7f);
+        }
+
+        [Test]
+        public void ProjectileSpeedAndWeightOrderTheSpellsFireFastestEarthSlowestAndHeaviest()
+        {
+            var fire = Load("Fire").Projectile;
+            var baseBolt = Load("Base").Projectile;
+            var earth = Load("Earth").Projectile;
+            Assert.Greater(fire.speed, baseBolt.speed);
+            Assert.Greater(baseBolt.speed, earth.speed);
+            Assert.Greater(earth.weight, fire.weight);
+            Assert.Greater(fire.weight, 0f);
+            Assert.AreEqual(0f, baseBolt.weight, 1e-6f);
+            Assert.AreEqual(30f, baseBolt.speed, 1e-4f);
+            Assert.AreEqual(0f, baseBolt.drag, 1e-6f);
+        }
+
+        [Test]
+        public void WaterIsABeamSoItsProjectileSettingsStayWeightless()
+        {
+            var water = Load("Water");
+            Assert.AreEqual(CastPattern.Channel, water.Pattern);
+            Assert.AreEqual(0f, water.Projectile.weight, 1e-6f);
+            Assert.AreEqual(0f, water.Projectile.drag, 1e-6f);
+        }
+
+        [Test]
+        public void EarthStonesStillReachFifteenToTwentyMetersBeforeTheyExpire()
+        {
+            var p = Load("Earth").Projectile;
+            var flight = new ProjectileFlight(Vector3.zero, new Vector3(0f, 0f, p.speed), p.weight * 9.81f, 0f, p.lifetimeSeconds, p.drag);
+            var steps = (int)(p.lifetimeSeconds / 0.02f) + 2;
+            var at15 = float.NaN;
+            for (var i = 0; i < steps && !flight.IsExpired; i++)
+            {
+                flight.Step(0.02f);
+                if (float.IsNaN(at15) && flight.Position.z >= 15f) at15 = flight.Age;
+            }
+            Assert.IsFalse(float.IsNaN(at15), "reaches 15 m of horizontal travel");
+            Assert.Less(at15, p.lifetimeSeconds, "before the lifetime ends");
+            Assert.Greater(flight.Position.z, 20f, "and carries past 20 m if nothing stops it");
         }
 
         [Test]

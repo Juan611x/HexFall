@@ -18,8 +18,9 @@ MonoBehaviour:
   damage: 8
   cooldownSeconds: 0.7
   projectile:
-    speed: 34
-    gravity: 6
+    speed: 20
+    weight: 1
+    drag: 0.3
     curveDegreesPerSecond: 0
     sizeScale: 0.6
     lifetimeSeconds: 2.5

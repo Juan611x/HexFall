@@ -170,7 +170,8 @@ namespace HexFall.UI.Tests
         {
             Set("cooldownSeconds", p => p.floatValue = float.PositiveInfinity);
             Set("projectile.speed", p => p.floatValue = float.NaN);
-            Set("projectile.gravity", p => p.floatValue = float.PositiveInfinity);
+            Set("projectile.weight", p => p.floatValue = float.PositiveInfinity);
+            Set("projectile.drag", p => p.floatValue = float.NaN);
             Set("projectile.curveDegreesPerSecond", p => p.floatValue = float.NaN);
             Set("projectile.sizeScale", p => p.floatValue = float.NaN);
             Set("projectile.lifetimeSeconds", p => p.floatValue = float.PositiveInfinity);
@@ -186,7 +187,7 @@ namespace HexFall.UI.Tests
 
             foreach (var v in new[]
             {
-                _spell.CooldownSeconds, _spell.Projectile.speed, _spell.Projectile.gravity,
+                _spell.CooldownSeconds, _spell.Projectile.speed, _spell.Projectile.weight, _spell.Projectile.drag,
                 _spell.Projectile.curveDegreesPerSecond, _spell.Projectile.sizeScale,
                 _spell.Projectile.lifetimeSeconds, _spell.Charge.maxChargeSeconds,
                 _spell.Burst.intervalSeconds, _spell.Burst.spreadDegrees,
@@ -199,6 +200,30 @@ namespace HexFall.UI.Tests
             Assert.Greater(_spell.Projectile.sizeScale, 0f);
             Assert.Greater(_spell.Projectile.lifetimeSeconds, 0f);
             Assert.Greater(_spell.Channel.ticksPerSecond, 0f);
+        }
+
+        [Test]
+        public void SanitizeClampsNegativeWeightAndDragToZero()
+        {
+            Set("projectile.weight", p => p.floatValue = -3f);
+            Set("projectile.drag", p => p.floatValue = -0.5f);
+
+            _spell.Sanitize();
+
+            Assert.AreEqual(0f, _spell.Projectile.weight);
+            Assert.AreEqual(0f, _spell.Projectile.drag);
+        }
+
+        [Test]
+        public void SanitizeKeepsAValidWeightAndDrag()
+        {
+            Set("projectile.weight", p => p.floatValue = 1.5f);
+            Set("projectile.drag", p => p.floatValue = 0.3f);
+
+            _spell.Sanitize();
+
+            Assert.AreEqual(1.5f, _spell.Projectile.weight, 1e-5f);
+            Assert.AreEqual(0.3f, _spell.Projectile.drag, 1e-5f);
         }
     }
 }
