@@ -20,10 +20,57 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void RejectsACountOutsideThreeToFour()
+        public void RejectsACountOutsideThreeToEight()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => Make(count: 2));
-            Assert.Throws<ArgumentOutOfRangeException>(() => Make(count: 5));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Make(count: 9));
+            Assert.AreEqual(6, Make(count: 6).Currents.Count);
+            Assert.AreEqual(8, Make(count: 8).Currents.Count);
+        }
+
+        // ---- six currents over the wider band (T6c) ----------------------------------------------------------------
+
+        [Test]
+        public void DefaultsAreSixCurrentsOverTheWideBand()
+        {
+            var scheduler = new WindCurrentScheduler(new Random(2));
+            Assert.AreEqual(6, scheduler.Currents.Count);
+
+            float min = 0f, max = 0f;
+            for (int step = 0; step < 3000; step++)
+            {
+                scheduler.Tick(0.05f);
+                foreach (var c in scheduler.Currents)
+                {
+                    min = Math.Min(min, c.Height);
+                    max = Math.Max(max, c.Height);
+                }
+            }
+
+            Assert.LessOrEqual(max, 0.85f);
+            Assert.GreaterOrEqual(min, -0.85f);
+            Assert.Greater(max, 0.8f, "reaches the top of the band");
+            Assert.Less(min, -0.8f, "reaches the bottom of the band");
+        }
+
+        [Test]
+        public void SixFastCurrentsKeepTheirHeightsApartAndTheirExpiriesApart()
+        {
+            for (int seed = 1; seed <= 20; seed++)
+            {
+                var scheduler = new WindCurrentScheduler(new Random(seed), 6, -0.85f, 0.85f, 0.22f, 12f, 0.6f, 0.8f, 0.06f);
+                for (int step = 0; step < 1500; step++)
+                {
+                    scheduler.Tick(1f / 60f);
+                    var heights = scheduler.Currents.Select(c => c.Height).OrderBy(x => x).ToArray();
+                    for (int i = 1; i < heights.Length; i++)
+                        Assert.Greater(heights[i] - heights[i - 1], 0.05f, "seed " + seed + " step " + step + ": heights apart");
+                }
+
+                var remaining = scheduler.Currents.Select(c => c.Lifetime * (1f - c.Progress)).OrderBy(x => x).ToArray();
+                for (int i = 1; i < remaining.Length; i++)
+                    Assert.Greater(remaining[i] - remaining[i - 1], 0.02f, "seed " + seed + ": expiries apart");
+            }
         }
 
         [Test]
@@ -210,6 +257,85 @@ namespace HexFall.UI.Tests
                 Assert.GreaterOrEqual(c.Height, -0.6f);
                 Assert.LessOrEqual(c.Height, 0.6f);
             }
+        }
+
+        // ---- fast currents, draining and the initial expiry gap (T6b) -------------------------------------------------
+
+        private static WindCurrentScheduler MakeFast(int seed, int count = 4)
+        {
+            return new WindCurrentScheduler(new Random(seed), count, -0.6f, 0.6f, 0.3f, 12f, 0.6f, 0.8f);
+        }
+
+        [Test]
+        public void InitialExpiriesStayApartUsingTheRemainingTimeNotTheFullLifetime()
+        {
+            for (int seed = 1; seed <= 40; seed++)
+            {
+                var scheduler = MakeFast(seed);
+
+                var remaining = scheduler.Currents.Select(c => c.Lifetime * (1f - c.Progress)).OrderBy(x => x).ToArray();
+                for (int i = 1; i < remaining.Length; i++) // 0.1 s is the target; late phases leave little room to pick, so 0.05 s is enforced
+                    Assert.GreaterOrEqual(remaining[i] - remaining[i - 1], 0.05f, "seed " + seed);
+            }
+        }
+
+        [Test]
+        public void FastLifetimesBirthSeveralCurrentsDuringTheGuardWindow()
+        {
+            for (int seed = 1; seed <= 20; seed++)
+            {
+                var scheduler = MakeFast(seed);
+                var heights = scheduler.Currents.Select(c => c.Height).ToArray();
+                int births = 0;
+                for (int step = 0; step < 24; step++) // 24 / 60 s = the 0.4 s guard
+                {
+                    scheduler.Tick(1f / 60f);
+                    for (int i = 0; i < heights.Length; i++)
+                    {
+                        if (scheduler.Currents[i].Height == heights[i]) continue;
+                        heights[i] = scheduler.Currents[i].Height;
+                        births++;
+                    }
+                }
+
+                Assert.GreaterOrEqual(births, 2, "seed " + seed);
+            }
+        }
+
+        [Test]
+        public void StopSpawningLetsLiveCurrentsFinishWithoutRespawning()
+        {
+            var scheduler = MakeFast(3);
+            scheduler.Tick(0.1f);
+            var heights = scheduler.Currents.Select(c => c.Height).ToArray();
+            Assert.IsFalse(scheduler.Draining);
+            Assert.IsFalse(scheduler.IsIdle);
+
+            scheduler.StopSpawning();
+            Assert.IsTrue(scheduler.Draining);
+            float last = scheduler.Currents.Max(c => c.Progress);
+            for (int step = 0; step < 120; step++)
+            {
+                scheduler.Tick(1f / 60f);
+                for (int i = 0; i < heights.Length; i++)
+                    Assert.AreEqual(heights[i], scheduler.Currents[i].Height, "no respawn of current " + i);
+                Assert.GreaterOrEqual(scheduler.Currents.Max(c => c.Progress), last - 1e-6f);
+                last = scheduler.Currents.Max(c => c.Progress);
+            }
+
+            Assert.IsTrue(scheduler.IsIdle, "everything expired after 2 s");
+            Assert.IsTrue(scheduler.Currents.All(c => c.Progress == 1f));
+        }
+
+        [Test]
+        public void ADrainingSchedulerIsNotIdleWhileAnyCurrentIsAlive()
+        {
+            var scheduler = MakeFast(5);
+            scheduler.StopSpawning();
+
+            scheduler.Tick(0.05f);
+
+            Assert.IsFalse(scheduler.IsIdle);
         }
 
         [Test]

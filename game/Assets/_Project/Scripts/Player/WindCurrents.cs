@@ -7,8 +7,10 @@ namespace HexFall.Player
 {
     // Horizontal wind currents wrapping the air shield: one band renderer per current (pooled in the prefab), all
     // sharing one material. WindCurrentScheduler decides heights, tilts and lifetimes, WindCurrentArc turns a
-    // current's life progress into a travelling arc, and the shield build gates the whole set so the currents only
-    // show once the shield is built and fade while it assembles or disassembles. MagicShield drives Step each frame.
+    // current's life progress into a travelling arc, and the shield build gates the set open while it assembles.
+    // Currents are fast and short-lived but dissipate slowly: once the shield starts to disassemble no new current
+    // spawns (the scheduler drains), the live ones keep their own fade and outlast the sphere a little (IsLingering)
+    // until they are transparent. MagicShield drives Step each frame, also after the sphere itself is gone.
     // The rings live in the shield's local space (sphere radius 0.5); per-current values go through a
     // MaterialPropertyBlock so the material stays shared.
     public class WindCurrents : MonoBehaviour
@@ -19,6 +21,13 @@ namespace HexFall.Player
         [SerializeField] private float sphereRadius = 0.5f;
         [SerializeField] private float sweepTurns = 1.1f;
         [SerializeField] private float maxArcLength = 0.4f;
+        [SerializeField] private float minLifetime = 0.6f;
+        [SerializeField] private float maxLifetime = 0.8f;
+        [SerializeField] private float minHeight = -0.85f; // band of heights in sphere-radius units
+        [SerializeField] private float maxHeight = 0.85f;
+        [SerializeField] private float minHeightGap = 0.22f;
+        [SerializeField] private float maxTiltDegrees = 12f;
+        [SerializeField] private float minExpiryGap = 0.06f; // six currents in 0.6-0.8 s need a tighter gap than 0.1 s
 
         private static readonly int HeadId = Shader.PropertyToID("_Head");
         private static readonly int TailId = Shader.PropertyToID("_Tail");
@@ -34,7 +43,12 @@ namespace HexFall.Player
         private float[] _lastHeight;
         private float[] _lastProgress;
 
+        private float _gate;
+
         public float BuildProgress { get; private set; }
+
+        // The sphere is gone (no more spawns) but some current is still fading out.
+        public bool IsLingering => _scheduler != null && _scheduler.Draining && !_scheduler.IsIdle;
 
         public IReadOnlyList<WindCurrentState> States
         {
@@ -56,6 +70,7 @@ namespace HexFall.Player
             rings = ringRenderers;
             _random = random;
             _scheduler = null;
+            _gate = 0f;
             Hide();
         }
 
@@ -63,6 +78,7 @@ namespace HexFall.Player
         public void Restart()
         {
             _scheduler = null;
+            _gate = 0f;
             EnsureScheduler();
         }
 
@@ -73,14 +89,18 @@ namespace HexFall.Player
                 if (ring != null) ring.enabled = false;
         }
 
-        // Advance the currents by deltaTime and show them for the shield's current build progress.
-        public void Step(float deltaTime, float buildProgress)
+        // Advance the currents by deltaTime. While the shield is built the build progress gates them open; once the shield is
+        // `draining` (disassembling or gone) no new current spawns and the gate stays where it was, so the live
+        // currents fade out on their own instead of vanishing with the sphere.
+        public void Step(float deltaTime, float buildProgress, bool draining = false)
         {
             EnsureScheduler();
             BuildProgress = buildProgress;
+            if (draining) _scheduler.StopSpawning();
+            else _gate = WindCurrentArc.Gate(buildProgress);
             _scheduler.Tick(deltaTime);
 
-            float gate = WindCurrentArc.Gate(buildProgress);
+            float gate = _gate;
             int count = Math.Min(rings.Length, _scheduler.Currents.Count);
             for (int i = 0; i < count; i++)
             {
@@ -111,9 +131,9 @@ namespace HexFall.Player
         {
             float scale = WindCurrentArc.RingRadius(state.Height, sphereRadius) / MeshRadius;
             ring.localPosition = new Vector3(0f, state.Height * sphereRadius, 0f);
-            ring.localScale = new Vector3(scale, 1f, scale);
+            ring.localScale = new Vector3(scale, WindCurrentArc.BandScaleY(state.Height), scale);
             var axis = Quaternion.Euler(0f, axisDegrees, 0f) * Vector3.right; // a random horizontal axis
-            ring.localRotation = Quaternion.AngleAxis(state.TiltDegrees, axis);
+            ring.localRotation = Quaternion.AngleAxis(state.TiltDegrees * WindCurrentArc.TiltScale(state.Height), axis);
         }
 
         // A current just respawned: it gets its own start position on the ring, tilt axis and noise seed.
@@ -131,8 +151,9 @@ namespace HexFall.Player
 
             _random = _random ?? new Random();
             _block = _block ?? new MaterialPropertyBlock();
-            int count = Mathf.Clamp(rings.Length, 3, 4);
-            _scheduler = new WindCurrentScheduler(_random, count, -0.6f, 0.6f, 0.3f, 12f, 1.2f, 2.2f);
+            int count = Mathf.Clamp(rings.Length, 3, 8);
+            _scheduler = new WindCurrentScheduler(_random, count, minHeight, maxHeight, minHeightGap, maxTiltDegrees,
+                minLifetime, maxLifetime, minExpiryGap);
             _startTurn = new float[count];
             _tiltAxisDegrees = new float[count];
             _seed = new float[count];

@@ -66,7 +66,8 @@ namespace HexFall.Player
 
         private void Update()
         {
-            if (!_renderer.enabled) return;
+            bool lingering = currents != null && currents.IsLingering; // currents outlive the sphere a little
+            if (!_renderer.enabled && !lingering) return;
             var t = Time.time - _startedAt;
             if (wisps != null && wisps.isEmitting && !WispsEmitting(t, _holdSeconds))
                 wisps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
@@ -74,14 +75,22 @@ namespace HexFall.Player
         }
 
         // Pushes the build state for `elapsed` seconds since Flash to the renderer and the wind currents (which advance by
-        // `deltaTime`). Returns false (and hides the
-        // renderer) once the shield has fully disassembled.
+        // `deltaTime`). Returns false (and hides the renderer) once the shield has fully disassembled; the currents
+        // keep being stepped (draining, no new spawns) so the live ones fade out after the sphere is gone.
         public bool Apply(float elapsed, float deltaTime = 0f)
         {
-            if (_shieldBuild == null || _shieldBuild.IsDone(elapsed))
+            if (_shieldBuild == null)
             {
                 _renderer.enabled = false;
                 if (currents != null) currents.Hide();
+                return false;
+            }
+
+            var phase = _shieldBuild.PhaseAt(elapsed);
+            if (phase == ShieldBuildPhase.Done)
+            {
+                _renderer.enabled = false;
+                if (currents != null) currents.Step(deltaTime, 0f, true);
                 return false;
             }
 
@@ -91,7 +100,7 @@ namespace HexFall.Player
                 color.a = Mathf.Clamp01(_baseColor.a * Mathf.Lerp(1f, deflectBoost, progress));
             _block.SetColor(BaseColor, color);
             _block.SetFloat(Build, progress);
-            if (currents != null) currents.Step(deltaTime, progress);
+            if (currents != null) currents.Step(deltaTime, progress, phase >= ShieldBuildPhase.Disassembling);
             _renderer.SetPropertyBlock(_block);
             return true;
         }
