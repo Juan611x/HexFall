@@ -6,6 +6,8 @@
         "HexFall.Surfaces",
         "HexFall.Player",
         "HexFall.World",
+        "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
