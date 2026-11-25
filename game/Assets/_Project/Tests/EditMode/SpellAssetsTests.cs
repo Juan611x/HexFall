@@ -52,7 +52,7 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(26f, fire.Projectile.speed, 1e-4f);
             Assert.That(fire.Projectile.gravity, Is.InRange(0.5f, 4f), "a slight drop");
             Assert.AreEqual(0f, fire.Projectile.curveDegreesPerSecond);
-            Assert.AreEqual(1.1f, fire.Projectile.sizeScale, 1e-4f);
+            Assert.AreEqual(1f, fire.Projectile.sizeScale, 1e-4f, "the size comes from the charge feedback");
             Assert.AreEqual(3f, fire.Projectile.lifetimeSeconds, 1e-4f);
             Assert.Greater(fire.Color.r, 0.8f);
             Assert.Less(fire.Color.b, 0.3f);

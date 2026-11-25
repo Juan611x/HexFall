@@ -18,5 +18,7 @@ namespace HexFall.Player.Spells
         void Release(float now, ICastSink sink);
         void Tick(float now, ICastSink sink);
         void Cancel(float now, ICastSink sink);
+        // 0..1 progress of a charge in progress; 0 for patterns that do not charge.
+        float ChargeLevel(float now);
     }
 }

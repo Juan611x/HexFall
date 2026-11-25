@@ -52,10 +52,10 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void ChargingAndChannellingReuseTheAttackAnimation()
+        public void ChannellingReusesTheAttackAnimationAndChargingHasItsOwnState()
         {
             var bridge = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath).GetComponent<ActionAnimatorBridge>();
-            Assert.AreEqual("Attack", bridge.StateNameFor(ActionStateId.Charging));
+            Assert.AreEqual("Charge", bridge.StateNameFor(ActionStateId.Charging));
             Assert.AreEqual("Attack", bridge.StateNameFor(ActionStateId.Channelling));
         }
 

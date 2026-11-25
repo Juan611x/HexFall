@@ -15,6 +15,8 @@ namespace HexFall.Player.Spells
 
         public bool IsBusy => false;
 
+        public float ChargeLevel(float now) => 0f;
+
         public void Press(float now, ICastSink sink)
         {
             sink.StartCooldown(now, _c.CooldownSeconds);
@@ -36,6 +38,9 @@ namespace HexFall.Player.Spells
 
         public bool IsBusy => _charging;
 
+        public float ChargeLevel(float now) =>
+            _charging ? ChargeFeedback.Level(now - _start, _c.MaxChargeSeconds) : 0f;
+
         public void Press(float now, ICastSink sink)
         {
             _charging = true;
@@ -46,8 +51,7 @@ namespace HexFall.Player.Spells
         {
             if (!_charging) return;
             _charging = false;
-            var held = Math.Max(0f, now - _start);
-            var charge = _c.MaxChargeSeconds <= 0f ? 1f : Math.Min(1f, held / _c.MaxChargeSeconds);
+            var charge = ChargeFeedback.Level(now - _start, _c.MaxChargeSeconds);
             var damage = (int)Math.Round(_c.MinDamage + (_c.MaxDamage - _c.MinDamage) * charge,
                 MidpointRounding.AwayFromZero);
             // State and cooldown advance before the event so a throwing subscriber cannot re-fire or skip it.
@@ -71,6 +75,8 @@ namespace HexFall.Player.Spells
         public BurstPattern(CastConfig c) => _c = c;
 
         public bool IsBusy => _active;
+
+        public float ChargeLevel(float now) => 0f;
 
         public void Press(float now, ICastSink sink)
         {
@@ -126,6 +132,8 @@ namespace HexFall.Player.Spells
         public ChannelPattern(CastConfig c) => _c = c;
 
         public bool IsBusy => _active;
+
+        public float ChargeLevel(float now) => 0f;
 
         public void Press(float now, ICastSink sink)
         {

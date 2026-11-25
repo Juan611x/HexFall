@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HexFall.Player.Actions;
+using HexFall.Player.Spells;
 using UnityEngine;
 
 namespace HexFall.Player
@@ -28,6 +29,9 @@ namespace HexFall.Player
         // Resolved by name so a reordered controller still targets the right layer.
         public const string UpperBodyLayerName = "UpperBody";
 
+        // Float parameter driving the speed of the Charge state: 1 plays the wind-up, 0 holds the pose.
+        public const string ChargeSpeedParameter = "ChargeSpeed";
+
         [SerializeField] private float crossFadeSeconds = 0.1f;
         [SerializeField] private StateMapping[] stateMappings =
         {
@@ -35,7 +39,7 @@ namespace HexFall.Player
             new StateMapping(ActionStateId.Attack, "Attack"),
             new StateMapping(ActionStateId.Parry, "Parry"),
             new StateMapping(ActionStateId.ParryEmpty, "Parry"),
-            new StateMapping(ActionStateId.Charging, "Attack"),
+            new StateMapping(ActionStateId.Charging, "Charge"),
             new StateMapping(ActionStateId.Channelling, "Attack"),
         };
 
@@ -43,12 +47,19 @@ namespace HexFall.Player
         private PlayerCombat _combat;
         private ActionMachine _subscribed;
         private int _upperBodyLayer;
+        private int _chargeSpeedId;
+        private bool _hasChargeSpeed;
+        private int _windUpHash;
+        private float _windUpHold;
+        private bool _holdingWindUp;
 
         private void Awake()
         {
             _animator = GetComponent<Animator>();
             _combat = GetComponent<PlayerCombat>();
             _upperBodyLayer = _animator.GetLayerIndex(UpperBodyLayerName);
+            _chargeSpeedId = Animator.StringToHash(ChargeSpeedParameter);
+            _hasChargeSpeed = HasParameter(_chargeSpeedId);
             if (_upperBodyLayer < 0) Debug.LogWarning($"{name}: animator has no '{UpperBodyLayerName}' layer.", this);
         }
 
@@ -91,10 +102,64 @@ namespace HexFall.Player
             _subscribed = null;
         }
 
+        // While a charge is held: once the wind-up has played to the spell's hold time, freeze the pose
+        // (speed 0) on exactly that time. Leaving Charging resumes the speed, so the throw plays normally.
+        private void Update() => HoldWindUp();
+
+        internal void HoldWindUp()
+        {
+            if (_upperBodyLayer < 0 || _windUpHash == 0) return;
+            if (_combat == null || _combat.Machine == null || _combat.Machine.Current != ActionStateId.Charging) return;
+            if (_holdingWindUp)
+            {
+                // Re-pinned every frame so a state without the speed parameter holds too.
+                _animator.Play(_windUpHash, _upperBodyLayer, Mathf.Clamp01(_windUpHold));
+                return;
+            }
+            var info = _animator.IsInTransition(_upperBodyLayer)
+                ? _animator.GetNextAnimatorStateInfo(_upperBodyLayer)
+                : _animator.GetCurrentAnimatorStateInfo(_upperBodyLayer);
+            if (info.shortNameHash != _windUpHash || !ChargeFeedback.WindUpReached(info.normalizedTime, _windUpHold)) return;
+            _holdingWindUp = true;
+            SetChargeSpeed(0f);
+            _animator.Play(_windUpHash, _upperBodyLayer, Mathf.Clamp01(_windUpHold));
+        }
+
+        // The Charge state of a spell: its own windUpState when the layer has it, else the mapped one.
+        private string ChargeStateFor(SpellDefinition spell)
+        {
+            var mapped = StateNameFor(ActionStateId.Charging);
+            var own = spell != null ? spell.Charge.windUpState : null;
+            if (string.IsNullOrEmpty(own) || own == mapped) return mapped;
+            return _animator.HasState(_upperBodyLayer, Animator.StringToHash(own)) ? own : mapped;
+        }
+
+        private void SetChargeSpeed(float value)
+        {
+            if (_hasChargeSpeed) _animator.SetFloat(_chargeSpeedId, value);
+        }
+
+        private bool HasParameter(int hash)
+        {
+            foreach (var parameter in _animator.parameters)
+                if (parameter.nameHash == hash) return true;
+            return false;
+        }
+
         private void OnStateChanged(ActionStateId from, ActionStateId to)
         {
             if (_upperBodyLayer < 0) return;
+            _holdingWindUp = false;
+            _windUpHash = 0;
+            SetChargeSpeed(1f);
             var stateName = StateNameFor(to);
+            if (to == ActionStateId.Charging && _combat != null)
+            {
+                stateName = ChargeStateFor(_combat.ActiveSpell);
+                _windUpHash = Animator.StringToHash(stateName);
+                var spell = _combat.ActiveSpell;
+                _windUpHold = spell != null ? spell.Charge.windUpHoldNormalized : 0.5f;
+            }
             if (stateName == null)
             {
                 Debug.LogWarning($"[ActionAnimatorBridge] No animator state mapped for '{to}'.", this);

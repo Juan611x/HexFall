@@ -44,6 +44,9 @@ namespace HexFall.Player.Actions
         // A charge or a channel is in progress and waits for the attack input to end.
         public bool IsHolding => Current == ActionStateId.Charging || Current == ActionStateId.Channelling;
 
+        // 0..1 progress of the charge in progress; 0 in any other state.
+        public float ChargeLevel(float now) => Current == ActionStateId.Charging ? _caster.ChargeLevel(now) : 0f;
+
         private bool InParry => Current == ActionStateId.Parry || Current == ActionStateId.ParryEmpty;
 
         // True while the wizard turns to the crosshair.

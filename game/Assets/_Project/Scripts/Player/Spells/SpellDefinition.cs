@@ -23,6 +23,22 @@ namespace HexFall.Player.Spells
             public float maxChargeSeconds;
             public int minDamage;
             public int maxDamage;
+
+            [Header("Feedback")]
+            [Tooltip("Projectile and orb size multiplier at no charge.")] public float minSizeScale;
+            [Tooltip("Projectile and orb size multiplier at full charge.")] public float maxSizeScale;
+            [Tooltip("Colour the spell colour blends toward as the charge grows.")] public Color fullChargeColor;
+            [Tooltip("How far toward the full-charge colour a full charge goes: 0 keeps the spell colour, 1 reaches it.")]
+            public float colorBlend;
+            [Tooltip("Projectile speed multiplier at full charge (1 = no change).")] public float speedScaleAtMax;
+            [Tooltip("Show a charging orb at the muzzle while the charge is held.")] public bool showOrb;
+            [Tooltip("Orb diameter in metres at size scale 1.")] public float orbSize;
+
+            [Header("Animation")]
+            [Tooltip("UpperBody animator state played while charging. An unknown name falls back to the Charging mapping.")]
+            public string windUpState;
+            [Tooltip("Normalized time of that state where the pose is held while the charge lasts.")]
+            public float windUpHoldNormalized;
         }
 
         [Serializable]
@@ -69,6 +85,8 @@ namespace HexFall.Player.Spells
         [SerializeField] private ChargeSettings charge = new ChargeSettings
         {
             maxChargeSeconds = 1.2f, minDamage = 18, maxDamage = 45,
+            minSizeScale = 1f, maxSizeScale = 1f, fullChargeColor = Color.white, colorBlend = 0f, speedScaleAtMax = 1f,
+            showOrb = true, orbSize = 0.25f, windUpState = "Charge", windUpHoldNormalized = 0.5f,
         };
         [SerializeField] private BurstSettings burst = new BurstSettings
         {
@@ -91,6 +109,23 @@ namespace HexFall.Player.Spells
         public BurstSettings Burst => burst;
         public ChannelSettings Channel => channel;
         public SpellEffects Effects => effects;
+
+        public ChargeFeedbackConfig ToFeedbackConfig() => new ChargeFeedbackConfig
+        {
+            MinScale = charge.minSizeScale,
+            MaxScale = charge.maxSizeScale,
+            ColorBlend = charge.colorBlend,
+            FullColor = ToRgb(charge.fullChargeColor),
+            SpeedScaleAtMax = charge.speedScaleAtMax,
+        };
+
+        // Size, colour and speed of the projectile (or orb) at a charge level. Only a Charged spell changes
+        // with charge; every other pattern keeps its own colour and size.
+        public ChargeLook LookAtCharge(float level) => pattern == CastPattern.Charged
+            ? ChargeFeedback.Evaluate(ToFeedbackConfig(), ToRgb(color), level)
+            : new ChargeLook(1f, ToRgb(color), 1f);
+
+        private static Rgb ToRgb(Color c) => new Rgb(c.r, c.g, c.b);
 
         public CastConfig ToCastConfig() => new CastConfig
         {
@@ -129,6 +164,12 @@ namespace HexFall.Player.Spells
             charge.maxChargeSeconds = Mathf.Max(0f, Finite(charge.maxChargeSeconds));
             charge.minDamage = Mathf.Max(0, charge.minDamage);
             charge.maxDamage = Mathf.Max(charge.minDamage, charge.maxDamage);
+            charge.minSizeScale = Mathf.Max(0.01f, Finite(charge.minSizeScale));
+            charge.maxSizeScale = Mathf.Max(0.01f, Finite(charge.maxSizeScale));
+            charge.colorBlend = Mathf.Clamp01(Finite(charge.colorBlend));
+            charge.speedScaleAtMax = Mathf.Max(0.01f, Finite(charge.speedScaleAtMax));
+            charge.orbSize = Mathf.Max(0f, Finite(charge.orbSize));
+            charge.windUpHoldNormalized = Mathf.Clamp01(Finite(charge.windUpHoldNormalized));
 
             burst.count = Mathf.Max(1, burst.count);
             burst.intervalSeconds = Mathf.Max(0f, Finite(burst.intervalSeconds));
