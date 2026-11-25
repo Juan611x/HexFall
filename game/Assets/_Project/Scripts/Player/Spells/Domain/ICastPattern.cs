@@ -20,5 +20,9 @@ namespace HexFall.Player.Spells
         void Cancel(float now, ICastSink sink);
         // 0..1 progress of a charge in progress; 0 for patterns that do not charge.
         float ChargeLevel(float now);
+        // True while a held cast waits for its pose before it really starts (channels with a wind-up).
+        bool IsWindingUp => false;
+        // The adapter reports the cast pose reached; only a pattern that is winding up reacts.
+        void PoseReached(float now, ICastSink sink) { }
     }
 }

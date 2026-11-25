@@ -44,6 +44,17 @@ namespace HexFall.Player.Actions
         // A charge or a channel is in progress and waits for the attack input to end.
         public bool IsHolding => Current == ActionStateId.Charging || Current == ActionStateId.Channelling;
 
+        // A channel was pressed and waits for its cast pose: nothing is cast yet.
+        public bool IsWindingUp => Current == ActionStateId.Channelling && _caster.IsWindingUp;
+
+        // The animation reached the cast pose: a channel that is winding up starts now. Ignored otherwise.
+        public void PoseReached(float now)
+        {
+            if (!IsWindingUp) return;
+            _now = now;
+            _caster.PoseReached(now);
+        }
+
         // 0..1 progress of the charge in progress; 0 in any other state.
         public float ChargeLevel(float now) => Current == ActionStateId.Charging ? _caster.ChargeLevel(now) : 0f;
 

@@ -27,6 +27,9 @@ namespace HexFall.Player.Spells
         public float ChannelTicksPerSecond;
         public int ChannelDamagePerTick;
         public float ChannelCooldownPerSecond;
+        // > 0: the press only starts a wind-up and the channel begins when the pose is reported, or after this
+        // many seconds if it never is. 0 (or invalid): the channel starts on press.
+        public float ChannelWindUpTimeoutSeconds;
 
         // Clamped copy so patterns can trust their inputs (bad asset data must not crash a cast).
         public CastConfig Sanitized()
@@ -46,6 +49,7 @@ namespace HexFall.Player.Spells
                 ? 1f : c.ChannelTicksPerSecond;
             c.ChannelDamagePerTick = Math.Max(0, c.ChannelDamagePerTick);
             c.ChannelCooldownPerSecond = NonNegative(c.ChannelCooldownPerSecond);
+            c.ChannelWindUpTimeoutSeconds = NonNegative(c.ChannelWindUpTimeoutSeconds);
             return c;
         }
 

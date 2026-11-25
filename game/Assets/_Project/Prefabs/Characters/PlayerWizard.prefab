@@ -10180,6 +10180,37 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &3101166989450670849
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8586482954914473356}
+  m_Layer: 0
+  m_Name: StaffOrbAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8586482954914473356
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3101166989450670849}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.39, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1679109109932114234}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3325826499230557467
 GameObject:
   m_ObjectHideFlags: 0
@@ -11566,6 +11597,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6400647988374193843}
+    - targetCorrespondingSourceObject: {fileID: 1856613193108662645, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8586482954914473356}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
       insertIndex: -1
@@ -11621,6 +11655,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8539750460231090093}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1552394099567386511}
   m_SourcePrefab: {fileID: 100100000, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
 --- !u!1 &164397724255835422 stripped
 GameObject:
@@ -12045,6 +12082,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e61dff4bbdc0284dadf48073d5a1235, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HexFall.Player::HexFall.Player.InteractPromptHud
+--- !u!114 &1552394099567386511
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164397724255835422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b689ade617f4dd34bb834a8c395ac092, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HexFall.Player::HexFall.Player.Spells.CastAnchors
+  entries:
+  - id: Muzzle
+    anchor: {fileID: 6374242125366786581}
+  - id: StaffOrb
+    anchor: {fileID: 8586482954914473356}
 --- !u!4 &614423777977665907 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8786601893355691716, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
@@ -12063,6 +12117,11 @@ Transform:
 --- !u!4 &1284712175632938414 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -6963319422789116447, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
+  m_PrefabInstance: {fileID: 1047481681258997839}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1679109109932114234 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1856613193108662645, guid: b0a4d629df87a8240b7c7dffd2ed85b0, type: 3}
   m_PrefabInstance: {fileID: 1047481681258997839}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &3277796272782843707 stripped

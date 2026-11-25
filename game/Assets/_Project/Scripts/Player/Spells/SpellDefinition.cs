@@ -12,7 +12,7 @@ namespace HexFall.Player.Spells
         {
             [Tooltip("Initial speed in m/s.")] public float speed;
             [Tooltip("Weight: a multiplier of the world gravity (Physics.gravity). 0 = no drop, 1 = falls like a normal object, 0.1 = a slight drop.")]
-            [UnityEngine.Serialization.FormerlySerializedAs("gravity")] public float weight;
+            public float weight;
             [Tooltip("Air drag: the fraction of speed lost per second, applied exponentially (v *= exp(-drag x dt)), so it is frame-rate independent. 0 = none.")]
             public float drag;
             [Tooltip("Horizontal yaw curve in degrees per second. 0 = none.")] public float curveDegreesPerSecond;
@@ -30,7 +30,7 @@ namespace HexFall.Player.Spells
             [UnityEngine.Serialization.FormerlySerializedAs("minDamage")] public int baseDamage;
             [Tooltip("Constant: damageMultiplier applies at full charge only. Curve: the damage curve sets the multiplier at every charge.")]
             public ChargeDamageMode damageMode;
-            [Tooltip("Constant mode: multiplier on the base damage at full charge; any lesser charge deals the base damage.")]
+            [Tooltip("Constant mode: multiplier on the base damage at full charge; any lesser charge deals the base damage. A value of 0 (or less) counts as x1.")]
             public float constantMultiplier;
             [Tooltip("Curve mode: x = charge (0 = tap, 1 = full), y = multiplier on the base damage.")]
             public AnimationCurve damageCurve;
@@ -68,6 +68,33 @@ namespace HexFall.Player.Spells
             public int damagePerTick;
             public float rangeMeters;
             [Tooltip("Extra cooldown per second actually channelled.")] public float cooldownPerChannelSecond;
+
+            [Header("Wind-up")]
+            [Tooltip("UpperBody animator state played before the channel starts and held while it lasts. An unknown name falls back to the Channelling mapping.")]
+            public string windUpState;
+            [Tooltip("Normalized time of that state where the pose is held. The channel starts when the pose is reached.")]
+            public float windUpHoldNormalized;
+            [Tooltip("Fallback: the channel starts this long after the press even if the animator never reports the pose; keep it above the time the pose takes to arrive. 0 = no wind-up, the channel starts on press (the default).")]
+            public float windUpTimeoutSeconds;
+        }
+
+        // The held-cast pose of a spell: the animator state to play and freeze at HoldNormalized. Charged spells
+        // read it from their charge settings, Channel spells from their channel settings; other patterns have none.
+        // TimeoutSeconds is only meaningful for a channel (when the cast really starts if the pose is never reported).
+        public readonly struct WindUpPose
+        {
+            public readonly bool Enabled;
+            public readonly string State;
+            public readonly float HoldNormalized;
+            public readonly float TimeoutSeconds;
+
+            public WindUpPose(bool enabled, string state, float holdNormalized, float timeoutSeconds)
+            {
+                Enabled = enabled;
+                State = state;
+                HoldNormalized = holdNormalized;
+                TimeoutSeconds = timeoutSeconds;
+            }
         }
 
         // Optional hooks, all unused for now; consumers must null-check.
@@ -108,8 +135,11 @@ namespace HexFall.Player.Spells
         {
             durationSeconds = 1.5f, ticksPerSecond = 10f, damagePerTick = 4,
             rangeMeters = 20f, cooldownPerChannelSecond = 0.6f,
+            windUpState = "Charge", windUpHoldNormalized = 0.5f, windUpTimeoutSeconds = 0f,
         };
         [SerializeField] private SpellEffects effects;
+        [Tooltip("Where the spell starts from: an id of the wizard's CastAnchors (Muzzle, StaffOrb). Empty or unknown = Muzzle.")]
+        [SerializeField] private string castAnchor = CastAnchors.Muzzle;
 
         public string DisplayName => displayName;
         public Color Color => color;
@@ -121,6 +151,24 @@ namespace HexFall.Player.Spells
         public BurstSettings Burst => burst;
         public ChannelSettings Channel => channel;
         public SpellEffects Effects => effects;
+        public string CastAnchor => string.IsNullOrWhiteSpace(castAnchor) ? CastAnchors.Muzzle : castAnchor;
+
+        public WindUpPose WindUp
+        {
+            get
+            {
+                switch (pattern)
+                {
+                    case CastPattern.Charged:
+                        return new WindUpPose(true, charge.windUpState, charge.windUpHoldNormalized, 0f);
+                    case CastPattern.Channel:
+                        return new WindUpPose(channel.windUpTimeoutSeconds > 0f, channel.windUpState,
+                            channel.windUpHoldNormalized, channel.windUpTimeoutSeconds);
+                    default:
+                        return new WindUpPose(false, null, 0f, 0f);
+                }
+            }
+        }
 
         public ChargeFeedbackConfig ToFeedbackConfig() => new ChargeFeedbackConfig
         {
@@ -156,6 +204,7 @@ namespace HexFall.Player.Spells
             ChannelTicksPerSecond = channel.ticksPerSecond,
             ChannelDamagePerTick = channel.damagePerTick,
             ChannelCooldownPerSecond = channel.cooldownPerChannelSecond,
+            ChannelWindUpTimeoutSeconds = channel.windUpTimeoutSeconds,
         };
 
         private static AnimationCurve FlatCurve() => AnimationCurve.Linear(0f, 1f, 1f, 1f);
@@ -215,6 +264,8 @@ namespace HexFall.Player.Spells
             channel.damagePerTick = Mathf.Max(0, channel.damagePerTick);
             channel.rangeMeters = Mathf.Max(0f, Finite(channel.rangeMeters));
             channel.cooldownPerChannelSecond = Mathf.Max(0f, Finite(channel.cooldownPerChannelSecond));
+            channel.windUpHoldNormalized = Mathf.Clamp01(Finite(channel.windUpHoldNormalized));
+            channel.windUpTimeoutSeconds = Mathf.Max(0f, Finite(channel.windUpTimeoutSeconds));
         }
     }
 }
