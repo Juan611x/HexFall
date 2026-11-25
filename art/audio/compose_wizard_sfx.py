@@ -11,9 +11,10 @@ seed), normalized to about -3 dBFS peak with short fades to avoid clicks:
     ShieldRaise.wav   shimmering swell
     ParryDeflect.wav  bright metallic ping
     ParryPerfect.wav  brighter two-tone ping with a little sparkle
-    Snap.wav          short bright finger snap (the wizard's body sound on a parry press)
     Huff.wav          breathy exhale (the wizard's body sound on an attack press)
     Jump.wav          light breathy hop with a faint upward whoosh (the wizard's body sound on a jump)
+
+The parry-press Snap.wav is not synthesized: it is a real finger snap derived by derive_finger_snap.py.
 """
 
 import math
@@ -172,14 +173,6 @@ def highpass(samples, alpha):
     return out
 
 
-def snap(rng):
-    """Finger snap: a very short bright click, a quick band-passed pop and a tiny low knock."""
-    click = shaped(highpass(noise(0.03, 1.0, rng, 180), 0.35), 0.0003, 0.012)
-    pop = shaped(highpass(lowpass(noise(0.09, 0.8, rng, 55), 0.6), 0.12), 0.0005, 0.03)
-    knock = shaped(thump(420, 160, 0.05, 0.35, 70), 0.0005, 0.02)
-    return finish(mix(0.12, (0.0, click), (0.0, pop), (0.001, knock)))
-
-
 def huff(rng):
     """Breathy exhale: noise through a lowpass whose cutoff falls (a downward formant feel)."""
     n = n_samples(0.3)
@@ -249,7 +242,6 @@ def main(argv):
         "ShieldRaise": shield_raise(),
         "ParryDeflect": parry_deflect(),
         "ParryPerfect": parry_perfect(),
-        "Snap": snap(random.Random(11)),
         "Huff": huff(random.Random(13)),
         "Jump": jump(random.Random(17)),
     }
