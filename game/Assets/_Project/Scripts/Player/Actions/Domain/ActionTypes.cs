@@ -11,13 +11,27 @@ namespace HexFall.Player.Actions
         public readonly bool AttackPressed;
         public readonly bool ParryPressed;
         public readonly bool AttackReleased;
+        // The attack input ended without a release (focus lost, input disabled): a charge or channel
+        // in progress is dropped instead of fired. An idle tick leaves it false, so it never cancels.
+        public readonly bool AttackCancelled;
 
-        public ActionIntent(bool attackPressed, bool parryPressed, bool attackReleased = false)
+        public ActionIntent(bool attackPressed, bool parryPressed, bool attackReleased = false, bool attackCancelled = false)
         {
             AttackPressed = attackPressed;
             ParryPressed = parryPressed;
             AttackReleased = attackReleased;
+            AttackCancelled = attackCancelled;
         }
+    }
+
+    public static class ActionStateRules
+    {
+        // True when the change begins a cast: entering Attack (unless it is the end of a charge),
+        // Charging or Channelling.
+        public static bool StartsCast(ActionStateId from, ActionStateId to) =>
+            (to == ActionStateId.Attack && from != ActionStateId.Charging)
+            || to == ActionStateId.Charging
+            || to == ActionStateId.Channelling;
     }
 
     // Wind-up, aim hold and shield rules of the actions, with the values the wizard ships with.

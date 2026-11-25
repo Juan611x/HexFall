@@ -41,6 +41,9 @@ namespace HexFall.Player.Actions
 
         public bool IsActing => Current != ActionStateId.Ready;
 
+        // A charge or a channel is in progress and waits for the attack input to end.
+        public bool IsHolding => Current == ActionStateId.Charging || Current == ActionStateId.Channelling;
+
         private bool InParry => Current == ActionStateId.Parry || Current == ActionStateId.ParryEmpty;
 
         // True while the wizard turns to the crosshair.
@@ -108,6 +111,16 @@ namespace HexFall.Player.Actions
                 Enter(StateFor(_caster.Pattern), now);
             }
             if (intent.AttackReleased) ReleaseCast(now);
+            else if (intent.AttackCancelled) AbortHold(now);
+        }
+
+        // A hold whose release never came ends without a shot: a charge is lost at no cooldown, a
+        // channel ends with what it already dealt. Safer than firing a shot nobody released.
+        private void AbortHold(float now)
+        {
+            if (!IsHolding) return;
+            CancelCast(now);
+            Enter(ActionStateId.Ready, now);
         }
 
         public HitResult ResolveHit(int damage, float now)

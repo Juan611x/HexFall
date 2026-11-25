@@ -30,10 +30,10 @@ namespace HexFall.Player
             Refresh();
         }
 
-        public void TakeHit(int damage, GameObject source)
+        public void TakeHit(HitInfo hit)
         {
             if (_health.IsDead) return;
-            _lastDamage = _health.TakeDamage(damage);
+            _lastDamage = _health.TakeDamage(hit.Damage);
             DamageFeed.Report(transform.position + Vector3.up * damagePopupHeight, _lastDamage);
             if (_health.IsDead)
             {

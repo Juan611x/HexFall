@@ -29,11 +29,11 @@ namespace HexFall.Player
             Push();
         }
 
-        public void TakeHit(int damage, GameObject source)
+        public void TakeHit(HitInfo hit)
         {
-            var hit = _combat.ResolveHit(damage);
-            _health.TakeDamage(hit.Taken);
-            Debug.Log($"[Player] hit {damage}: {hit.Grade}, took {hit.Taken}, health {_health.Current}/{_health.Max}");
+            var result = _combat.ResolveHit(hit.Damage);
+            _health.TakeDamage(result.Taken);
+            Debug.Log($"[Player] hit {hit.Damage}: {result.Grade}, took {result.Taken}, health {_health.Current}/{_health.Max}");
             if (_health.IsDead)
             {
                 Debug.Log("[Player] defeated; restoring health and shield for testing");
