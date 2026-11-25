@@ -17,6 +17,7 @@ namespace HexFall.Player
         private readonly List<SpellPickup> _inReach = new List<SpellPickup>();
         private readonly List<Vector3> _points = new List<Vector3>();
         private readonly List<SpellPickup> _candidates = new List<SpellPickup>();
+        private bool _disabled;
 
         // The "E" prompt: visible while a pickup that needs Interact is in reach, with the spell it holds.
         public InteractPrompt Prompt { get; private set; }
@@ -28,13 +29,23 @@ namespace HexFall.Player
         private void Awake()
         {
             _combat = GetComponent<PlayerCombat>();
+            EnsureLoadout();
         }
 
         private void Update() => Refresh();
 
+        // Disabled, the interactor offers and swaps nothing, but it remembers what is in reach so that
+        // enabling it again picks up where it left off.
         private void OnDisable()
         {
-            _inReach.Clear();
+            _disabled = true;
+            Refresh();
+        }
+
+        private void OnEnable()
+        {
+            _disabled = false;
+            foreach (var pickup in _inReach.ToArray()) Reach(pickup);
             Refresh();
         }
 
@@ -47,7 +58,13 @@ namespace HexFall.Player
         // A pickup was touched. Holding Base takes its spell at once; otherwise it waits for Interact.
         internal void Reach(SpellPickup pickup)
         {
-            if (!EnsureLoadout() || pickup == null || pickup.Consumed) return;
+            if (pickup == null || pickup.Consumed) return;
+            if (_disabled)
+            {
+                if (!_inReach.Contains(pickup)) _inReach.Add(pickup);
+                return;
+            }
+            if (!EnsureLoadout()) return;
             if (_loadout.Offer(pickup.Spell) == OfferOutcome.Swapped)
             {
                 _combat.SetSpell(_loadout.Current);
@@ -70,6 +87,7 @@ namespace HexFall.Player
         // Swaps with the nearest pickup in reach: the held spell is left in that pickup. False when there is none.
         public bool Interact()
         {
+            if (_disabled) return false;
             Refresh();
             var target = Target();
             if (target == null) return false;
@@ -94,7 +112,7 @@ namespace HexFall.Player
         // The nearest pickup that is still there and holds a spell other than the held one.
         private SpellPickup Target()
         {
-            if (_loadout == null) return null;
+            if (_disabled || !EnsureLoadout()) return null;
             _points.Clear();
             _candidates.Clear();
             foreach (var pickup in _inReach)
@@ -108,13 +126,18 @@ namespace HexFall.Player
             return index < 0 ? null : _candidates[index];
         }
 
-        // The Base spell is whatever PlayerCombat starts with; without one there is no loadout.
+        // The Base spell is whatever PlayerCombat starts with (latched at Awake); without one there is no
+        // loadout. Whatever PlayerCombat holds now is the held spell, even when something else set it.
         private bool EnsureLoadout()
         {
-            if (_loadout != null) return true;
             if (_combat == null) _combat = GetComponent<PlayerCombat>();
-            if (_combat == null || _combat.ActiveSpell == null) return false;
-            _loadout = new SpellLoadout<SpellDefinition>(_combat.ActiveSpell);
+            if (_combat == null) return false;
+            if (_loadout == null)
+            {
+                if (_combat.ActiveSpell == null) return false;
+                _loadout = new SpellLoadout<SpellDefinition>(_combat.ActiveSpell);
+            }
+            _loadout.Sync(_combat.ActiveSpell);
             return true;
         }
     }

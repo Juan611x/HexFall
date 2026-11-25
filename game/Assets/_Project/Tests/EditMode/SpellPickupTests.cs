@@ -41,10 +41,14 @@ namespace HexFall.UI.Tests
         private static void Awake(Component c) =>
             c.GetType().GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance)?.Invoke(c, null);
 
+        private static void Invoke(Component c, string method) =>
+            c.GetType().GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance).Invoke(c, null);
+
         private SpellDefinition NewSpell(string name, Color color)
         {
             var spell = Track(ScriptableObject.CreateInstance<SpellDefinition>());
             spell.name = name;
+            Set(spell, "displayName", name);
             Set(spell, "color", color);
             return spell;
         }
@@ -296,11 +300,13 @@ namespace HexFall.UI.Tests
         {
             var slow = NewSpell("Slow", Color.white);
             Set(slow, "cooldownSeconds", 100f);
-            _combat.SetSpell(slow);
+            NewPickup(slow, Vector3.zero).Reach(_wizard); // Base -> Slow at once
             Assert.IsTrue(_combat.Attack());
             _combat.Machine.Tick(default, Time.time + 1f); // the attack is over, the cooldown runs
 
-            NewPickup(_fire, Vector3.zero).Reach(_wizard);
+            var fire = NewPickup(_fire, Vector3.zero);
+            fire.Reach(_wizard);
+            Assert.IsTrue(_interactor.Interact());
             Assert.AreSame(_fire, _combat.ActiveSpell);
             Assert.IsFalse(_combat.Attack(), "Fire is not castable before the old cooldown ends");
         }
@@ -318,6 +324,145 @@ namespace HexFall.UI.Tests
 
             _combat.Step(Time.time + 0.1f, false); // the attack input is not held
             Assert.IsTrue(_combat.Machine.IsHolding, "a refused press must not turn the scripted hold into one that can be lost");
+        }
+
+        // ---- Reach is counted per collider (T5 advisory a) ----
+
+        private Collider ColliderOnWizard(string name)
+        {
+            var go = Track(new GameObject(name));
+            go.transform.SetParent(_wizard.transform, false);
+            return go.AddComponent<SphereCollider>();
+        }
+
+        [Test]
+        public void ThePickupStaysInReachUntilTheLastColliderOfTheWizardLeaves()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            var hand = ColliderOnWizard("Hand");
+            var foot = ColliderOnWizard("Foot");
+            water.Reach(hand);
+            water.Reach(foot);
+
+            water.Leave(hand);
+            Assert.IsTrue(_interactor.Prompt.Visible, "the foot is still inside");
+            Assert.IsTrue(_interactor.Interact());
+        }
+
+        [Test]
+        public void TheLastColliderLeavingEndsTheReach()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            var hand = ColliderOnWizard("Hand");
+            var foot = ColliderOnWizard("Foot");
+            water.Reach(hand);
+            water.Reach(foot);
+            water.Leave(hand);
+            water.Leave(foot);
+
+            Assert.IsFalse(_interactor.Prompt.Visible);
+            Assert.IsFalse(_interactor.Interact());
+        }
+
+        [Test]
+        public void ACollidersRepeatedEnterCountsOnce()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            var hand = ColliderOnWizard("Hand");
+            water.Reach(hand);
+            water.Reach(hand);
+            water.Leave(hand);
+            Assert.IsFalse(_interactor.Prompt.Visible);
+        }
+
+        // ---- The loadout follows PlayerCombat (T5 advisory b) ----
+
+        [Test]
+        public void TheSpellSetBySomethingElseBecomesTheHeldOneAndBaseStaysBase()
+        {
+            _combat.SetSpell(_fire); // not through the interactor, before any pickup was touched
+            var water = NewPickup(_water, Vector3.zero);
+            water.Reach(_wizard);
+
+            Assert.AreSame(_fire, _combat.ActiveSpell, "holding Fire, so Water needs Interact");
+            Assert.AreSame(_water, _interactor.Prompt.Spell);
+
+            _interactor.Interact();
+            Assert.AreSame(_water, _combat.ActiveSpell);
+            Assert.AreSame(_fire, water.Spell, "Fire was dropped; Base was not the held one");
+        }
+
+        [Test]
+        public void ReturningToBaseThroughSetSpellMakesTheNextPickupSwapAtOnce()
+        {
+            HoldFire();
+            _combat.SetSpell(_base);
+            var water = NewPickup(_water, Vector3.zero);
+            water.Reach(_wizard);
+
+            Assert.AreSame(_water, _combat.ActiveSpell);
+            Assert.IsTrue(water.Consumed);
+            Assert.IsFalse(_interactor.Prompt.Visible);
+        }
+
+        [Test]
+        public void AnExternalSpellChangeRetargetsThePromptOnRefresh()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            water.Reach(_wizard);
+            _combat.SetSpell(_water);
+            _interactor.Refresh();
+            Assert.IsFalse(_interactor.Prompt.Visible, "the pickup holds the spell that is now held");
+        }
+
+        // ---- Disabling and re-enabling the interactor (T5 advisory d) ----
+
+        [Test]
+        public void DisablingTheInteractorHidesThePromptAndEnablingItRestoresTheReach()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            water.Reach(_wizard);
+
+            Invoke(_interactor, "OnDisable");
+            Assert.IsFalse(_interactor.Prompt.Visible);
+            Assert.IsFalse(_interactor.Interact(), "a disabled interactor does not swap");
+
+            Invoke(_interactor, "OnEnable");
+            Assert.IsTrue(_interactor.Prompt.Visible);
+            Assert.AreSame(_water, _interactor.Prompt.Spell);
+            Assert.IsTrue(_interactor.Interact());
+            Assert.AreSame(_water, _combat.ActiveSpell);
+        }
+
+        [Test]
+        public void APickupTouchedWhileTheInteractorIsDisabledIsOfferedWhenItComesBack()
+        {
+            var fire = NewPickup(_fire, Vector3.zero);
+            Invoke(_interactor, "OnDisable");
+            fire.Reach(_wizard);
+            Assert.AreSame(_base, _combat.ActiveSpell);
+            Assert.IsFalse(fire.Consumed);
+
+            Invoke(_interactor, "OnEnable");
+            Assert.AreSame(_fire, _combat.ActiveSpell);
+            Assert.IsTrue(fire.Consumed);
+        }
+
+        [Test]
+        public void LeavingWhileTheInteractorIsDisabledIsRemembered()
+        {
+            HoldFire();
+            var water = NewPickup(_water, Vector3.zero);
+            water.Reach(_wizard);
+            Invoke(_interactor, "OnDisable");
+            water.Leave(_wizard);
+            Invoke(_interactor, "OnEnable");
+            Assert.IsFalse(_interactor.Prompt.Visible);
         }
 
         // ---- Assets ----

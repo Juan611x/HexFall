@@ -13,6 +13,46 @@ namespace HexFall.UI.Tests
 
         private static SpellLoadout<string> NewLoadout() => new SpellLoadout<string>(BaseSpell);
 
+        // ---- Sync with whatever else changes the held spell ----
+
+        [Test]
+        public void SyncFollowsAnExternalChangeAndKeepsBase()
+        {
+            var loadout = NewLoadout();
+            loadout.Sync("fire");
+            Assert.AreEqual("fire", loadout.Current);
+            Assert.AreEqual(BaseSpell, loadout.Base);
+            Assert.IsFalse(loadout.HoldsBase);
+        }
+
+        [Test]
+        public void SyncingBackToBaseHoldsBaseAgain()
+        {
+            var loadout = NewLoadout();
+            loadout.Offer("fire");
+            loadout.Sync(BaseSpell);
+            Assert.IsTrue(loadout.HoldsBase);
+            Assert.AreEqual(OfferOutcome.Swapped, loadout.Offer("water"));
+        }
+
+        [Test]
+        public void SyncingNothingMeansBase()
+        {
+            var loadout = NewLoadout();
+            loadout.Offer("fire");
+            loadout.Sync(null);
+            Assert.IsTrue(loadout.HoldsBase);
+        }
+
+        [Test]
+        public void SwapAfterAnExternalSyncDropsTheSyncedSpell()
+        {
+            var loadout = NewLoadout();
+            loadout.Sync("fire");
+            Assert.AreEqual("fire", loadout.Swap("water"));
+            Assert.AreEqual("water", loadout.Current);
+        }
+
         [Test]
         public void StartsHoldingTheBaseSpell()
         {

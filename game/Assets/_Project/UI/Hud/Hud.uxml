@@ -7,5 +7,9 @@
             <ui:Label name="player-name" text="Wizard" class="hud-player__name" picking-mode="Ignore" />
             <ui:Label name="player-health" text="100 / 100" class="hud-player__health" picking-mode="Ignore" />
         </hf:InkPlayerHudElement>
+        <hf:InkPromptElement name="interact-prompt" class="hud-prompt">
+            <ui:Label name="interact-key" text="E" class="hud-prompt__key" picking-mode="Ignore" />
+            <ui:Label name="interact-text" text="Swap spell" class="hud-prompt__text" picking-mode="Ignore" />
+        </hf:InkPromptElement>
     </ui:VisualElement>
 </ui:UXML>

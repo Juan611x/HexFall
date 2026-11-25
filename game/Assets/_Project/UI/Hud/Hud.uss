@@ -53,6 +53,45 @@
     color: #fda4af;
 }
 
+/* Interact prompt (InkPromptElement): a 260x60 design space, bottom centre above the player cluster row. */
+.hud-prompt {
+    position: absolute;
+    left: 50%;
+    bottom: 150px;
+    width: 260px;
+    height: 60px;
+    translate: -50% 0;
+}
+
+.hud-prompt > Label {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    -unity-font-definition: url("project://database/Assets/_Project/UI/Fonts/CinzelDecorative-Bold.ttf");
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
+}
+
+.hud-prompt__key {
+    left: 14px;
+    top: 13px;
+    width: 40px;
+    height: 34px;
+    -unity-text-align: middle-center;
+    font-size: 22px;
+    color: #f5dca6;
+}
+
+.hud-prompt__text {
+    left: 64px;
+    top: 19px;
+    width: 184px;
+    height: 22px;
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+    font-size: 15px;
+    color: #f5dca6;
+}
+
 /* Floating damage numbers (DamagePopupLayer): centred on the hit point, scaled and faded from code. */
 .damage-popup {
     position: absolute;

@@ -6,7 +6,7 @@ namespace HexFall.UI
     // Fills the HUD's player cluster. Until health and shield systems exist, it shows the serialized
     // values; gameplay code will call Show with the live status.
     [RequireComponent(typeof(UIDocument))]
-    public class PlayerHud : MonoBehaviour
+    public class PlayerHud : MonoBehaviour, IInteractPromptView
     {
         [SerializeField] private string playerName = "Wizard";
         [SerializeField] private int health = 100;
@@ -18,6 +18,7 @@ namespace HexFall.UI
         private Label _name;
         private Label _health;
         private Label _shield;
+        private InkPromptElement _prompt;
 
         private void OnEnable()
         {
@@ -26,8 +27,14 @@ namespace HexFall.UI
             _name = root.Q<Label>("player-name");
             _health = root.Q<Label>("player-health");
             _shield = root.Q<Label>("player-shield");
+            _prompt = root.Q<InkPromptElement>("interact-prompt");
             Show(new PlayerStatus(playerName, health, maxHealth, shieldCharges, maxShieldCharges));
         }
+
+        // The Interact prompt: a key badge and a label, shown only while something needs Interact.
+        public void ShowPrompt(string key, string text) => _prompt?.Show(key, text);
+
+        public void HidePrompt() => _prompt?.Hide();
 
         public void Show(PlayerStatus status)
         {
