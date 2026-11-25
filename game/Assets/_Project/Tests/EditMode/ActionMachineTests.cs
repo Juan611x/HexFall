@@ -144,14 +144,15 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void ParryPressWithoutChargesIsRefused()
+        public void ParryPressWithoutChargesOpensNoShield()
         {
             var settings = new ActionSettings { shieldCharges = 1, guardSeconds = 0.4f, chargeRechargeSeconds = 100f };
             var machine = new ActionMachine(settings);
             machine.Tick(Parry, 1f);
             machine.Tick(None, 2f);
             machine.Tick(Parry, 3f);
-            Assert.AreEqual(ActionStateId.Ready, machine.Current);
+            Assert.AreEqual(ActionStateId.ParryEmpty, machine.Current);
+            Assert.AreEqual(ParryGrade.None, machine.ResolveHit(10, 3.1f).Grade);
         }
 
         [Test]
@@ -301,6 +302,99 @@ namespace HexFall.UI.Tests
             Assert.IsTrue(machine.RefillShield(1.1f));
             Assert.AreEqual(machine.MaxShieldCharges, machine.ShieldCharges(1.1f));
             Assert.IsFalse(machine.RefillShield(1.2f));
+        }
+
+        private static ActionMachine CreateOutOfCharges()
+        {
+            var machine = Create();
+            machine.Tick(Parry, 1f);
+            machine.Tick(Parry, 2f);
+            machine.Tick(Parry, 3f);
+            machine.Tick(None, 3.5f);
+            return machine;
+        }
+
+        [Test]
+        public void ParryWithoutChargesEntersParryEmptyAndSpendsNothing()
+        {
+            var machine = CreateOutOfCharges();
+            Assert.AreEqual(ActionStateId.Ready, machine.Current);
+            machine.Tick(Parry, 4f);
+            Assert.AreEqual(ActionStateId.ParryEmpty, machine.Current);
+            Assert.IsTrue(machine.IsActing);
+            Assert.AreEqual(0, machine.ShieldCharges(4f));
+        }
+
+        [Test]
+        public void ParryEmptyLastsTheGuardTimeThenReturnsToReady()
+        {
+            var machine = CreateOutOfCharges();
+            machine.Tick(Parry, 4f);
+            machine.Tick(None, 4.39f);
+            Assert.AreEqual(ActionStateId.ParryEmpty, machine.Current);
+            machine.Tick(None, 4.41f);
+            Assert.AreEqual(ActionStateId.Ready, machine.Current);
+        }
+
+        [Test]
+        public void ParryEmptyOpensNoGuard()
+        {
+            var machine = CreateOutOfCharges();
+            machine.Tick(Parry, 4f);
+            var hit = machine.ResolveHit(20, 4.1f);
+            Assert.AreEqual(ParryGrade.None, hit.Grade);
+            Assert.AreEqual(20, hit.Taken);
+        }
+
+        [Test]
+        public void ParryEmptyDoesNotRetriggerWhileActive()
+        {
+            var machine = CreateOutOfCharges();
+            var changes = 0;
+            machine.Tick(Parry, 4f);
+            machine.StateChanged += (f, t) => changes++;
+            machine.Tick(Parry, 4.2f);
+            Assert.AreEqual(0, changes);
+            Assert.AreEqual(ActionStateId.ParryEmpty, machine.Current);
+        }
+
+        [Test]
+        public void AttackIsRefusedDuringParryEmpty()
+        {
+            var machine = CreateOutOfCharges();
+            machine.Tick(Parry, 4f);
+            machine.Tick(Attack, 4.2f);
+            Assert.AreEqual(ActionStateId.ParryEmpty, machine.Current);
+        }
+
+        [Test]
+        public void ParryWithoutChargesInterruptsAnAttack()
+        {
+            var machine = CreateOutOfCharges();
+            machine.Tick(Attack, 4f);
+            Assert.AreEqual(ActionStateId.Attack, machine.Current);
+            machine.Tick(Parry, 4.1f);
+            Assert.AreEqual(ActionStateId.ParryEmpty, machine.Current);
+        }
+
+        [Test]
+        public void ARechargeDuringParryEmptyDoesNotUpgradeIt()
+        {
+            var machine = CreateOutOfCharges();
+            machine.Tick(Parry, 6.8f);
+            Assert.AreEqual(ActionStateId.ParryEmpty, machine.Current);
+            machine.Tick(Parry, 7.1f);
+            Assert.AreEqual(ActionStateId.ParryEmpty, machine.Current);
+            Assert.AreEqual(ParryGrade.None, machine.ResolveHit(10, 7.1f).Grade);
+        }
+
+        [Test]
+        public void ParryPressWhileTheGuardRunsChangesNothing()
+        {
+            var machine = Create();
+            machine.Tick(Parry, 1f);
+            machine.Tick(Parry, 1.2f);
+            Assert.AreEqual(ActionStateId.Parry, machine.Current);
         }
     }
 }

@@ -50,6 +50,14 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void ParryEmptyAimsLikeAParry()
+        {
+            var empty = IkProfiles.For(LocomotionStateId.Grounded, ActionStateId.ParryEmpty);
+            Assert.AreEqual(IkProfiles.ActingHeadAim, empty.HeadAimWeight, 0.0001f);
+            Assert.AreEqual(IkProfiles.ActingChestAim, empty.ChestAimWeight, 0.0001f);
+        }
+
+        [Test]
         public void ActingAimIsStrongerThanIdleAim()
         {
             Assert.Greater(IkProfiles.ActingHeadAim, IkProfiles.IdleHeadAim);

@@ -3,7 +3,8 @@ using System;
 namespace HexFall.Player.Actions
 {
     // The wizard's action state: Ready, Attack (until the bolt has left and the aim hold is over) or
-    // Parry (while the shield guards). It reuses AttackCooldown and ShieldState for the rules and
+    // Parry (while the shield guards) or ParryEmpty (a parry pressed with no charges: the same pose for
+    // the guard time, but no shield and no guard). It reuses AttackCooldown and ShieldState for the rules and
     // reports the moments the rest of the player reacts to: state changes, the bolt leaving, hits.
     // A parry press interrupts an attack (parry is defensive; a bolt not yet fired is cancelled),
     // while an attack press is refused during a parry (the guard has to finish).
@@ -26,6 +27,8 @@ namespace HexFall.Player.Actions
         public ActionStateId Current { get; private set; } = ActionStateId.Ready;
 
         public bool IsActing => Current != ActionStateId.Ready;
+
+        private bool InParry => Current == ActionStateId.Parry || Current == ActionStateId.ParryEmpty;
 
         // True while the wizard turns to the crosshair.
         public bool FacesAim => Current == ActionStateId.Attack;
@@ -52,8 +55,10 @@ namespace HexFall.Player.Actions
             Expire(now);
             if (intent.ParryPressed) ParryPressed?.Invoke();
             if (intent.AttackPressed) AttackPressed?.Invoke();
-            if (intent.ParryPressed && Current != ActionStateId.Parry && _shield.TryRaise(now))
+            if (intent.ParryPressed && !InParry && _shield.TryRaise(now))
                 Enter(ActionStateId.Parry, now);
+            else if (intent.ParryPressed && !InParry && !_shield.IsGuarding(now) && !_shield.HasCharge(now))
+                Enter(ActionStateId.ParryEmpty, now);
             else if (intent.AttackPressed && Current == ActionStateId.Ready && _cooldown.TryAttack(now))
                 Enter(ActionStateId.Attack, now);
         }
@@ -77,6 +82,10 @@ namespace HexFall.Player.Actions
                 }
                 if (now >= _enteredAt + _settings.boltDelaySeconds + _settings.faceAimHoldSeconds)
                     Enter(ActionStateId.Ready, now);
+            }
+            else if (Current == ActionStateId.ParryEmpty && now >= _enteredAt + _settings.guardSeconds)
+            {
+                Enter(ActionStateId.Ready, now);
             }
             else if (Current == ActionStateId.Parry && !_shield.IsGuarding(now))
             {

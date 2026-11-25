@@ -88,6 +88,18 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void HasChargeIsFalseOnlyWhenEverySpentChargeIsStillRecharging()
+        {
+            var shield = NewShield();
+            Assert.IsTrue(shield.HasCharge(0f));
+            shield.TryRaise(1f);
+            shield.TryRaise(2f);
+            shield.TryRaise(3f);
+            Assert.IsFalse(shield.HasCharge(4f));
+            Assert.IsTrue(shield.HasCharge(7f));
+        }
+
+        [Test]
         public void ChargesRechargeOneAtATime()
         {
             var shield = NewShield();

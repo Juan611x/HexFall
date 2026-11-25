@@ -34,6 +34,7 @@ namespace HexFall.Player
             new StateMapping(ActionStateId.Ready, "Empty"),
             new StateMapping(ActionStateId.Attack, "Attack"),
             new StateMapping(ActionStateId.Parry, "Parry"),
+            new StateMapping(ActionStateId.ParryEmpty, "Parry"),
         };
 
         private Animator _animator;
