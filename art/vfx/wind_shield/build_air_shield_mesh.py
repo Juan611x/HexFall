@@ -32,7 +32,7 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 bm = bmesh.new()
 bm.loops.layers.uv.new("UVMap")  # create_uvsphere only fills an existing UV layer
 bmesh.ops.create_uvsphere(bm, u_segments=SEGMENTS, v_segments=RINGS, radius=RADIUS, calc_uvs=True)
-# create_uvsphere puts the poles on Z; turn them onto Y (x, y, z) -> (x, z, -y), a +90 degree rotation about X
+# create_uvsphere puts the poles on Z; turn them onto Y (x, y, z) -> (x, -z, y), a +90 degree rotation about X (the +Z pole lands on +Y)
 bmesh.ops.rotate(bm, verts=bm.verts[:], cent=(0.0, 0.0, 0.0), matrix=Matrix.Rotation(math.radians(90.0), 3, "X"))
 bmesh.ops.triangulate(bm, faces=bm.faces[:])
 for face in bm.faces:
