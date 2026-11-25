@@ -311,5 +311,94 @@ namespace HexFall.UI.Tests
             }
             Assert.AreEqual(1, clones);
         }
+
+        // ---- Fallbacks for unusable ballistics ----
+
+        [Test]
+        public void ANonPositiveLifetimeFallsBackToThePrefabLifetime()
+        {
+            var prefab = NewPrefab();
+            foreach (var bad in new float[] { 0f, -2f, float.NaN })
+            {
+                var b = BoltPool.Get(prefab, Vector3.zero, Quaternion.identity);
+                Track(b.gameObject);
+                b.Launch(null, Vector3.forward, Settings(lifetime: bad), 5, null);
+                b.Advance(0.1f);
+                Assert.IsTrue(b.gameObject.activeSelf, $"lifetime {bad} must not end the bolt at once");
+                b.Advance(2.8f);
+                b.Advance(0.2f);
+                b.Advance(0.1f); // the step after the last one notices the expiry
+                Assert.IsFalse(b.gameObject.activeSelf, $"lifetime {bad} falls back to the prefab's 3 s");
+            }
+        }
+
+        [Test]
+        public void ANonPositiveSpeedFallsBackToTheOldBoltSpeed()
+        {
+            var prefab = NewPrefab();
+            foreach (var bad in new float[] { 0f, -5f, float.NaN })
+            {
+                var b = BoltPool.Get(prefab, Vector3.zero, Quaternion.identity);
+                Track(b.gameObject);
+                b.Launch(null, Vector3.forward, Settings(speed: bad), 5, null);
+                b.Advance(0.1f);
+                Assert.AreEqual(3f, b.transform.position.z, 1e-3f, $"speed {bad} flies at 30 m/s");
+            }
+        }
+
+        // ---- Hit branches ----
+
+        [Test]
+        public void ABoltStartingInsideACollidersHitsItAtItsOwnPositionFacingBack()
+        {
+            var target = NewTarget(Vector3.zero); // the bolt starts inside the cube
+            var prefab = NewPrefab();
+            var bolt = BoltPool.Get(prefab, Vector3.zero, Quaternion.identity);
+            Track(bolt.gameObject);
+            bolt.Launch(null, Vector3.forward, Settings(speed: 30f), 7, null);
+            bolt.Advance(0.1f);
+
+            Assert.AreEqual(1, target.Hits.Count);
+            Assert.AreEqual(Vector3.zero, target.Hits[0].Point);
+            Assert.AreEqual(-1f, target.Hits[0].Normal.z, 1e-4f);
+            Assert.IsFalse(bolt.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void AHitOnAWorldColliderEndsTheBoltDealsNothingAndSpawnsTheSurfaceEffects()
+        {
+            var wall = Track(GameObject.CreatePrimitive(PrimitiveType.Cube));
+            wall.transform.position = new Vector3(0f, 0f, 2f);
+            Physics.SyncTransforms();
+            var impact = Track(new GameObject("ImpactMarker"));
+            var enemy = Track(new GameObject("EnemyMarker"));
+            var surface = Track(new GameObject("SurfaceMarker"));
+            var spell = NewSpell(Color.white, new SpellDefinition.SpellEffects
+            {
+                impactEffect = impact, enemyHitEffect = enemy, surfaceImpactParticles = surface,
+            });
+            var prefab = NewPrefab();
+            var bolt = BoltPool.Get(prefab, Vector3.zero, Quaternion.identity);
+            Track(bolt.gameObject);
+            bolt.Launch(null, Vector3.forward, Settings(), 5, spell);
+            bolt.Advance(0.1f);
+
+            Assert.IsFalse(bolt.gameObject.activeSelf, "a world hit ends the bolt");
+            Assert.AreEqual(1, Clones("ImpactMarker(Clone)"));
+            Assert.AreEqual(1, Clones("SurfaceMarker(Clone)"));
+            Assert.AreEqual(0, Clones("EnemyMarker(Clone)"), "nothing damageable was hit");
+        }
+
+        private int Clones(string name)
+        {
+            var count = 0;
+            foreach (var go in Object.FindObjectsByType<GameObject>())
+            {
+                if (go.name != name) continue;
+                count++;
+                Track(go);
+            }
+            return count;
+        }
     }
 }

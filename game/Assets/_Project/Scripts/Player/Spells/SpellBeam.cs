@@ -1,0 +1,120 @@
+using HexFall.Player.Spells;
+using UnityEngine;
+
+namespace HexFall.Player
+{
+    // The visible and damaging side of a channelled spell (Water). Child of the wizard, driven by
+    // PlayerCombat from the channel events: Begin shows a stretched cylinder tinted with the spell colour,
+    // Refresh stretches it every frame, Pulse (one per channel tick) deals that tick's damage to whatever
+    // the beam meets first, End hides it. Geometry is BeamTrace; this class only asks the physics engine.
+    public class SpellBeam : MonoBehaviour
+    {
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+
+        [Tooltip("Placed at the muzzle facing the aim; its Z scale is the beam length, X and Y the width.")]
+        [SerializeField] private Transform pivot;
+        [Tooltip("The cylinder's renderer, tinted with the spell colour through a property block.")]
+        [SerializeField] private Renderer visual;
+        [SerializeField] private float width = 0.25f;
+
+        private GameObject _owner;
+        private SpellDefinition _spell;
+        private MaterialPropertyBlock _block;
+
+        public bool IsActive { get; private set; }
+
+        // Length of the beam as last drawn; 0 while inactive.
+        public float Length { get; private set; }
+
+        // The channel started: show the beam in the spell colour. The owner's colliders are never hit.
+        public void Begin(GameObject owner, SpellDefinition spell)
+        {
+            _owner = owner;
+            _spell = spell;
+            IsActive = true;
+            Length = 0f;
+            Tint();
+            if (pivot != null) pivot.gameObject.SetActive(true);
+        }
+
+        // The channel ended, was parried or cancelled: hide the beam.
+        public void End()
+        {
+            IsActive = false;
+            Length = 0f;
+            if (pivot != null) pivot.gameObject.SetActive(false);
+        }
+
+        // Stretches the visual from the muzzle toward the aim point, to the range or the first surface.
+        public void Refresh(Vector3 origin, Vector3 aimPoint)
+        {
+            if (!IsActive) return;
+            var direction = BeamTrace.DirectionTo(origin, aimPoint);
+            var segment = Trace(origin, direction, out _);
+            Length = segment.Length;
+            if (pivot == null || direction == Vector3.zero) return;
+            pivot.SetPositionAndRotation(origin, Quaternion.LookRotation(direction));
+            var parent = pivot.parent != null ? pivot.parent.lossyScale : Vector3.one;
+            pivot.localScale = new Vector3(
+                width / Mathf.Max(Mathf.Abs(parent.x), 1e-4f),
+                width / Mathf.Max(Mathf.Abs(parent.y), 1e-4f),
+                segment.Length / Mathf.Max(Mathf.Abs(parent.z), 1e-4f));
+        }
+
+        // One channel tick: damages the IDamageable under the beam right now. A surface that is not
+        // damageable only spawns the surface effects; nothing in range does nothing.
+        public void Pulse(Vector3 origin, Vector3 aimPoint, int damage)
+        {
+            if (!IsActive) return;
+            var direction = BeamTrace.DirectionTo(origin, aimPoint);
+            var segment = Trace(origin, direction, out var hit);
+            if (!segment.Hit) return;
+
+            var point = hit.distance <= 0f ? origin : hit.point;
+            var normal = hit.distance <= 0f ? -direction : hit.normal;
+            var target = hit.collider.GetComponentInParent<IDamageable>();
+            target?.TakeHit(new HitInfo(damage, _owner, point, normal, _spell));
+            SpawnEffects(target != null, point, normal);
+        }
+
+        private BeamSegment Trace(Vector3 origin, Vector3 direction, out RaycastHit nearest)
+        {
+            nearest = default;
+            var range = _spell != null ? _spell.Channel.rangeMeters : 0f;
+            if (direction == Vector3.zero || !(range > 0f)) return BeamTrace.Resolve(origin, direction, range, null);
+
+            float? distance = null;
+            foreach (var hit in Physics.RaycastAll(origin, direction, range, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (_owner != null && hit.collider.transform.root == _owner.transform.root) continue;
+                if (distance != null && hit.distance >= distance.Value) continue;
+                distance = hit.distance;
+                nearest = hit;
+            }
+            return BeamTrace.Resolve(origin, direction, range, distance);
+        }
+
+        private void Tint()
+        {
+            if (visual == null) return;
+            _block ??= new MaterialPropertyBlock();
+            _block.Clear();
+            if (_spell != null)
+            {
+                _block.SetColor(BaseColorId, _spell.Color);
+                _block.SetColor(ColorId, _spell.Color);
+            }
+            visual.SetPropertyBlock(_block);
+        }
+
+        // The spell's optional effect prefabs; they clean themselves up. None are set yet.
+        private void SpawnEffects(bool damageable, Vector3 point, Vector3 normal)
+        {
+            if (_spell == null) return;
+            var rotation = normal.sqrMagnitude > 0f ? Quaternion.LookRotation(normal) : Quaternion.identity;
+            foreach (var prefab in HitEffectPlan.Select(damageable, _spell.Effects))
+                Instantiate(prefab, point, rotation);
+        }
+    }
+}

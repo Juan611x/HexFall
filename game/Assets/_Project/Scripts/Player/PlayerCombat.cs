@@ -29,12 +29,22 @@ namespace HexFall.Player
         [SerializeField] private float guardSeconds = 0.4f;
         [SerializeField, Range(0f, 1f)] private float partialBlock = 0.5f;
         [SerializeField] private MagicShield shield;
+        [Header("Beam")]
+        [Tooltip("The channelled-spell beam (Water); optional. Shown while a channel runs.")]
+        [SerializeField] private SpellBeam beam;
 
         // Counts cast starts (Attack, Charging, Channelling), so Attack() also reports an attack chained on the tick the last one ended.
         private int _attackStarts;
 
         // The Attack input action, to notice a hold whose release was lost. Null without PlayerInput.
         private InputAction _attackAction;
+
+        // True while the running cast was started from the Attack input; only those casts can have a lost release.
+        private bool _inputCast;
+
+        // Test seams: where the crosshair points and whether Attack is held. Null in production.
+        internal System.Func<Vector3> AimOverride { get; set; }
+        internal System.Func<bool> AttackHeldSource { get; set; }
 
         // The action state machine; the IK, animator and audio adapters read it. Null before Awake.
         public ActionMachine Machine { get; private set; }
@@ -63,6 +73,9 @@ namespace HexFall.Player
             Machine.StateChanged += OnActionChanged;
             Machine.ShotFired += FireShot;
             Machine.HitResolved += OnHitResolved;
+            Machine.ChannelStarted += OnChannelStarted;
+            Machine.ChannelTicked += OnChannelTicked;
+            Machine.ChannelEnded += OnChannelEnded;
         }
 
         private void OnDestroy()
@@ -71,6 +84,9 @@ namespace HexFall.Player
             Machine.StateChanged -= OnActionChanged;
             Machine.ShotFired -= FireShot;
             Machine.HitResolved -= OnHitResolved;
+            Machine.ChannelStarted -= OnChannelStarted;
+            Machine.ChannelTicked -= OnChannelTicked;
+            Machine.ChannelEnded -= OnChannelEnded;
         }
 
         // The shield flash follows the action state; the animator follows it in ActionAnimatorBridge.
@@ -95,12 +111,21 @@ namespace HexFall.Player
         // and a channel need.
         public void OnAttack(InputValue value)
         {
-            if (value.isPressed) Attack();
+            if (value.isPressed) StartAttackFromInput();
             else ReleaseAttack();
+        }
+
+        // An attack from the Attack input: a hold it starts is dropped if the input stops being held.
+        internal bool StartAttackFromInput()
+        {
+            var started = Attack();
+            if (started) _inputCast = true;
+            return started;
         }
 
         public void ReleaseAttack()
         {
+            _inputCast = false;
             Machine.Tick(new ActionIntent(false, false, true), Time.time);
         }
 
@@ -137,13 +162,17 @@ namespace HexFall.Player
         private void Update()
         {
             Step(Time.time, AttackHeld());
+            if (beam != null && beam.IsActive) beam.Refresh(MuzzlePosition(), AimPoint());
         }
 
         // One frame of the machine. A hold (charge, channel) whose attack input is no longer held lost its
-        // release (focus lost, input disabled): it is dropped, not fired.
+        // release (focus lost, input disabled): it is dropped, not fired. Only casts started from the input count;
+        // a scripted Attack() has no input to lose.
         internal void Step(float now, bool attackHeld)
         {
-            var lost = !attackHeld && Machine.IsHolding;
+            if (!Machine.IsHolding) _inputCast = false;
+            var lost = !attackHeld && Machine.IsHolding && _inputCast;
+            if (lost) _inputCast = false;
             Machine.Tick(new ActionIntent(false, false, false, lost), now);
         }
 
@@ -151,6 +180,7 @@ namespace HexFall.Player
         // say the hold ended, so it keeps going.
         private bool AttackHeld()
         {
+            if (AttackHeldSource != null) return AttackHeldSource();
             if (_attackAction == null) return true;
             return _attackAction.IsPressed();
         }
@@ -174,14 +204,30 @@ namespace HexFall.Player
         private void FireShot(ProjectileShot shot)
         {
             if (boltPrefab == null) return;
-            var origin = muzzle != null ? muzzle.position : transform.position + Vector3.up * 1.3f;
+            var origin = MuzzlePosition();
             var bolt = BoltPool.Get(boltPrefab, origin, Quaternion.identity);
             var projectile = activeSpell != null ? activeSpell.Projectile : BaseProjectile;
             var direction = ShotAim.Offset(AimPoint() - origin, shot.SpreadDegrees);
-            bolt.Launch(gameObject, direction, projectile, shot.Damage, activeSpell);
+            try
+            {
+                bolt.Launch(gameObject, direction, projectile, shot.Damage, activeSpell);
+            }
+            catch
+            {
+                BoltPool.Release(bolt); // a bolt that never flew must not stay active
+                throw;
+            }
             if (activeSpell != null && activeSpell.Effects.castEffect != null)
                 Instantiate(activeSpell.Effects.castEffect, origin, Quaternion.LookRotation(direction));
         }
+
+        private Vector3 MuzzlePosition() => muzzle != null ? muzzle.position : transform.position + Vector3.up * 1.3f;
+
+        private void OnChannelStarted() { if (beam != null) beam.Begin(gameObject, activeSpell); }
+
+        private void OnChannelTicked(int damage) { if (beam != null) beam.Pulse(MuzzlePosition(), AimPoint(), damage); }
+
+        private void OnChannelEnded(float seconds) { if (beam != null) beam.End(); }
 
         // Ballistics of the default Base spell: 30 m/s, straight.
         private static readonly SpellDefinition.ProjectileSettings BaseProjectile = new SpellDefinition.ProjectileSettings
@@ -193,6 +239,7 @@ namespace HexFall.Player
         // wizard, or a far point along that ray.
         private Vector3 AimPoint()
         {
+            if (AimOverride != null) return AimOverride();
             var cam = Camera.main;
             if (cam == null) return transform.position + transform.forward * aimDistance;
             var ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
