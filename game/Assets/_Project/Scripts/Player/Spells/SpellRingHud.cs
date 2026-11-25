@@ -15,12 +15,27 @@ namespace HexFall.Player
         private PlayerCombat _combat;
         private ISpellRingView _view;
 
-        private void Start()
+        // Finds the HUD to bind; the default looks the PlayerHud up in the scene. A test seam.
+        internal System.Func<ISpellRingView> ViewFinder;
+
+        // While no HUD is bound (it may be created after the wizard), look again every few frames.
+        private const int RetryEveryFrames = 15;
+        private int _unboundFrames;
+
+        private void Start() => TryBind();
+
+        private void Update()
         {
-            if (_view == null) Bind(FindAnyObjectByType<PlayerHud>());
+            if (_view == null && _unboundFrames++ % RetryEveryFrames == 0) TryBind();
+            Refresh();
         }
 
-        private void Update() => Refresh();
+        private void TryBind()
+        {
+            if (_view != null) return;
+            var found = ViewFinder != null ? ViewFinder() : FindAnyObjectByType<PlayerHud>();
+            if (found != null) Bind(found);
+        }
 
         // Points the adapter at a HUD (null for none) and shows the current ring on it at once.
         internal void Bind(ISpellRingView view)

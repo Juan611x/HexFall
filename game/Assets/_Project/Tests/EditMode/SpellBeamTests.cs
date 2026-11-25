@@ -283,6 +283,79 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(1, target.Hits.Count);
         }
 
+        private Target EnemyAt5()
+        {
+            var enemy = Track(new GameObject("Enemy"));
+            enemy.transform.position = new Vector3(0f, 0f, 5f);
+            enemy.AddComponent<BoxCollider>();
+            Physics.SyncTransforms();
+            return enemy.AddComponent<Target>();
+        }
+
+        // A tick the machine fired in the frame the channel ends (expiry, release, parry, swap) was emitted,
+        // so it lands: End plays the queued ticks along the latest pose, then hides the beam.
+        [Test]
+        public void ATickFiredInTheFrameTheChannelEndsStillLands()
+        {
+            var target = EnemyAt5();
+            var aim = new Vector3(0f, 0f, 10f);
+            _beam.Begin(_owner, _spell, () => Vector3.zero, () => aim);
+
+            _beam.QueuePulse(4);
+            _beam.End();
+
+            Assert.AreEqual(1, target.Hits.Count);
+            Assert.AreEqual(4, target.Hits[0].Damage);
+            Assert.IsFalse(_beam.IsActive);
+            Assert.IsFalse(_pivot.gameObject.activeSelf);
+            _beam.UpdateToFinalPose();
+            Assert.AreEqual(1, target.Hits.Count, "the queue is spent");
+        }
+
+        [Test]
+        public void AFullChannelDealsOneHitPerTickFired()
+        {
+            var target = EnemyAt5();
+            var aim = new Vector3(0f, 0f, 10f);
+            _beam.Begin(_owner, _spell, () => Vector3.zero, () => aim);
+            for (var i = 0; i < 14; i++)
+            {
+                _beam.QueuePulse(4);
+                _beam.UpdateToFinalPose();
+            }
+            _beam.QueuePulse(4); // the 15th tick fires in the same step as the end
+            _beam.End();
+            Assert.AreEqual(15, target.Hits.Count);
+        }
+
+        // Two-argument Begin has no sources: a tick pulses at once along the last pose it was refreshed with
+        // and never piles up in a queue nobody drains.
+        [Test]
+        public void WithoutSourcesATickPulsesAtOnceAlongTheLastRefreshedPose()
+        {
+            var target = EnemyAt5();
+            _beam.Begin(_owner, _spell);
+            _beam.Refresh(Muzzle, new Vector3(0f, 0f, 10f));
+
+            _beam.QueuePulse(4);
+
+            Assert.AreEqual(1, target.Hits.Count);
+            _beam.UpdateToFinalPose();
+            _beam.End();
+            Assert.AreEqual(1, target.Hits.Count, "nothing was left queued");
+        }
+
+        [Test]
+        public void WithoutSourcesAndWithoutAPoseATickIsDroppedNotQueued()
+        {
+            var target = EnemyAt5();
+            _beam.Begin(_owner, _spell);
+            _beam.QueuePulse(4);
+            _beam.Refresh(Muzzle, new Vector3(0f, 0f, 10f));
+            _beam.End();
+            Assert.AreEqual(0, target.Hits.Count);
+        }
+
         [Test]
         public void TheVisualIsTintedWithTheSpellColour()
         {

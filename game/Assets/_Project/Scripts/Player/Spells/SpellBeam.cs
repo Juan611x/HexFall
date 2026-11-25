@@ -31,6 +31,9 @@ namespace HexFall.Player
         private Func<Vector3> _origin;
         private Func<Vector3> _aim;
         private readonly List<int> _queuedTicks = new List<int>();
+        private Vector3 _lastOrigin;
+        private Vector3 _lastAim;
+        private bool _hasPose;
 
         public bool IsActive { get; private set; }
 
@@ -46,6 +49,7 @@ namespace HexFall.Player
             _origin = origin;
             _aim = aim;
             _queuedTicks.Clear();
+            _hasPose = false;
             _owner = owner;
             _spell = spell;
             IsActive = true;
@@ -54,19 +58,26 @@ namespace HexFall.Player
             if (pivot != null) pivot.gameObject.SetActive(true);
         }
 
-        // The channel ended, was parried or cancelled: hide the beam.
+        // The channel ended, was parried or cancelled: hide the beam. A tick the machine already fired in this
+        // frame was emitted (expiry, release, parry and swap all raise the tick and the end in one step), so it
+        // lands first, along the latest pose, before the beam is hidden.
         public void End()
         {
+            if (IsActive) UpdateToFinalPose();
             IsActive = false;
             Length = 0f;
             _queuedTicks.Clear();
             if (pivot != null) pivot.gameObject.SetActive(false);
         }
 
-        // A channel tick fired mid-frame: its damage lands in the end-of-frame pass, along the final pose.
+        // A channel tick fired mid-frame. With sources its damage lands in the end-of-frame pass (or in End),
+        // along the final pose. Without sources nothing would ever drain a queue, so it pulses at once along the
+        // last pose given to Refresh (dropped if there was none).
         public void QueuePulse(int damage)
         {
-            if (IsActive) _queuedTicks.Add(damage);
+            if (!IsActive) return;
+            if (_origin != null && _aim != null) _queuedTicks.Add(damage);
+            else if (_hasPose) Pulse(_lastOrigin, _lastAim, damage);
         }
 
         private void LateUpdate() => UpdateToFinalPose();
@@ -87,6 +98,9 @@ namespace HexFall.Player
         public void Refresh(Vector3 origin, Vector3 aimPoint)
         {
             if (!IsActive) return;
+            _lastOrigin = origin;
+            _lastAim = aimPoint;
+            _hasPose = true;
             var direction = BeamTrace.DirectionTo(origin, aimPoint);
             var segment = Trace(origin, direction, out _);
             Length = segment.Length;
