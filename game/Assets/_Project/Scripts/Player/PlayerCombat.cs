@@ -240,7 +240,11 @@ namespace HexFall.Player
         private Vector3 AimPoint()
         {
             if (AimOverride != null) return AimOverride();
-            var cam = Camera.main;
+            return AimPointFrom(Camera.main);
+        }
+
+        internal Vector3 AimPointFrom(Camera cam)
+        {
             if (cam == null) return transform.position + transform.forward * aimDistance;
             var ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             var best = ray.GetPoint(aimDistance);

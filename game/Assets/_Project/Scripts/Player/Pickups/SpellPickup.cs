@@ -1,5 +1,6 @@
 using HexFall.Player.Spells;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace HexFall.Player
 {
@@ -27,6 +28,8 @@ namespace HexFall.Player
         private MaterialPropertyBlock _block;
         private Vector3 _restPosition;
         private SpellInteractor _reachedBy;
+        // The colliders of the wizard inside the trigger: the reach lasts until the last one leaves.
+        private readonly TouchSet<Object> _touching = new TouchSet<Object>();
 
         public SpellDefinition Spell => spell;
 
@@ -42,6 +45,7 @@ namespace HexFall.Player
 
         private void OnDisable()
         {
+            _touching.Clear();
             if (_reachedBy != null) _reachedBy.Leave(this);
             _reachedBy = null;
         }
@@ -53,23 +57,30 @@ namespace HexFall.Player
             visual.localRotation = Quaternion.Euler(0f, PickupMotion.Spin(Time.time, spinDegreesPerSecond), 0f);
         }
 
-        private void OnTriggerEnter(Collider other) => Reach(other.gameObject);
-        private void OnTriggerExit(Collider other) => Leave(other.gameObject);
+        private void OnTriggerEnter(Collider other) => Reach(other);
+        private void OnTriggerExit(Collider other) => Leave(other);
+
+        internal void Reach(Collider collider) => Reach(collider.gameObject, collider);
+        internal void Leave(Collider collider) => Leave(collider.gameObject, collider);
+        internal void Reach(GameObject collector) => Reach(collector, collector);
+        internal void Leave(GameObject collector) => Leave(collector, collector);
 
         // Something touched the trigger: a wizard with a SpellInteractor takes it from here.
-        internal void Reach(GameObject collector)
+        private void Reach(GameObject collector, Object key)
         {
             if (Consumed) return;
             var interactor = collector.GetComponentInParent<SpellInteractor>();
             if (interactor == null) return;
+            _touching.Add(key);
             _reachedBy = interactor;
             interactor.Reach(this);
         }
 
-        internal void Leave(GameObject collector)
+        private void Leave(GameObject collector, Object key)
         {
             var interactor = collector.GetComponentInParent<SpellInteractor>();
             if (interactor == null) return;
+            if (!_touching.Remove(key) && !_touching.IsEmpty) return; // others of the wizard are still inside
             interactor.Leave(this);
             if (_reachedBy == interactor) _reachedBy = null;
         }

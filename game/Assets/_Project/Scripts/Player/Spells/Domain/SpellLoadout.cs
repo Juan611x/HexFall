@@ -38,6 +38,10 @@ namespace HexFall.Player.Spells
             return OfferOutcome.Swapped;
         }
 
+        // The held spell was changed by something else (PlayerCombat.SetSpell): follow it. Base stays the
+        // original Base, and nothing means Base.
+        public void Sync(T spell) => Current = spell ?? Base;
+
         // Interact on a pickup: holds the spell and returns the one that was held, to leave on the ground.
         // Null when nothing is dropped (Base is never dropped, and a null or already-held spell changes nothing).
         public T Swap(T spell)
