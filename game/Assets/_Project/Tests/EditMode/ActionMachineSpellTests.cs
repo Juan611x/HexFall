@@ -405,5 +405,76 @@ namespace HexFall.UI.Tests
             machine.Tick(None, 1.2f);
             Assert.AreEqual(18, damage);
         }
+
+        // ---- A hold whose release is lost ----
+
+        private static readonly ActionIntent Cancel = new ActionIntent(false, false, false, true);
+
+        [Test]
+        public void ALostReleaseLeavesChargingWithoutFiringOrCooldown()
+        {
+            var rig = new Rig(Charged());
+            rig.Tick(Press, 1f);
+            rig.RunTo(2f);
+            Assert.AreEqual(ActionStateId.Charging, rig.State);
+            rig.Tick(Cancel, 2f);
+            Assert.AreEqual(ActionStateId.Ready, rig.State);
+            Assert.AreEqual(0, rig.Shots.Count, "a lost release must not fire a charged shot");
+            rig.Tick(Press, 2.01f);
+            Assert.AreEqual(ActionStateId.Charging, rig.State, "a cancelled charge costs no cooldown");
+        }
+
+        [Test]
+        public void ALostReleaseEndsAChannelAndReportsItsDuration()
+        {
+            var rig = new Rig(Channel());
+            rig.Tick(Press, 1f);
+            rig.RunTo(1.5f);
+            rig.Tick(Cancel, 1.5f);
+            Assert.AreEqual(ActionStateId.Ready, rig.State);
+            Assert.AreEqual(1, rig.ChannelEnds.Count);
+            var ticks = rig.ChannelTicks.Count;
+            rig.RunTo(3f);
+            Assert.AreEqual(ticks, rig.ChannelTicks.Count, "no ticks after the cancel");
+        }
+
+        [Test]
+        public void ACancelWhileReadyOrAttackingChangesNothing()
+        {
+            var rig = new Rig(Single());
+            rig.Tick(Cancel, 1f);
+            Assert.AreEqual(ActionStateId.Ready, rig.State);
+            rig.Tick(Press, 1.1f);
+            rig.Tick(Cancel, 1.15f);
+            Assert.AreEqual(ActionStateId.Attack, rig.State);
+            rig.Tick(None, 1.31f);
+            Assert.AreEqual(1, rig.Shots.Count, "a queued shot still leaves");
+        }
+
+        [Test]
+        public void AnIdleTickNeverCancelsAHold()
+        {
+            var rig = new Rig(Charged());
+            rig.Tick(Press, 1f);
+            rig.RunTo(1.8f);
+            Assert.AreEqual(ActionStateId.Charging, rig.State);
+        }
+
+        // ---- What counts as the start of a cast ----
+
+        [TestCase(ActionStateId.Ready, ActionStateId.Attack, true)]
+        [TestCase(ActionStateId.Ready, ActionStateId.Charging, true)]
+        [TestCase(ActionStateId.Ready, ActionStateId.Channelling, true)]
+        [TestCase(ActionStateId.Attack, ActionStateId.Attack, true)]
+        [TestCase(ActionStateId.Charging, ActionStateId.Attack, false)]
+        [TestCase(ActionStateId.Attack, ActionStateId.Ready, false)]
+        [TestCase(ActionStateId.Charging, ActionStateId.Ready, false)]
+        [TestCase(ActionStateId.Ready, ActionStateId.Parry, false)]
+        [TestCase(ActionStateId.Ready, ActionStateId.ParryEmpty, false)]
+        [TestCase(ActionStateId.Channelling, ActionStateId.Ready, false)]
+        public void OnlyEnteringACastFromOutsideItStartsOne(ActionStateId from, ActionStateId to, bool starts)
+        {
+            Assert.AreEqual(starts, ActionStateRules.StartsCast(from, to));
+        }
     }
 }

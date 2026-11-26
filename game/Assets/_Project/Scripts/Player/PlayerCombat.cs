@@ -33,6 +33,9 @@ namespace HexFall.Player
         // Counts cast starts (Attack, Charging, Channelling), so Attack() also reports an attack chained on the tick the last one ended.
         private int _attackStarts;
 
+        // The Attack input action, to notice a hold whose release was lost. Null without PlayerInput.
+        private InputAction _attackAction;
+
         // The action state machine; the IK, animator and audio adapters read it. Null before Awake.
         public ActionMachine Machine { get; private set; }
 
@@ -45,7 +48,9 @@ namespace HexFall.Player
 
         private void Awake()
         {
-            Machine = new ActionMachine(new ActionSettings
+            var playerInput = GetComponent<PlayerInput>();
+            _attackAction = playerInput != null && playerInput.actions != null ? playerInput.actions.FindAction("Attack") : null;
+            Machine =new ActionMachine(new ActionSettings
             {
                 boltDelaySeconds = boltDelaySeconds,
                 faceAimHoldSeconds = faceAimHoldSeconds,
@@ -71,7 +76,7 @@ namespace HexFall.Player
         // The shield flash follows the action state; the animator follows it in ActionAnimatorBridge.
         private void OnActionChanged(ActionStateId from, ActionStateId to)
         {
-            if (to == ActionStateId.Attack && from != ActionStateId.Charging || to == ActionStateId.Charging || to == ActionStateId.Channelling)
+            if (ActionStateRules.StartsCast(from, to))
             {
                 _attackStarts++;
             }
@@ -131,7 +136,23 @@ namespace HexFall.Player
 
         private void Update()
         {
-            Machine.Tick(default, Time.time);
+            Step(Time.time, AttackHeld());
+        }
+
+        // One frame of the machine. A hold (charge, channel) whose attack input is no longer held lost its
+        // release (focus lost, input disabled): it is dropped, not fired.
+        internal void Step(float now, bool attackHeld)
+        {
+            var lost = !attackHeld && Machine.IsHolding;
+            Machine.Tick(new ActionIntent(false, false, false, lost), now);
+        }
+
+        // False only when the Attack action exists and is not pressed; without PlayerInput nothing can
+        // say the hold ended, so it keeps going.
+        private bool AttackHeld()
+        {
+            if (_attackAction == null) return true;
+            return _attackAction.IsPressed();
         }
 
         // Runs after the movement controller, which only turns the wizard toward where it walks, so an
@@ -154,13 +175,19 @@ namespace HexFall.Player
         {
             if (boltPrefab == null) return;
             var origin = muzzle != null ? muzzle.position : transform.position + Vector3.up * 1.3f;
-            var bolt = Instantiate(boltPrefab, origin, Quaternion.identity);
-            var speed = activeSpell != null ? activeSpell.Projectile.speed : BaseBoltSpeed;
+            var bolt = BoltPool.Get(boltPrefab, origin, Quaternion.identity);
+            var projectile = activeSpell != null ? activeSpell.Projectile : BaseProjectile;
             var direction = ShotAim.Offset(AimPoint() - origin, shot.SpreadDegrees);
-            bolt.Launch(gameObject, direction, speed, shot.Damage);
+            bolt.Launch(gameObject, direction, projectile, shot.Damage, activeSpell);
+            if (activeSpell != null && activeSpell.Effects.castEffect != null)
+                Instantiate(activeSpell.Effects.castEffect, origin, Quaternion.LookRotation(direction));
         }
 
-        private const float BaseBoltSpeed = 30f;
+        // Ballistics of the default Base spell: 30 m/s, straight.
+        private static readonly SpellDefinition.ProjectileSettings BaseProjectile = new SpellDefinition.ProjectileSettings
+        {
+            speed = 30f, gravity = 0f, curveDegreesPerSecond = 0f, sizeScale = 1f, lifetimeSeconds = 3f,
+        };
 
         // The point under the crosshair: the first thing the camera's centre ray hits that is not the
         // wizard, or a far point along that ray.
