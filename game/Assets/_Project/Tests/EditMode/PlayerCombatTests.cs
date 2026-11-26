@@ -193,6 +193,31 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
+        public void ARefusedInputPressStartedByAScriptedTickIsStillAnInputCast()
+        {
+            FireThenClickDuringTheCooldown();
+            _t = 2f;
+            Assert.IsTrue(_combat.Attack(), "the pending press starts on a tick made outside Step");
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current);
+
+            _combat.Step(2.1f, attackHeld: false);
+
+            Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current, "its release was lost: the input-cast guard drops it");
+        }
+
+        [Test]
+        public void ARefusedInputPressStartedByAnIdleMachineTickIsStillAnInputCast()
+        {
+            FireThenClickDuringTheCooldown();
+            _combat.Machine.Tick(new ActionIntent(false, false), 2f);
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current);
+
+            _combat.Step(2.1f, attackHeld: false);
+
+            Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current);
+        }
+
+        [Test]
         public void AnInputPressReleasedWithoutAReleaseEventIsDroppedBeforeItStarts()
         {
             FireThenClickDuringTheCooldown();

@@ -312,6 +312,69 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(1, target.Hits.Count, "the queue is spent");
         }
 
+        // ---- Teardown: the sources may already be gone and nothing may be dealt ----
+
+        private void Invoke(string method) =>
+            typeof(SpellBeam).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Invoke(_beam, null);
+
+        [Test]
+        public void EndAfterTheSourceTransformIsDestroyedDoesNotThrowAndDealsNothing()
+        {
+            var target = EnemyAt5();
+            var anchor = Track(new GameObject("Anchor")).transform;
+            var aim = new Vector3(0f, 0f, 10f);
+            _beam.Begin(_owner, _spell, () => anchor.position, () => aim);
+            _beam.QueuePulse(4);
+
+            Object.DestroyImmediate(anchor.gameObject);
+
+            Assert.DoesNotThrow(() => _beam.End());
+            Assert.AreEqual(0, target.Hits.Count);
+            Assert.IsFalse(_beam.IsActive);
+            Assert.IsFalse(_pivot.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void EndAfterTheOwnerIsDestroyedHidesWithoutPulsing()
+        {
+            var target = EnemyAt5();
+            var aim = new Vector3(0f, 0f, 10f);
+            _beam.Begin(_owner, _spell, () => Vector3.zero, () => aim);
+            _beam.QueuePulse(4);
+
+            Object.DestroyImmediate(_owner);
+
+            Assert.DoesNotThrow(() => _beam.End());
+            Assert.AreEqual(0, target.Hits.Count);
+            Assert.IsFalse(_beam.IsActive);
+        }
+
+        [Test]
+        public void TheEndOfFrameUpdateWithADestroyedSourceDoesNotThrow()
+        {
+            var anchor = Track(new GameObject("Anchor")).transform;
+            _beam.Begin(_owner, _spell, () => anchor.position, () => Vector3.forward);
+            Object.DestroyImmediate(anchor.gameObject);
+
+            Assert.DoesNotThrow(() => _beam.UpdateToFinalPose());
+        }
+
+        [Test]
+        public void DisablingTheBeamMidChannelHidesItWithoutThrowingOrDealingDamage()
+        {
+            var target = EnemyAt5();
+            var aim = new Vector3(0f, 0f, 10f);
+            _beam.Begin(_owner, _spell, () => Vector3.zero, () => aim);
+            _pivot.gameObject.SetActive(true);
+            _beam.QueuePulse(4);
+
+            Assert.DoesNotThrow(() => Invoke("OnDisable"));
+
+            Assert.AreEqual(0, target.Hits.Count, "teardown flushes nothing");
+            Assert.IsFalse(_beam.IsActive);
+            Assert.IsFalse(_pivot.gameObject.activeSelf);
+        }
+
         [Test]
         public void AFullChannelDealsOneHitPerTickFired()
         {

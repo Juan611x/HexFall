@@ -61,9 +61,20 @@ namespace HexFall.Player
         // The channel ended, was parried or cancelled: hide the beam. A tick the machine already fired in this
         // frame was emitted (expiry, release, parry and swap all raise the tick and the end in one step), so it
         // lands first, along the latest pose, before the beam is hidden.
+        // If the owner is already destroyed the sources cannot be trusted: it only hides, nothing is evaluated or dealt.
         public void End()
         {
-            if (IsActive) UpdateToFinalPose();
+            if (IsActive && !OwnerDestroyed) UpdateToFinalPose();
+            Hide();
+        }
+
+        // Teardown (the beam or its wizard is disabled or destroyed): hide and clear, no pose, no damage.
+        private void OnDisable() => Hide();
+
+        private bool OwnerDestroyed => !ReferenceEquals(_owner, null) && _owner == null;
+
+        private void Hide()
+        {
             IsActive = false;
             Length = 0f;
             _queuedTicks.Clear();
@@ -86,8 +97,17 @@ namespace HexFall.Player
         public void UpdateToFinalPose()
         {
             if (!IsActive || _origin == null || _aim == null) return;
-            var origin = _origin();
-            var aim = _aim();
+            Vector3 origin, aim;
+            try
+            {
+                origin = _origin();
+                aim = _aim();
+            }
+            catch (MissingReferenceException)
+            {
+                _queuedTicks.Clear(); // a source was destroyed: there is no pose to deal along
+                return;
+            }
             Refresh(origin, aim);
             var ticks = _queuedTicks.ToArray();
             _queuedTicks.Clear();

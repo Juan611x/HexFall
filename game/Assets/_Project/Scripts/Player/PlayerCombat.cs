@@ -108,6 +108,12 @@ namespace HexFall.Player
             if (ActionStateRules.StartsCast(from, to))
             {
                 _attackStarts++;
+                // A pending input press starts its cast on whichever tick finds the wizard ready (Step or not).
+                if (_inputPending)
+                {
+                    _inputPending = false;
+                    if (to == ActionStateId.Charging || to == ActionStateId.Channelling) _inputCast = true;
+                }
             }
             else if (to == ActionStateId.Parry)
             {
@@ -199,14 +205,7 @@ namespace HexFall.Player
                 Machine.DropPendingAttack(); // the click was let go without a release event
                 _inputPending = false;
             }
-            var pendingFromInput = _inputPending;
-            Machine.Tick(new ActionIntent(false, false, false, lost), now);
-            // The pending press started its cast on this tick: it is an input cast, so a lost release still drops it.
-            if (pendingFromInput && !Machine.HasPendingAttack)
-            {
-                _inputPending = false;
-                if (Machine.IsHolding) _inputCast = true;
-            }
+            Machine.Tick(new ActionIntent(false, false, false, lost), now); // a pending press that starts is promoted in OnActionChanged
             UpdateChargeOrb(now);
         }
 
