@@ -52,7 +52,7 @@ namespace HexFall.UI.Tests
 
         private static SpellDefinition.ProjectileSettings Flat(float speed = 10f) => new SpellDefinition.ProjectileSettings
         {
-            speed = speed, gravity = 0f, curveDegreesPerSecond = 0f, sizeScale = 1f, lifetimeSeconds = 3f,
+            speed = speed, weight = 0f, drag = 0f, curveDegreesPerSecond = 0f, sizeScale = 1f, lifetimeSeconds = 3f,
         };
 
         // ---- settings ----

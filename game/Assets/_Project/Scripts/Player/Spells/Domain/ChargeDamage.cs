@@ -45,13 +45,21 @@ namespace HexFall.Player.Spells
         public static float Multiplier(CastConfig config, float charge)
         {
             if (config.ChargeMode == ChargeDamageMode.Curve) return Sample(config.ChargeCurve, charge);
-            return charge >= 1f - FullChargeEpsilon ? config.ChargeMultiplier : 1f;
+            return charge >= 1f - FullChargeEpsilon ? ConstantMultiplier(config.ChargeMultiplier) : 1f;
         }
+
+        // A Constant multiplier that is unset (0, which is what a code-built default struct holds), negative or
+        // not a number acts as x1: a full charge never deals less than a tap by accident.
+        public static float ConstantMultiplier(float v) => float.IsNaN(v) || float.IsInfinity(v) || v <= 0f ? 1f : v;
 
         public static int Damage(CastConfig config, float charge)
         {
-            var scaled = config.BaseDamage * (double)Multiplier(config, charge);
-            return (int)Math.Max(0.0, Math.Round(scaled, MidpointRounding.AwayFromZero));
+            var multiplier = Multiplier(config, charge);
+            // Safe even for an unsanitized config: a bad multiplier (e.g. a NaN curve sample) counts as x1.
+            if (float.IsNaN(multiplier) || float.IsInfinity(multiplier)) multiplier = 1f;
+            var scaled = Math.Round(config.BaseDamage * (double)multiplier, MidpointRounding.AwayFromZero);
+            if (scaled >= int.MaxValue) return int.MaxValue; // saturate instead of overflowing the cast
+            return (int)Math.Max(0.0, scaled);
         }
     }
 }

@@ -28,7 +28,8 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(18, spell.Damage);
             Assert.AreEqual(0.5f, spell.CooldownSeconds, 1e-4f);
             Assert.AreEqual(30f, spell.Projectile.speed, 1e-4f);
-            Assert.AreEqual(0f, spell.Projectile.gravity, 1e-4f);
+            Assert.AreEqual(0f, spell.Projectile.weight, 1e-4f);
+            Assert.AreEqual(0f, spell.Projectile.drag, 1e-4f);
             Assert.AreEqual(0f, spell.Projectile.curveDegreesPerSecond, 1e-4f);
             Assert.AreEqual(1f, spell.Projectile.sizeScale, 1e-4f);
             Assert.AreEqual(3f, spell.Projectile.lifetimeSeconds, 1e-4f);

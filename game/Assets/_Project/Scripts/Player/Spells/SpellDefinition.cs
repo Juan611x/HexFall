@@ -10,8 +10,11 @@ namespace HexFall.Player.Spells
         [Serializable]
         public struct ProjectileSettings
         {
-            public float speed;
-            [Tooltip("Downward acceleration in m/s^2. 0 flies straight.")] public float gravity;
+            [Tooltip("Initial speed in m/s.")] public float speed;
+            [Tooltip("Weight: a multiplier of the world gravity (Physics.gravity). 0 = no drop, 1 = falls like a normal object, 0.1 = a slight drop.")]
+            [UnityEngine.Serialization.FormerlySerializedAs("gravity")] public float weight;
+            [Tooltip("Air drag: the fraction of speed lost per second, applied exponentially (v *= exp(-drag x dt)), so it is frame-rate independent. 0 = none.")]
+            public float drag;
             [Tooltip("Horizontal yaw curve in degrees per second. 0 = none.")] public float curveDegreesPerSecond;
             public float sizeScale;
             public float lifetimeSeconds;
@@ -88,7 +91,7 @@ namespace HexFall.Player.Spells
         [SerializeField] private float cooldownSeconds = 0.5f;
         [SerializeField] private ProjectileSettings projectile = new ProjectileSettings
         {
-            speed = 30f, gravity = 0f, curveDegreesPerSecond = 0f, sizeScale = 1f, lifetimeSeconds = 3f,
+            speed = 30f, weight = 0f, drag = 0f, curveDegreesPerSecond = 0f, sizeScale = 1f, lifetimeSeconds = 3f,
         };
         [SerializeField] private ChargeSettings charge = new ChargeSettings
         {
@@ -185,14 +188,15 @@ namespace HexFall.Player.Spells
             cooldownSeconds = Mathf.Max(0f, Finite(cooldownSeconds));
 
             projectile.speed = Mathf.Max(0f, Finite(projectile.speed));
-            projectile.gravity = Mathf.Max(0f, Finite(projectile.gravity));
+            projectile.weight = Mathf.Max(0f, Finite(projectile.weight));
+            projectile.drag = Mathf.Max(0f, Finite(projectile.drag));
             projectile.curveDegreesPerSecond = Finite(projectile.curveDegreesPerSecond);
             projectile.sizeScale = Mathf.Max(0.01f, Finite(projectile.sizeScale));
             projectile.lifetimeSeconds = Mathf.Max(0.01f, Finite(projectile.lifetimeSeconds));
 
             charge.maxChargeSeconds = Mathf.Max(0f, Finite(charge.maxChargeSeconds));
             charge.baseDamage = Mathf.Max(0, charge.baseDamage);
-            charge.constantMultiplier = !IsFinite(charge.constantMultiplier) || charge.constantMultiplier < 0f
+            charge.constantMultiplier = !IsFinite(charge.constantMultiplier) || charge.constantMultiplier <= 0f
                 ? 1f : charge.constantMultiplier;
             if (!IsUsable(charge.damageCurve)) charge.damageCurve = FlatCurve();
             charge.minSizeScale = Mathf.Max(0.01f, Finite(charge.minSizeScale));

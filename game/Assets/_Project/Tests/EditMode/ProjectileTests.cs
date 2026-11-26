@@ -49,10 +49,10 @@ namespace HexFall.UI.Tests
             return spell;
         }
 
-        private static SpellDefinition.ProjectileSettings Settings(float speed = 30f, float gravity = 0f, float curve = 0f,
-            float size = 1f, float lifetime = 3f) => new SpellDefinition.ProjectileSettings
+        private static SpellDefinition.ProjectileSettings Settings(float speed = 30f, float weight = 0f, float curve = 0f,
+            float size = 1f, float lifetime = 3f, float drag = 0f) => new SpellDefinition.ProjectileSettings
         {
-            speed = speed, gravity = gravity, curveDegreesPerSecond = curve, sizeScale = size, lifetimeSeconds = lifetime,
+            speed = speed, weight = weight, drag = drag, curveDegreesPerSecond = curve, sizeScale = size, lifetimeSeconds = lifetime,
         };
 
         private sealed class Target : MonoBehaviour, IDamageable
@@ -210,15 +210,44 @@ namespace HexFall.UI.Tests
         // ---- Flight and hits ----
 
         [Test]
-        public void AdvanceFliesTheSpellsFlightAndDropsWithGravity()
+        public void AdvanceFliesTheSpellsFlightAndDropsByItsWeightTimesWorldGravity()
         {
             var prefab = NewPrefab();
             var b = BoltPool.Get(prefab, Vector3.zero, Quaternion.identity);
             Track(b.gameObject);
-            b.Launch(null, Vector3.forward, Settings(speed: 10f, gravity: 10f), 5, null);
+            b.Launch(null, Vector3.forward, Settings(speed: 10f, weight: 0.5f), 5, null);
             for (var i = 0; i < 10; i++) b.Advance(0.1f);
             Assert.AreEqual(10f, b.transform.position.z, 1e-3f);
-            Assert.AreEqual(-5.5f, b.transform.position.y, 1e-3f);
+            // Semi-implicit Euler over 10 steps of 0.1 s: drop = 0.55 x acceleration; acceleration = weight x world gravity.
+            Assert.AreEqual(-0.55f * 0.5f * Physics.gravity.magnitude, b.transform.position.y, 1e-3f);
+        }
+
+        [Test]
+        public void AWeightlessSpellFliesStraightWhateverTheWorldGravity()
+        {
+            var prefab = NewPrefab();
+            var b = BoltPool.Get(prefab, Vector3.zero, Quaternion.identity);
+            Track(b.gameObject);
+            b.Launch(null, Vector3.forward, Settings(speed: 10f, weight: 0f), 5, null);
+            for (var i = 0; i < 10; i++) b.Advance(0.1f);
+            Assert.AreEqual(0f, b.transform.position.y, 1e-4f);
+        }
+
+        [Test]
+        public void AdvanceAppliesTheSpellsDrag()
+        {
+            var prefab = NewPrefab();
+            var b = BoltPool.Get(prefab, Vector3.zero, Quaternion.identity);
+            Track(b.gameObject);
+            b.Launch(null, Vector3.forward, Settings(speed: 10f, drag: 1f), 5, null);
+            var expected = 0f;
+            for (var i = 1; i <= 10; i++)
+            {
+                b.Advance(0.1f);
+                expected += 10f * Mathf.Exp(-0.1f * i) * 0.1f; // speed after each exponential decay step
+            }
+            Assert.AreEqual(expected, b.transform.position.z, 1e-3f);
+            Assert.Less(b.transform.position.z, 10f);
         }
 
         [Test]

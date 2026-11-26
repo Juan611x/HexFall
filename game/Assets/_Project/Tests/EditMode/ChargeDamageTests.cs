@@ -185,6 +185,50 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(1f, new CastConfig { ChargeMultiplier = float.PositiveInfinity }.Sanitized().ChargeMultiplier, Eps);
         }
 
+        // ---- T10 advisories: unsanitized configs must not misbehave ----
+
+        [Test]
+        public void ANonFiniteMultiplierOnAnUnsanitizedConfigCountsAsX1()
+        {
+            Assert.AreEqual(18, ChargeDamage.Damage(Constant(float.NaN), 1f));
+            Assert.AreEqual(18, ChargeDamage.Damage(Constant(float.PositiveInfinity), 1f));
+            Assert.AreEqual(18, ChargeDamage.Damage(Constant(float.NegativeInfinity), 1f));
+            var curve = new CastConfig
+            {
+                ChargeMode = ChargeDamageMode.Curve, BaseDamage = 18, ChargeCurve = new[] { 1f, float.NaN, float.PositiveInfinity },
+            };
+            Assert.AreEqual(18, ChargeDamage.Damage(curve, 0.5f));
+            Assert.AreEqual(18, ChargeDamage.Damage(curve, 1f));
+        }
+
+        [Test]
+        public void AHugeProductSaturatesAtIntMaxValue()
+        {
+            Assert.AreEqual(int.MaxValue, ChargeDamage.Damage(Constant(3f, int.MaxValue), 1f));
+            Assert.AreEqual(int.MaxValue, ChargeDamage.Damage(Constant(1e30f), 1f));
+            Assert.AreEqual(int.MaxValue, ChargeDamage.Damage(Curve(x => 1e30f), 0.5f));
+            Assert.AreEqual(int.MaxValue, ChargeDamage.Damage(Constant(1f, int.MaxValue), 1f));
+        }
+
+        [Test]
+        public void ACodeBuiltConfigNeverDealsZeroAtFullChargeInConstantMode()
+        {
+            // A default struct leaves ChargeMultiplier at 0; 0 means "unset" and acts as x1, never as zero damage.
+            var built = new CastConfig { Pattern = CastPattern.Charged, MaxChargeSeconds = 1.2f, BaseDamage = 18 };
+            Assert.AreEqual(ChargeDamageMode.Constant, built.ChargeMode);
+            Assert.AreEqual(18, ChargeDamage.Damage(built, 1f));
+            Assert.AreEqual(18, ChargeDamage.Damage(built.Sanitized(), 1f));
+            Assert.AreEqual(1f, built.Sanitized().ChargeMultiplier, Eps);
+            Assert.AreEqual(18, Shoot(built, 1.2f));
+        }
+
+        [Test]
+        public void AnExplicitMultiplierIsStillHonoured()
+        {
+            Assert.AreEqual(45, ChargeDamage.Damage(Constant(2.5f), 1f));
+            Assert.AreEqual(2.5f, Constant(2.5f).Sanitized().ChargeMultiplier, Eps);
+        }
+
         [Test]
         public void SanitizeDoesNotMutateTheSourceCurve()
         {
