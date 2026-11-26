@@ -530,6 +530,85 @@ namespace HexFall.UI.Tests
             Assert.IsTrue(caster.IsReady(1.1f));
         }
 
+        // ---- A refused Press changes nothing: a pending press retries it on every Ready tick ----
+
+        private static CastConfig WindUpChannel()
+        {
+            var c = Channel();
+            c.ChannelWindUpTimeoutSeconds = 0.5f;
+            return c;
+        }
+
+        private static List<string> Log(SpellCaster caster)
+        {
+            var log = new List<string>();
+            caster.ProjectileFired += s => log.Add("shot " + s.Index + " " + s.Damage + " " + s.Charge);
+            caster.ChannelStarted += () => log.Add("start");
+            caster.ChannelTicked += d => log.Add("tick " + d);
+            caster.ChannelEnded += s => log.Add("end " + s);
+            return log;
+        }
+
+        private static string State(SpellCaster c, float t) =>
+            string.Join("|", c.IsBusy, c.IsWindingUp, c.ReadyAt, c.CooldownStart,
+                c.ChargeLevel(t), c.ChannelRemainingFraction(t), c.CooldownFraction(t));
+
+        private static IEnumerable<TestCaseData> EveryPattern()
+        {
+            yield return new TestCaseData(Single()).SetName("Single");
+            yield return new TestCaseData(Charged()).SetName("Charged");
+            yield return new TestCaseData(Burst()).SetName("Burst");
+            yield return new TestCaseData(Channel()).SetName("Channel");
+            yield return new TestCaseData(WindUpChannel()).SetName("ChannelWithWindUp");
+        }
+
+        [TestCaseSource(nameof(EveryPattern))]
+        public void ARefusedPressRaisesNoEventAndChangesNoState(CastConfig config)
+        {
+            var refused = new SpellCaster(config);
+            var twin = new SpellCaster(config);
+            var refusedLog = Log(refused);
+            var twinLog = Log(twin);
+            Assert.IsTrue(refused.Press(1f));
+            Assert.IsTrue(twin.Press(1f));
+            var before = State(refused, 1.05f);
+            var eventsBefore = refusedLog.Count;
+
+            // 1.05: busy (charging, bursting, channelling, winding up) or cooling down (single).
+            foreach (var t in new[] { 1.05f, 1.05f, 1.05f, float.NaN, -1f, float.PositiveInfinity })
+                Assert.IsFalse(refused.Press(t), "refused at " + t);
+
+            Assert.AreEqual(before, State(refused, 1.05f));
+            Assert.AreEqual(eventsBefore, refusedLog.Count, "no event from a refused press");
+
+            // The same follow-up on both casters ends in the same events and cooldown.
+            foreach (var c in new[] { refused, twin })
+            {
+                c.Release(1.1f);
+                c.Tick(1.2f);
+                c.Tick(3f);
+            }
+            CollectionAssert.AreEqual(twinLog, refusedLog);
+            Assert.AreEqual(twin.ReadyAt, refused.ReadyAt);
+            Assert.AreEqual(twin.CooldownStart, refused.CooldownStart);
+            Assert.AreEqual(twin.IsBusy, refused.IsBusy);
+        }
+
+        [TestCaseSource(nameof(EveryPattern))]
+        public void APressRefusedByAnInvalidTimeOnAFreshCasterChangesNothing(CastConfig config)
+        {
+            var caster = new SpellCaster(config);
+            var log = Log(caster);
+            var before = State(caster, 1f);
+
+            foreach (var t in new[] { float.NaN, -1f, float.PositiveInfinity, float.NegativeInfinity })
+                Assert.IsFalse(caster.Press(t));
+
+            Assert.AreEqual(before, State(caster, 1f));
+            Assert.IsEmpty(log);
+            Assert.IsTrue(caster.Press(1f), "still ready afterwards");
+        }
+
         [Test]
         public void CasterExposesItsPattern()
         {

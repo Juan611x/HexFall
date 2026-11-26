@@ -162,6 +162,121 @@ namespace HexFall.UI.Tests
         private void Update() =>
             typeof(PlayerCombat).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(_combat, null);
 
+        // ---- A click made while the spell is not ready stays pending while the button is held ----
+
+        // A Fire-like spell fired by input at t = 1 (released at 1.2, cooling down until ~1.8), then clicked again at 1.4.
+        private float _t;
+
+        private void FireThenClickDuringTheCooldown()
+        {
+            _combat.ClockOverride = () => _t;
+            _combat.SetSpell(Spell(CastPattern.Charged));
+            _t = 1f;
+            _combat.StartAttackFromInput();
+            _t = 1.2f;
+            _combat.ReleaseAttack();
+            _t = 1.4f;
+            Assert.IsFalse(_combat.StartAttackFromInput(), "refused: cooling down");
+            Assert.IsTrue(_combat.Machine.HasPendingAttack);
+        }
+
+        [Test]
+        public void AnInputPressDuringTheCooldownStartsTheCastWhenReadyAndCountsAsAnInputCast()
+        {
+            FireThenClickDuringTheCooldown();
+            _combat.Step(1.5f, attackHeld: true);
+            Assert.AreNotEqual(ActionStateId.Charging, _combat.Machine.Current, "still cooling down");
+            _combat.Step(2f, attackHeld: true);
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current, "the pending click started the charge");
+            _combat.Step(2.1f, attackHeld: false);
+            Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current, "its release was lost: the input-cast guard drops it");
+        }
+
+        [Test]
+        public void ARefusedInputPressStartedByAScriptedTickIsStillAnInputCast()
+        {
+            FireThenClickDuringTheCooldown();
+            _t = 2f;
+            Assert.IsTrue(_combat.Attack(), "the pending press starts on a tick made outside Step");
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current);
+
+            _combat.Step(2.1f, attackHeld: false);
+
+            Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current, "its release was lost: the input-cast guard drops it");
+        }
+
+        [Test]
+        public void ARefusedInputPressStartedByAnIdleMachineTickIsStillAnInputCast()
+        {
+            FireThenClickDuringTheCooldown();
+            _combat.Machine.Tick(new ActionIntent(false, false), 2f);
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current);
+
+            _combat.Step(2.1f, attackHeld: false);
+
+            Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current);
+        }
+
+        [Test]
+        public void AnInputPressReleasedWithoutAReleaseEventIsDroppedBeforeItStarts()
+        {
+            FireThenClickDuringTheCooldown();
+            _combat.Step(1.5f, attackHeld: false);
+            Assert.IsFalse(_combat.Machine.HasPendingAttack);
+            _combat.Step(2f, attackHeld: true);
+            Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current);
+        }
+
+        [Test]
+        public void ReleaseAttackDropsAPendingInputPress()
+        {
+            FireThenClickDuringTheCooldown();
+            _combat.ReleaseAttack();
+            _combat.Step(2f, attackHeld: true);
+            Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current);
+        }
+
+        [Test]
+        public void ThePendingStartIsCountedAsAnAttackStart()
+        {
+            FireThenClickDuringTheCooldown();
+            var starts = 0;
+            _combat.Machine.StateChanged += (from, to) => { if (ActionStateRules.StartsCast(from, to)) starts++; };
+            _combat.Step(2f, attackHeld: true);
+            Assert.AreEqual(1, starts);
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current);
+        }
+
+        [Test]
+        public void AScriptedPressThatWasRefusedIsNotDroppedByAnUnheldInput()
+        {
+            _combat.ClockOverride = () => _t;
+            _combat.SetSpell(Spell(CastPattern.Charged));
+            _t = 1f;
+            _combat.Attack();
+            _t = 1.2f;
+            _combat.ReleaseAttack();
+            _t = 1.4f;
+            Assert.IsFalse(_combat.Attack());
+            _combat.Step(2f, attackHeld: false);
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current, "a scripted press has no input to lose");
+            _combat.Step(2.1f, attackHeld: false);
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current, "and its hold is not an input cast");
+        }
+
+        [Test]
+        public void ARefusedInputPressDoesNotDropARunningScriptedHoldWhenTheInputIsNotHeld()
+        {
+            _combat.ClockOverride = () => _t;
+            _combat.SetSpell(Spell(CastPattern.Charged));
+            _t = 1f;
+            Assert.IsTrue(_combat.Attack());
+            Assert.IsFalse(_combat.StartAttackFromInput());
+            _combat.Step(1.1f, attackHeld: false);
+            Assert.IsFalse(_combat.Machine.HasPendingAttack, "the unheld input dropped its pending press");
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current, "but the scripted hold is untouched");
+        }
+
         // ---- A launch that throws must not leak the pooled bolt ----
 
         [Test]

@@ -170,6 +170,36 @@ namespace HexFall.UI.Tests
             Assert.DoesNotThrow(() => adapter.Refresh());
         }
 
+        // A HUD created after the wizard still gets the ring: the adapter keeps looking while unbound.
+        [Test]
+        public void AHudThatAppearsLateIsBoundByARetryWhileUnbound()
+        {
+            var wizard = Track(new GameObject("Wizard"));
+            var combat = wizard.AddComponent<PlayerCombat>();
+            Invoke(combat, "Awake");
+            var adapter = wizard.AddComponent<SpellRingHud>();
+            var view = new FakeView();
+            ISpellRingView found = null;
+            adapter.ViewFinder = () => found;
+
+            Invoke(adapter, "Update");
+            Assert.AreEqual(0, view.Calls);
+
+            found = view;
+            for (var i = 0; i < 60 && view.Calls == 0; i++) Invoke(adapter, "Update");
+            Assert.Greater(view.Calls, 0);
+        }
+
+        [Test]
+        public void OnceBoundTheAdapterStopsLooking()
+        {
+            var (_, adapter, _, _) = NewWizard(null);
+            var lookups = 0;
+            adapter.ViewFinder = () => { lookups++; return null; };
+            for (var i = 0; i < 40; i++) Invoke(adapter, "Update");
+            Assert.AreEqual(0, lookups);
+        }
+
         [Test]
         public void ThePlayerPrefabHasTheRingAdapter()
         {
