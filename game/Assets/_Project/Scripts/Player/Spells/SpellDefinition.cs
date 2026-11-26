@@ -111,30 +111,34 @@ namespace HexFall.Player.Spells
 
         private void OnValidate() => Sanitize();
 
+        // NaN and +/-Infinity fall back to 0 so the clamps below always see a finite number.
+        private static float Finite(float v) => float.IsNaN(v) || float.IsInfinity(v) ? 0f : v;
+
         // Clamps obviously invalid authoring values; public so tests can run it without the editor callback.
         public void Sanitize()
         {
             damage = Mathf.Max(0, damage);
-            cooldownSeconds = Mathf.Max(0f, cooldownSeconds);
+            cooldownSeconds = Mathf.Max(0f, Finite(cooldownSeconds));
 
-            projectile.speed = Mathf.Max(0f, projectile.speed);
-            projectile.gravity = Mathf.Max(0f, projectile.gravity);
-            projectile.sizeScale = Mathf.Max(0.01f, projectile.sizeScale);
-            projectile.lifetimeSeconds = Mathf.Max(0.01f, projectile.lifetimeSeconds);
+            projectile.speed = Mathf.Max(0f, Finite(projectile.speed));
+            projectile.gravity = Mathf.Max(0f, Finite(projectile.gravity));
+            projectile.curveDegreesPerSecond = Finite(projectile.curveDegreesPerSecond);
+            projectile.sizeScale = Mathf.Max(0.01f, Finite(projectile.sizeScale));
+            projectile.lifetimeSeconds = Mathf.Max(0.01f, Finite(projectile.lifetimeSeconds));
 
-            charge.maxChargeSeconds = Mathf.Max(0f, charge.maxChargeSeconds);
+            charge.maxChargeSeconds = Mathf.Max(0f, Finite(charge.maxChargeSeconds));
             charge.minDamage = Mathf.Max(0, charge.minDamage);
             charge.maxDamage = Mathf.Max(charge.minDamage, charge.maxDamage);
 
             burst.count = Mathf.Max(1, burst.count);
-            burst.intervalSeconds = Mathf.Max(0f, burst.intervalSeconds);
-            burst.spreadDegrees = Mathf.Max(0f, burst.spreadDegrees);
+            burst.intervalSeconds = Mathf.Max(0f, Finite(burst.intervalSeconds));
+            burst.spreadDegrees = Mathf.Max(0f, Finite(burst.spreadDegrees));
 
-            channel.durationSeconds = Mathf.Max(0f, channel.durationSeconds);
-            channel.ticksPerSecond = Mathf.Max(0.1f, channel.ticksPerSecond);
+            channel.durationSeconds = Mathf.Max(0f, Finite(channel.durationSeconds));
+            channel.ticksPerSecond = Mathf.Max(0.1f, Finite(channel.ticksPerSecond));
             channel.damagePerTick = Mathf.Max(0, channel.damagePerTick);
-            channel.rangeMeters = Mathf.Max(0f, channel.rangeMeters);
-            channel.cooldownPerChannelSecond = Mathf.Max(0f, channel.cooldownPerChannelSecond);
+            channel.rangeMeters = Mathf.Max(0f, Finite(channel.rangeMeters));
+            channel.cooldownPerChannelSecond = Mathf.Max(0f, Finite(channel.cooldownPerChannelSecond));
         }
     }
 }

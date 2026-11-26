@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HexFall.Player;
 using HexFall.Player.Actions;
+using HexFall.Player.Spells;
 using NUnit.Framework;
 
 namespace HexFall.UI.Tests
@@ -59,7 +60,7 @@ namespace HexFall.UI.Tests
         {
             var machine = Create();
             var fired = 0;
-            machine.BoltFired += () => fired++;
+            machine.ShotFired += _ => fired++;
             machine.Tick(Attack, 1f);
             machine.Tick(None, 1.19f);
             Assert.AreEqual(0, fired);
@@ -75,7 +76,7 @@ namespace HexFall.UI.Tests
         {
             var machine = Create();
             var fired = 0;
-            machine.BoltFired += () => fired++;
+            machine.ShotFired += _ => fired++;
             machine.Tick(Attack, 1f);
             machine.Tick(None, 2f);
             Assert.AreEqual(1, fired);
@@ -97,8 +98,8 @@ namespace HexFall.UI.Tests
         [Test]
         public void AttackPressIsRefusedWhileTheCooldownRuns()
         {
-            var settings = new ActionSettings { attackCooldownSeconds = 1f };
-            var machine = new ActionMachine(settings);
+            var spell = new SpellCaster(new CastConfig { Pattern = CastPattern.Single, Damage = 18, CooldownSeconds = 1f });
+            var machine = new ActionMachine(new ActionSettings(), spell);
             machine.Tick(Attack, 1f);
             machine.Tick(None, 1.51f);
             Assert.AreEqual(ActionStateId.Ready, machine.Current);
@@ -113,7 +114,7 @@ namespace HexFall.UI.Tests
         {
             var machine = Create();
             var fired = 0;
-            machine.BoltFired += () => fired++;
+            machine.ShotFired += _ => fired++;
             machine.Tick(Attack, 1f);
             machine.Tick(Attack, 1.3f);
             machine.Tick(None, 1.51f);
@@ -173,7 +174,7 @@ namespace HexFall.UI.Tests
         {
             var machine = Create();
             var fired = 0;
-            machine.BoltFired += () => fired++;
+            machine.ShotFired += _ => fired++;
             machine.Tick(Attack, 1f);
             machine.Tick(Parry, 1.1f);
             Assert.AreEqual(ActionStateId.Parry, machine.Current);
@@ -187,7 +188,7 @@ namespace HexFall.UI.Tests
         {
             var machine = Create();
             var fired = 0;
-            machine.BoltFired += () => fired++;
+            machine.ShotFired += _ => fired++;
             machine.Tick(Attack, 1f);
             machine.Tick(None, 1.2f);
             machine.Tick(Parry, 1.3f);
@@ -331,7 +332,7 @@ namespace HexFall.UI.Tests
             var settings = new ActionSettings();
             var machine = CreateOutOfCharges();
             var fired = 0;
-            machine.BoltFired += () => fired++;
+            machine.ShotFired += _ => fired++;
 
             machine.Tick(Attack, 4f);
             Assert.AreEqual(ActionStateId.Attack, machine.Current);
