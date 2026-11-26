@@ -154,7 +154,7 @@ namespace HexFall.Player
             RaycastHit? nearest = null;
             foreach (var hit in hits)
             {
-                if (_owner != null && hit.collider.transform.root == _owner.transform.root) continue;
+                if (OwnerFilter.Owns(_owner, hit.collider.transform)) continue;
                 if (nearest == null || hit.distance < nearest.Value.distance) nearest = hit;
             }
 

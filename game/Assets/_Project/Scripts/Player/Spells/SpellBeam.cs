@@ -87,7 +87,7 @@ namespace HexFall.Player
             float? distance = null;
             foreach (var hit in Physics.RaycastAll(origin, direction, range, ~0, QueryTriggerInteraction.Ignore))
             {
-                if (_owner != null && hit.collider.transform.root == _owner.transform.root) continue;
+                if (OwnerFilter.Owns(_owner, hit.collider.transform)) continue;
                 if (distance != null && hit.distance >= distance.Value) continue;
                 distance = hit.distance;
                 nearest = hit;

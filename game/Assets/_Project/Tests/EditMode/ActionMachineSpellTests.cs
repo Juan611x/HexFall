@@ -380,7 +380,9 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(ActionStateId.Ready, rig.State);
             Assert.AreEqual(1, rig.ChannelEnds.Count);
             rig.Tick(Press, 1.3f);
-            rig.RunTo(1.6f);
+            Assert.AreEqual(ActionStateId.Ready, rig.State, "the cancelled channel's cooldown carries over the swap");
+            rig.Tick(Press, 1.83f);
+            rig.RunTo(2.2f);
             Assert.AreEqual(31, rig.Shots[0].Shot.Damage);
         }
 

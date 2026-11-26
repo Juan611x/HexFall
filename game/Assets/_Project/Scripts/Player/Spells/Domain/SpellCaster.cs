@@ -23,6 +23,17 @@ namespace HexFall.Player.Spells
 
         public bool IsBusy => _pattern.IsBusy;
 
+        // When the cooldown of the last cast ends (-Infinity before the first cast).
+        public float ReadyAt => _readyAt;
+
+        // A spell swap keeps the cooldown that was running: this caster is not ready before the given time
+        // either. Never shortens its own cooldown; a non-finite time is ignored.
+        public void InheritCooldown(float readyAt)
+        {
+            if (float.IsNaN(readyAt) || float.IsInfinity(readyAt)) return;
+            if (readyAt > _readyAt) _readyAt = readyAt;
+        }
+
         public bool IsReady(float now) => !IsBusy && now >= _readyAt - CastTime.Eps;
 
         // Returns whether the press started a cast.
