@@ -112,7 +112,7 @@ namespace HexFall.UI.Tests
         public void AHoldIsDroppedWhenTheAttackInputIsNoLongerHeld()
         {
             _combat.SetSpell(Spell(CastPattern.Charged));
-            _combat.Attack();
+            Assert.IsTrue(_combat.StartAttackFromInput());
             var shots = 0;
             _combat.Machine.ShotFired += _ => shots++;
             _combat.Step(Now, attackHeld: true);
@@ -120,6 +120,170 @@ namespace HexFall.UI.Tests
             _combat.Step(Now, attackHeld: false);
             Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current);
             Assert.AreEqual(0, shots);
+        }
+
+        [Test]
+        public void ACastStartedByAScriptedAttackIsNotDroppedWhenTheInputIsNotHeld()
+        {
+            _combat.SetSpell(Spell(CastPattern.Charged));
+            Assert.IsTrue(_combat.Attack());
+            _combat.Step(Now, attackHeld: false);
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current);
+        }
+
+        [Test]
+        public void TheInputGuardClearsOnceTheCastEndsSoALaterScriptedCastIsKept()
+        {
+            _combat.SetSpell(Spell(CastPattern.Charged));
+            _combat.StartAttackFromInput();
+            _combat.Step(Now, attackHeld: false);
+            Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current);
+
+            Assert.IsTrue(_combat.Attack());
+            _combat.Step(Now, attackHeld: false);
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current);
+        }
+
+        [Test]
+        public void UpdateReadsTheHeldSourceAndDropsAnInputHoldWhoseReleaseWasLost()
+        {
+            var held = true;
+            _combat.AttackHeldSource = () => held;
+            _combat.SetSpell(Spell(CastPattern.Charged));
+            _combat.StartAttackFromInput();
+
+            Update();
+            Assert.AreEqual(ActionStateId.Charging, _combat.Machine.Current);
+            held = false;
+            Update();
+            Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current);
+        }
+
+        private void Update() =>
+            typeof(PlayerCombat).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(_combat, null);
+
+        // ---- A launch that throws must not leak the pooled bolt ----
+
+        [Test]
+        public void ABoltWhoseLaunchThrowsGoesBackToThePool()
+        {
+            var prefabGo = new GameObject("BoltPrefab");
+            _made.Add(prefabGo);
+            prefabGo.SetActive(false);
+            var prefab = prefabGo.AddComponent<Bolt>();
+            typeof(PlayerCombat).GetField("boltPrefab", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_combat, prefab);
+            _combat.AimOverride = () => new Vector3(0f, 1.3f, 50f);
+
+            var spell = Spell(CastPattern.Single);
+            var projectile = spell.Projectile;
+            projectile.gravity = float.NaN; // ProjectileFlight refuses it
+            typeof(SpellDefinition).GetField("projectile", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(spell, projectile);
+            _combat.SetSpell(spell);
+
+            var t = Now;
+            _combat.Machine.Tick(new ActionIntent(true, false), t);
+            Assert.Throws<System.ArgumentException>(() => _combat.Machine.Tick(new ActionIntent(false, false), t + 0.5f));
+
+            var active = 0;
+            foreach (var bolt in Object.FindObjectsByType<Bolt>()) if (bolt != prefab) active++;
+            Assert.AreEqual(0, active, "no active bolt is left behind");
+            foreach (var bolt in Object.FindObjectsByType<Bolt>(FindObjectsInactive.Include))
+                if (bolt != prefab) _made.Add(bolt.gameObject);
+            BoltPool.Clear();
+        }
+
+        // ---- The Water beam end to end ----
+
+        private sealed class Target : MonoBehaviour, IDamageable
+        {
+            public readonly List<HitInfo> Hits = new List<HitInfo>();
+            public void TakeHit(HitInfo hit) => Hits.Add(hit);
+        }
+
+        private SpellBeam WireBeam(SpellDefinition spell, out Target target)
+        {
+            var beamGo = new GameObject("Beam");
+            _made.Add(beamGo);
+            var pivot = new GameObject("Pivot");
+            _made.Add(pivot);
+            pivot.transform.SetParent(beamGo.transform, false);
+            pivot.SetActive(false);
+            var beam = beamGo.AddComponent<SpellBeam>();
+            typeof(SpellBeam).GetField("pivot", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(beam, pivot.transform);
+            typeof(PlayerCombat).GetField("beam", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_combat, beam);
+            _combat.AimOverride = () => new Vector3(0f, 1.3f, 50f);
+            _combat.SetSpell(spell);
+
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            _made.Add(cube);
+            cube.transform.position = new Vector3(0f, 1.3f, 5f);
+            Physics.SyncTransforms();
+            target = cube.AddComponent<Target>();
+            return beam;
+        }
+
+        [Test]
+        public void ChannellingDamagesTheTargetEachTickShowsTheBeamAndHidesItOnRelease()
+        {
+            var beam = WireBeam(Spell(CastPattern.Channel), out var target);
+            var t = Now;
+            _combat.Machine.Tick(new ActionIntent(true, false), t);
+            Assert.IsTrue(beam.IsActive);
+
+            _combat.Machine.Tick(new ActionIntent(false, false), t + 0.55f);
+            Assert.AreEqual(5, target.Hits.Count, "10 ticks/s for 0.55 s");
+            Assert.AreEqual(4, target.Hits[0].Damage);
+            Assert.AreSame(_combat.ActiveSpell, target.Hits[0].Spell);
+
+            _combat.Machine.Tick(new ActionIntent(false, false, true), t + 0.55f);
+            Assert.IsFalse(beam.IsActive);
+        }
+
+        [Test]
+        public void TheBeamFollowsTheCameraEveryFrameWhileChannelling()
+        {
+            var beam = WireBeam(Spell(CastPattern.Channel), out _);
+            _combat.AttackHeldSource = () => true;
+            _combat.StartAttackFromInput();
+            Update();
+            Assert.AreEqual(4.5f, beam.Length, 0.01f, "from the muzzle to the cube face at z 4.5");
+        }
+
+        [Test]
+        public void AParryEndsTheChannelAndHidesTheBeam()
+        {
+            var beam = WireBeam(Spell(CastPattern.Channel), out _);
+            var t = Now;
+            _combat.Machine.Tick(new ActionIntent(true, false), t);
+            Assert.IsTrue(beam.IsActive);
+            _combat.Machine.Tick(new ActionIntent(false, true), t + 0.2f);
+            Assert.IsFalse(beam.IsActive);
+        }
+
+        [Test]
+        public void SwappingTheSpellMidChannelHidesTheBeam()
+        {
+            var beam = WireBeam(Spell(CastPattern.Channel), out _);
+            _combat.Machine.Tick(new ActionIntent(true, false), Now);
+            Assert.IsTrue(beam.IsActive);
+            _combat.SetSpell(Spell(CastPattern.Single));
+            Assert.IsFalse(beam.IsActive);
+        }
+
+        [Test]
+        public void TheChannelCooldownIsTheBasePlusTheChannelledTimeScaled()
+        {
+            WireBeam(Spell(CastPattern.Channel), out _);
+            var t = Now;
+            _combat.Machine.Tick(new ActionIntent(true, false), t);
+            _combat.Machine.Tick(new ActionIntent(false, false, true), t + 1f); // 1 s channelled: 0.5 + 1 x 0.6
+            var starts = 0;
+            _combat.Machine.AttackPressed += () => starts++;
+
+            _combat.Machine.Tick(new ActionIntent(true, false), t + 1f + 1.0f);
+            Assert.AreEqual(ActionStateId.Ready, _combat.Machine.Current, "still cooling down 1.0 s after the release");
+            _combat.Machine.Tick(new ActionIntent(true, false), t + 1f + 1.2f);
+            Assert.AreEqual(ActionStateId.Channelling, _combat.Machine.Current, "ready after 1.1 s");
         }
     }
 }

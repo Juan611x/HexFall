@@ -17,6 +17,9 @@ namespace HexFall.Player
         [SerializeField] private AudioClip impactClip;
         [SerializeField, Range(0f, 1f)] private float impactVolume = 0.9f;
 
+        // Speed used when a spell gives none that is usable (zero, negative or not a number).
+        private const float FallbackSpeed = 30f;
+
         private GameObject _owner;
         private SpellDefinition _spell;
         private ProjectileFlight _flight;
@@ -54,12 +57,15 @@ namespace HexFall.Player
             _spell = spell;
             var scale = projectile.sizeScale > 0f ? projectile.sizeScale : 1f;
             _sweepRadius = radius * scale;
-            var velocity = direction.normalized * projectile.speed;
+            var velocity = direction.normalized * Usable(projectile.speed, FallbackSpeed);
             _flight = new ProjectileFlight(transform.position, velocity, projectile.gravity,
-                projectile.curveDegreesPerSecond, projectile.lifetimeSeconds);
+                projectile.curveDegreesPerSecond, Usable(projectile.lifetimeSeconds, lifetimeSeconds));
             if (velocity.sqrMagnitude > 0f) transform.rotation = Quaternion.LookRotation(velocity);
             ApplyLook(scale, spell);
         }
+
+        // A positive finite value, else the fallback: a spell with no speed or lifetime must not fire nothing or hover.
+        private static float Usable(float value, float fallback) => value > 0f && !float.IsInfinity(value) ? value : fallback;
 
         private void Cache()
         {
