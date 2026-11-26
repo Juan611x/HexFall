@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace HexFall.Player
@@ -18,5 +19,14 @@ namespace HexFall.Player
         public bool Remove(T key) => _keys.Remove(key) && _keys.Count == 0;
 
         public void Clear() => _keys.Clear();
+
+        // A collider disabled or destroyed inside a trigger never raises its exit: drop the keys that are
+        // no longer alive. True when that emptied the set (the pickup left reach).
+        public bool Prune(Func<T, bool> isAlive)
+        {
+            if (isAlive == null) throw new ArgumentNullException(nameof(isAlive));
+            if (_keys.Count == 0) return false;
+            return _keys.RemoveWhere(k => !isAlive(k)) > 0 && _keys.Count == 0;
+        }
     }
 }

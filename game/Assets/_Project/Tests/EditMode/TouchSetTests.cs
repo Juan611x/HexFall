@@ -1,3 +1,4 @@
+using System;
 using HexFall.Player;
 using NUnit.Framework;
 
@@ -58,6 +59,43 @@ namespace HexFall.UI.Tests
             set.Add("a");
             set.Clear();
             Assert.IsTrue(set.IsEmpty);
+        }
+
+        // A collider disabled or destroyed inside the trigger never raises an exit; pruning drops those keys.
+        [Test]
+        public void PruneDropsTheKeysThatAreNoLongerAlive()
+        {
+            var set = new TouchSet<string>();
+            set.Add("live");
+            set.Add("dead");
+            Assert.IsFalse(set.Prune(k => k == "live"), "a live key remains");
+            Assert.AreEqual(1, set.Count);
+        }
+
+        [Test]
+        public void PruneReportsWhenTheLastKeyWasDropped()
+        {
+            var set = new TouchSet<string>();
+            set.Add("a");
+            set.Add("b");
+            Assert.IsTrue(set.Prune(k => false));
+            Assert.IsTrue(set.IsEmpty);
+        }
+
+        [Test]
+        public void PruningAnEmptySetOrWhenAllAreAliveReportsNothing()
+        {
+            var set = new TouchSet<string>();
+            Assert.IsFalse(set.Prune(k => false));
+            set.Add("a");
+            Assert.IsFalse(set.Prune(k => true));
+            Assert.AreEqual(1, set.Count);
+        }
+
+        [Test]
+        public void PruneRequiresAPredicate()
+        {
+            Assert.Throws<ArgumentNullException>(() => new TouchSet<string>().Prune(null));
         }
     }
 }
