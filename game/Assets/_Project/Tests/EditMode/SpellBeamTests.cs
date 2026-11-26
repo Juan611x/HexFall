@@ -244,6 +244,45 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(new Vector3(1f, 2f, 3f), _pivot.position);
         }
 
+        // The beam is drawn after the frame's animation, facing, locomotion and camera: it reads the
+        // origin and aim from its sources at that moment, not from values captured earlier in the frame.
+        [Test]
+        public void TheBeamFollowsItsSourcesAtTheEndOfTheFrame()
+        {
+            var anchor = Track(new GameObject("Anchor")).transform;
+            var aim = new Vector3(10f, 0f, 0f);
+            _beam.Begin(_owner, _spell, () => anchor.position, () => aim);
+
+            anchor.position = new Vector3(0f, 2f, 0f); // animator and locomotion moved it after Update
+            aim = new Vector3(0f, 2f, 10f);            // the camera moved after Update
+            _beam.UpdateToFinalPose();
+
+            Assert.AreEqual(new Vector3(0f, 2f, 0f), _pivot.position);
+            Assert.AreEqual(1f, (_pivot.rotation * Vector3.forward).z, 1e-4f);
+        }
+
+        [Test]
+        public void QueuedPulsesHitAlongTheFinalPoseOfTheFrame()
+        {
+            var enemy = Track(new GameObject("Enemy"));
+            enemy.transform.position = new Vector3(0f, 0f, 5f);
+            enemy.AddComponent<BoxCollider>();
+            var target = enemy.AddComponent<Target>();
+            var origin = Vector3.zero;
+            var aim = new Vector3(10f, 0f, 0f); // last frame's pose misses the enemy
+            _beam.Begin(_owner, _spell, () => origin, () => aim);
+
+            _beam.QueuePulse(4);                // the tick fires in Update
+            aim = new Vector3(0f, 0f, 10f);     // the final pose points at it
+            _beam.UpdateToFinalPose();
+
+            Assert.AreEqual(1, target.Hits.Count);
+            Assert.AreEqual(4, target.Hits[0].Damage);
+
+            _beam.UpdateToFinalPose();          // the queue is spent
+            Assert.AreEqual(1, target.Hits.Count);
+        }
+
         [Test]
         public void TheVisualIsTintedWithTheSpellColour()
         {

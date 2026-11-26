@@ -138,6 +138,12 @@ namespace HexFall.Player.Spells
 
         public float ChargeLevel(float now) => 0f;
 
+        public float ChannelRemaining(float now)
+        {
+            if (!_active || _c.ChannelDurationSeconds <= 0f) return 0f;
+            return Math.Min(1f, Math.Max(0f, 1f - (now - _start) / _c.ChannelDurationSeconds));
+        }
+
         // With a wind-up the press only starts the pose: nothing is cast and no cooldown runs until the pose
         // is reached (or the fallback timeout passes), so an early release or cancel costs nothing.
         public void Press(float now, ICastSink sink)

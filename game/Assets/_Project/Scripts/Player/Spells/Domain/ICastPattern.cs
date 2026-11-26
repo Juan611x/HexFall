@@ -22,6 +22,8 @@ namespace HexFall.Player.Spells
         float ChargeLevel(float now);
         // True while a held cast waits for its pose before it really starts (channels with a wind-up).
         bool IsWindingUp => false;
+        // 1..0 remaining share of a running channel; 0 for patterns that do not channel or a channel not running.
+        float ChannelRemaining(float now) => 0f;
         // The adapter reports the cast pose reached; only a pattern that is winding up reacts.
         void PoseReached(float now, ICastSink sink) { }
     }

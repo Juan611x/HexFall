@@ -6,7 +6,7 @@ namespace HexFall.UI
     // Fills the HUD's player cluster. Until health and shield systems exist, it shows the serialized
     // values; gameplay code will call Show with the live status.
     [RequireComponent(typeof(UIDocument))]
-    public class PlayerHud : MonoBehaviour, IInteractPromptView
+    public class PlayerHud : MonoBehaviour, IInteractPromptView, ISpellRingView
     {
         [SerializeField] private string playerName = "Wizard";
         [SerializeField] private int health = 100;
@@ -19,6 +19,7 @@ namespace HexFall.UI
         private Label _health;
         private Label _shield;
         private InkPromptElement _prompt;
+        private SpellRingElement _ring;
 
         private void OnEnable()
         {
@@ -28,6 +29,7 @@ namespace HexFall.UI
             _health = root.Q<Label>("player-health");
             _shield = root.Q<Label>("player-shield");
             _prompt = root.Q<InkPromptElement>("interact-prompt");
+            _ring = root.Q<SpellRingElement>("spell-ring");
             Show(new PlayerStatus(playerName, health, maxHealth, shieldCharges, maxShieldCharges));
         }
 
@@ -35,6 +37,9 @@ namespace HexFall.UI
         public void ShowPrompt(string key, string text) => _prompt?.Show(key, text);
 
         public void HidePrompt() => _prompt?.Hide();
+
+        // The ring around the crosshair: cooldown, charge or channel of the active spell, in its colour.
+        public void SetSpellRing(SpellRingState state, Color color) => _ring?.SetState(state, color);
 
         public void Show(PlayerStatus status)
         {

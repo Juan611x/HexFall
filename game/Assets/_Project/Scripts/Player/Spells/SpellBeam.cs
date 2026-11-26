@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using HexFall.Player.Spells;
 using UnityEngine;
 
@@ -7,8 +9,13 @@ namespace HexFall.Player
     // PlayerCombat from the channel events: Begin shows a stretched cylinder tinted with the spell colour,
     // Refresh stretches it every frame, Pulse (one per channel tick) deals that tick's damage to whatever
     // the beam meets first, End hides it. Geometry is BeamTrace; this class only asks the physics engine.
+    // Runs after the Cinemachine brain (order 100, LateUpdate): the muzzle (animated staff orb), the wizard's
+    // facing and position and the camera aim are all final by then, so the beam never lags a frame behind.
+    [DefaultExecutionOrder(ExecutionOrder)]
     public class SpellBeam : MonoBehaviour
     {
+        public const int ExecutionOrder = 200;
+
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
@@ -21,6 +28,9 @@ namespace HexFall.Player
         private GameObject _owner;
         private SpellDefinition _spell;
         private MaterialPropertyBlock _block;
+        private Func<Vector3> _origin;
+        private Func<Vector3> _aim;
+        private readonly List<int> _queuedTicks = new List<int>();
 
         public bool IsActive { get; private set; }
 
@@ -28,8 +38,14 @@ namespace HexFall.Player
         public float Length { get; private set; }
 
         // The channel started: show the beam in the spell colour. The owner's colliders are never hit.
-        public void Begin(GameObject owner, SpellDefinition spell)
+        public void Begin(GameObject owner, SpellDefinition spell) => Begin(owner, spell, null, null);
+
+        // With sources, the beam draws itself and deals its queued ticks at the end of every frame.
+        public void Begin(GameObject owner, SpellDefinition spell, Func<Vector3> origin, Func<Vector3> aim)
         {
+            _origin = origin;
+            _aim = aim;
+            _queuedTicks.Clear();
             _owner = owner;
             _spell = spell;
             IsActive = true;
@@ -43,7 +59,28 @@ namespace HexFall.Player
         {
             IsActive = false;
             Length = 0f;
+            _queuedTicks.Clear();
             if (pivot != null) pivot.gameObject.SetActive(false);
+        }
+
+        // A channel tick fired mid-frame: its damage lands in the end-of-frame pass, along the final pose.
+        public void QueuePulse(int damage)
+        {
+            if (IsActive) _queuedTicks.Add(damage);
+        }
+
+        private void LateUpdate() => UpdateToFinalPose();
+
+        // Draws the beam and deals the queued ticks from the sources' current origin and aim.
+        public void UpdateToFinalPose()
+        {
+            if (!IsActive || _origin == null || _aim == null) return;
+            var origin = _origin();
+            var aim = _aim();
+            Refresh(origin, aim);
+            var ticks = _queuedTicks.ToArray();
+            _queuedTicks.Clear();
+            foreach (var damage in ticks) Pulse(origin, aim, damage);
         }
 
         // Stretches the visual from the muzzle toward the aim point, to the range or the first surface.

@@ -53,7 +53,7 @@ namespace HexFall.Player
         // Test seam: the clock every machine tick uses (Time.time when null).
         internal System.Func<float> ClockOverride { get; set; }
 
-        private float Now => ClockOverride != null ? ClockOverride() : Time.time;
+        internal float Now => ClockOverride != null ? ClockOverride() : Time.time;
 
         // The action state machine; the IK, animator and audio adapters read it. Null before Awake.
         public ActionMachine Machine { get; private set; }
@@ -177,7 +177,6 @@ namespace HexFall.Player
         private void Update()
         {
             Step(Now, AttackHeld());
-            if (beam != null && beam.IsActive) beam.Refresh(CastOrigin(), AimPoint());
         }
 
         // One frame of the machine. A hold (charge, channel) whose attack input is no longer held lost its
@@ -259,9 +258,9 @@ namespace HexFall.Player
             return _anchors != null ? _anchors.PositionFor(activeSpell != null ? activeSpell.CastAnchor : CastAnchors.Muzzle, fallback) : fallback;
         }
 
-        private void OnChannelStarted() { if (beam != null) beam.Begin(gameObject, activeSpell); }
+        private void OnChannelStarted() { if (beam != null) beam.Begin(gameObject, activeSpell, CastOrigin, AimPoint); }
 
-        private void OnChannelTicked(int damage) { if (beam != null) beam.Pulse(CastOrigin(), AimPoint(), damage); }
+        private void OnChannelTicked(int damage) { if (beam != null) beam.QueuePulse(damage); }
 
         private void OnChannelEnded(float seconds) { if (beam != null) beam.End(); }
 
