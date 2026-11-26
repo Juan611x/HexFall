@@ -81,7 +81,7 @@ namespace HexFall.UI.Tests
             Press(_mouse.leftButton);
             Release(_mouse.leftButton);
             Assert.AreEqual(1, _shots.Count);
-            Assert.AreEqual(_fire.Charge.minDamage, _shots[0].Damage);
+            Assert.AreEqual(_fire.Charge.baseDamage, _shots[0].Damage);
         }
 
         [Test]

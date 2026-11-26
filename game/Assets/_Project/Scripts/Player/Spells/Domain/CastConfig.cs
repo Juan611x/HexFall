@@ -12,8 +12,12 @@ namespace HexFall.Player.Spells
         public float CooldownSeconds;
 
         public float MaxChargeSeconds;
-        public int MinDamage;
-        public int MaxDamage;
+        // Charged damage = round(BaseDamage x multiplier): Constant applies ChargeMultiplier at full charge only,
+        // Curve samples ChargeCurve (multipliers over charge 0..1, linearly interpolated).
+        public int BaseDamage;
+        public ChargeDamageMode ChargeMode;
+        public float ChargeMultiplier;
+        public float[] ChargeCurve;
 
         public int BurstCount;
         public float BurstIntervalSeconds;
@@ -31,8 +35,9 @@ namespace HexFall.Player.Spells
             c.Damage = Math.Max(0, c.Damage);
             c.CooldownSeconds = NonNegative(c.CooldownSeconds);
             c.MaxChargeSeconds = NonNegative(c.MaxChargeSeconds);
-            c.MinDamage = Math.Max(0, c.MinDamage);
-            c.MaxDamage = Math.Max(c.MinDamage, c.MaxDamage);
+            c.BaseDamage = Math.Max(0, c.BaseDamage);
+            c.ChargeMultiplier = Multiplier(c.ChargeMultiplier);
+            c.ChargeCurve = SanitizedCurve(c.ChargeCurve);
             c.BurstCount = Math.Max(1, c.BurstCount);
             c.BurstIntervalSeconds = NonNegative(c.BurstIntervalSeconds);
             c.BurstSpreadDegrees = NonNegative(c.BurstSpreadDegrees);
@@ -46,6 +51,18 @@ namespace HexFall.Player.Spells
 
         // NaN and +/-Infinity fall back to 0: an infinite interval or cooldown would lock the spell.
         private static float NonNegative(float v) => !IsFinite(v) || v < 0f ? 0f : v;
+
+        // A bad multiplier (NaN, infinite, negative) falls back to the neutral x1 rather than zeroing or inverting damage.
+        private static float Multiplier(float v) => !IsFinite(v) || v < 0f ? 1f : v;
+
+        // Copy with bad samples replaced by x1; a missing or empty table becomes a flat x1 one.
+        private static float[] SanitizedCurve(float[] curve)
+        {
+            if (curve == null || curve.Length == 0) return new[] { 1f, 1f };
+            var copy = new float[curve.Length];
+            for (var i = 0; i < curve.Length; i++) copy[i] = Multiplier(curve[i]);
+            return copy;
+        }
 
         private static bool IsFinite(float v) => !float.IsNaN(v) && !float.IsInfinity(v);
     }

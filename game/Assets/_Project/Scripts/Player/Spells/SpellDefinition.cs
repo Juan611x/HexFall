@@ -21,8 +21,16 @@ namespace HexFall.Player.Spells
         public struct ChargeSettings
         {
             public float maxChargeSeconds;
-            public int minDamage;
-            public int maxDamage;
+
+            [Header("Damage")]
+            [Tooltip("Damage before the charge multiplier: what a tap deals and what the multiplier scales.")]
+            [UnityEngine.Serialization.FormerlySerializedAs("minDamage")] public int baseDamage;
+            [Tooltip("Constant: damageMultiplier applies at full charge only. Curve: the damage curve sets the multiplier at every charge.")]
+            public ChargeDamageMode damageMode;
+            [Tooltip("Constant mode: multiplier on the base damage at full charge; any lesser charge deals the base damage.")]
+            public float constantMultiplier;
+            [Tooltip("Curve mode: x = charge (0 = tap, 1 = full), y = multiplier on the base damage.")]
+            public AnimationCurve damageCurve;
 
             [Header("Feedback")]
             [Tooltip("Projectile and orb size multiplier at no charge.")] public float minSizeScale;
@@ -84,7 +92,8 @@ namespace HexFall.Player.Spells
         };
         [SerializeField] private ChargeSettings charge = new ChargeSettings
         {
-            maxChargeSeconds = 1.2f, minDamage = 18, maxDamage = 45,
+            maxChargeSeconds = 1.2f, baseDamage = 18, damageMode = ChargeDamageMode.Constant,
+            constantMultiplier = 1f, damageCurve = FlatCurve(),
             minSizeScale = 1f, maxSizeScale = 1f, fullChargeColor = Color.white, colorBlend = 0f, speedScaleAtMax = 1f,
             showOrb = true, orbSize = 0.25f, windUpState = "Charge", windUpHoldNormalized = 0.5f,
         };
@@ -133,8 +142,10 @@ namespace HexFall.Player.Spells
             Damage = damage,
             CooldownSeconds = cooldownSeconds,
             MaxChargeSeconds = charge.maxChargeSeconds,
-            MinDamage = charge.minDamage,
-            MaxDamage = charge.maxDamage,
+            BaseDamage = charge.baseDamage,
+            ChargeMode = charge.damageMode,
+            ChargeMultiplier = charge.constantMultiplier,
+            ChargeCurve = BakeDamageCurve(charge.damageCurve),
             BurstCount = burst.count,
             BurstIntervalSeconds = burst.intervalSeconds,
             BurstSpreadDegrees = burst.spreadDegrees,
@@ -143,6 +154,24 @@ namespace HexFall.Player.Spells
             ChannelDamagePerTick = channel.damagePerTick,
             ChannelCooldownPerSecond = channel.cooldownPerChannelSecond,
         };
+
+        private static AnimationCurve FlatCurve() => AnimationCurve.Linear(0f, 1f, 1f, 1f);
+
+        // The domain never sees the AnimationCurve: it gets a table of multipliers sampled over charge 0..1.
+        private static float[] BakeDamageCurve(AnimationCurve curve) =>
+            curve == null || curve.length == 0
+                ? ChargeDamage.Bake(x => 1f)
+                : ChargeDamage.Bake(curve.Evaluate);
+
+        private static bool IsUsable(AnimationCurve curve)
+        {
+            if (curve == null || curve.length == 0) return false;
+            foreach (var k in curve.keys)
+                if (!IsFinite(k.time) || !IsFinite(k.value)) return false;
+            return true;
+        }
+
+        private static bool IsFinite(float v) => !float.IsNaN(v) && !float.IsInfinity(v);
 
         private void OnValidate() => Sanitize();
 
@@ -162,8 +191,10 @@ namespace HexFall.Player.Spells
             projectile.lifetimeSeconds = Mathf.Max(0.01f, Finite(projectile.lifetimeSeconds));
 
             charge.maxChargeSeconds = Mathf.Max(0f, Finite(charge.maxChargeSeconds));
-            charge.minDamage = Mathf.Max(0, charge.minDamage);
-            charge.maxDamage = Mathf.Max(charge.minDamage, charge.maxDamage);
+            charge.baseDamage = Mathf.Max(0, charge.baseDamage);
+            charge.constantMultiplier = !IsFinite(charge.constantMultiplier) || charge.constantMultiplier < 0f
+                ? 1f : charge.constantMultiplier;
+            if (!IsUsable(charge.damageCurve)) charge.damageCurve = FlatCurve();
             charge.minSizeScale = Mathf.Max(0.01f, Finite(charge.minSizeScale));
             charge.maxSizeScale = Mathf.Max(0.01f, Finite(charge.maxSizeScale));
             charge.colorBlend = Mathf.Clamp01(Finite(charge.colorBlend));

@@ -32,7 +32,7 @@ namespace HexFall.UI.Tests
         private static CastConfig Charged() => new CastConfig
         {
             Pattern = CastPattern.Charged, CooldownSeconds = 0.6f,
-            MaxChargeSeconds = 1.2f, MinDamage = 18, MaxDamage = 45,
+            MaxChargeSeconds = 1.2f, BaseDamage = 18, ChargeMode = ChargeDamageMode.Curve, ChargeCurve = ChargeDamage.Bake(x => 1f + 1.5f * x),
         };
 
         private static CastConfig Burst(int count = 3) => new CastConfig
@@ -100,7 +100,7 @@ namespace HexFall.UI.Tests
         }
 
         [Test]
-        public void ChargedQuickTapFiresMinDamage()
+        public void ChargedQuickTapFiresBaseDamage()
         {
             var caster = new SpellCaster(Charged());
             var rec = new Recorder(caster);
