@@ -116,7 +116,8 @@ namespace HexFall.UI.Tests
             var fired = 0;
             machine.ShotFired += _ => fired++;
             machine.Tick(Attack, 1f);
-            machine.Tick(Attack, 1.3f);
+            machine.Tick(Attack, 1.3f);                                  // seen while the attack runs: pending, not a restart
+            machine.Tick(new ActionIntent(false, false, true), 1.35f);   // released before it could start: dropped
             machine.Tick(None, 1.51f);
             Assert.AreEqual(1, fired);
             Assert.AreEqual(ActionStateId.Ready, machine.Current);

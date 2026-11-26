@@ -45,6 +45,10 @@ namespace HexFall.Player
         // True while the running cast was started from the Attack input; only those casts can have a lost release.
         private bool _inputCast;
 
+        // True while a press the machine refused (and keeps pending) came from the Attack input: it is dropped when
+        // the input stops being held, and the cast it starts later is an input cast.
+        private bool _inputPending;
+
         private CastAnchors _anchors;
 
         // Test seams: where the crosshair points and whether Attack is held. Null in production.
@@ -129,6 +133,7 @@ namespace HexFall.Player
         {
             var started = Attack();
             if (started) _inputCast = true;
+            else if (Machine.HasPendingAttack) _inputPending = true;
             return started;
         }
 
@@ -141,6 +146,7 @@ namespace HexFall.Player
         public void ReleaseAttack()
         {
             _inputCast = false;
+            _inputPending = false;
             Machine.Tick(new ActionIntent(false, false, true), Now);
         }
 
@@ -185,9 +191,22 @@ namespace HexFall.Player
         internal void Step(float now, bool attackHeld)
         {
             if (!Machine.IsHolding) _inputCast = false;
+            if (!Machine.HasPendingAttack) _inputPending = false;
             var lost = !attackHeld && Machine.IsHolding && _inputCast;
             if (lost) _inputCast = false;
+            if (!attackHeld && _inputPending)
+            {
+                Machine.DropPendingAttack(); // the click was let go without a release event
+                _inputPending = false;
+            }
+            var pendingFromInput = _inputPending;
             Machine.Tick(new ActionIntent(false, false, false, lost), now);
+            // The pending press started its cast on this tick: it is an input cast, so a lost release still drops it.
+            if (pendingFromInput && !Machine.HasPendingAttack)
+            {
+                _inputPending = false;
+                if (Machine.IsHolding) _inputCast = true;
+            }
             UpdateChargeOrb(now);
         }
 

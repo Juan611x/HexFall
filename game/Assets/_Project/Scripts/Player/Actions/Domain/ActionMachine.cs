@@ -14,6 +14,11 @@ namespace HexFall.Player.Actions
     // channel ticks, hits.
     // A parry press interrupts any cast (parry is defensive; shots not yet fired and held charges or
     // channels are cancelled), while an attack press is refused during a parry (the guard has to finish).
+    // A refused attack press is not lost: it stays pending while the button is held. The first tick on which
+    // the machine is Ready and the spell is ready starts the cast as a fresh press would, at that tick's time.
+    // Releasing (or a lost release) drops it; it is consumed once, so holding never repeats the cast. It
+    // survives a parry (the cast starts when the guard ends) and a spell swap (it follows the held button
+    // and starts the new spell once that is ready).
     public sealed class ActionMachine
     {
         private readonly ActionSettings _settings;
@@ -24,6 +29,7 @@ namespace HexFall.Player.Actions
         private float _attackEndsAt;
         private float _now;
         private bool _releasing;
+        private bool _pendingAttack;
 
         // Without a caster the wizard casts the Base spell (a single 18 damage bolt, 0.5 s cooldown).
         public ActionMachine(ActionSettings settings, SpellCaster caster = null)
@@ -42,6 +48,9 @@ namespace HexFall.Player.Actions
 
         public bool IsActing => Current != ActionStateId.Ready;
 
+        // An attack press was refused and waits for the wizard to be ready, while the button stays held.
+        public bool HasPendingAttack => _pendingAttack;
+
         // A charge or a channel is in progress and waits for the attack input to end.
         public bool IsHolding => Current == ActionStateId.Charging || Current == ActionStateId.Channelling;
 
@@ -55,6 +64,9 @@ namespace HexFall.Player.Actions
             _now = now;
             _caster.PoseReached(now);
         }
+
+        // Forgets a refused press that was waiting (the input stopped being held); a cast in progress is untouched.
+        public void DropPendingAttack() => _pendingAttack = false;
 
         // 0..1 progress of the charge in progress; 0 in any other state.
         public float ChargeLevel(float now) => Current == ActionStateId.Charging ? _caster.ChargeLevel(now) : 0f;
@@ -127,6 +139,8 @@ namespace HexFall.Player.Actions
             Expire(now);
             if (intent.ParryPressed) ParryPressed?.Invoke();
             if (intent.AttackPressed) AttackPressed?.Invoke();
+            var ended = intent.AttackReleased || intent.AttackCancelled;
+            if (ended && !intent.AttackPressed) _pendingAttack = false; // released before it could start
             if (intent.ParryPressed && !InParry && _shield.TryRaise(now))
             {
                 CancelCast(now);
@@ -137,12 +151,25 @@ namespace HexFall.Player.Actions
                 CancelCast(now);
                 Enter(ActionStateId.ParryEmpty, now);
             }
-            else if (intent.AttackPressed && Current == ActionStateId.Ready && _caster.Press(now))
+            if (Current == ActionStateId.Ready && (intent.AttackPressed || _pendingAttack) && _caster.Press(now))
             {
+                _pendingAttack = false;
                 Enter(StateFor(_caster.Pattern), now);
             }
-            if (intent.AttackReleased) ReleaseCast(now);
-            else if (intent.AttackCancelled) AbortHold(now);
+            else if (intent.AttackPressed)
+            {
+                _pendingAttack = true; // refused for now: starts when the wizard is ready, if still held
+            }
+            if (intent.AttackReleased)
+            {
+                _pendingAttack = false;
+                ReleaseCast(now);
+            }
+            else if (intent.AttackCancelled)
+            {
+                _pendingAttack = false;
+                AbortHold(now);
+            }
         }
 
         // A hold whose release never came ends without a shot: a charge is lost at no cooldown, a

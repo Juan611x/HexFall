@@ -4,8 +4,8 @@ using NUnit.Framework;
 
 namespace HexFall.UI.Tests
 {
-    // Swapping the spell keeps the running cooldown, and a press the machine refuses never turns into a
-    // hold later (no buffered input).
+    // Swapping the spell keeps the running cooldown, and a press the machine refuses only turns into a
+    // cast later while the button stays held (see ActionMachinePendingPressTests); releasing drops it.
     public class ActionMachineSwapTests
     {
         private static readonly ActionIntent None = default;
@@ -113,10 +113,10 @@ namespace HexFall.UI.Tests
             Assert.IsTrue(caster.IsReady(0f));
         }
 
-        // ---- A refused press never becomes a hold ----
+        // ---- A refused press released before the wizard is ready never becomes a hold ----
 
         [Test]
-        public void APressDuringTheCooldownDoesNotStartAChargeNowOrLater()
+        public void APressDuringTheCooldownReleasedBeforeItEndsDoesNotStartAChargeNowOrLater()
         {
             var other = new ActionMachine(new ActionSettings(), new SpellCaster(Charged()));
             other.Tick(Press, 1f);
@@ -125,14 +125,14 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(ActionStateId.Ready, other.Current);
             other.Tick(Press, 1.85f); // refused: still cooling down
             Assert.AreNotEqual(ActionStateId.Charging, other.Current);
-            other.Tick(None, 1.86f);
+            other.Tick(Release, 1.86f); // let go before the cooldown ended (1.9)
             other.Tick(None, 2.5f);
-            Assert.AreNotEqual(ActionStateId.Charging, other.Current, "no buffered press");
+            Assert.AreNotEqual(ActionStateId.Charging, other.Current, "a released press is not buffered");
             Assert.IsFalse(other.IsHolding);
         }
 
         [Test]
-        public void APressWhileAnAttackRunsIsRefusedAndNotBuffered()
+        public void APressWhileAnAttackRunsIsRefusedAndNotBufferedOnceReleased()
         {
             var machine = new ActionMachine(new ActionSettings(), new SpellCaster(Single(0.5f)));
             machine.Tick(Press, 1f);
@@ -141,18 +141,20 @@ namespace HexFall.UI.Tests
             machine.Tick(Press, 1.1f);
             Assert.AreEqual(1, presses, "the press was seen");
             Assert.AreEqual(ActionStateId.Attack, machine.Current);
+            machine.Tick(Release, 1.2f);
             machine.Tick(None, 1.6f);
-            Assert.AreEqual(ActionStateId.Ready, machine.Current, "the refused press did not queue another attack");
+            Assert.AreEqual(ActionStateId.Ready, machine.Current, "the released press did not queue another attack");
             Assert.IsFalse(machine.IsHolding);
         }
 
         [Test]
-        public void ARefusedPressDuringAParryNeverStartsAHoldWhenTheParryEnds()
+        public void ARefusedPressDuringAParryReleasedBeforeItEndsNeverStartsAHold()
         {
             var machine = new ActionMachine(new ActionSettings { guardSeconds = 0.4f, shieldCharges = 3, chargeRechargeSeconds = 6f, perfectParrySeconds = 0.15f, partialBlock = 0.5f },
                 new SpellCaster(Charged()));
             machine.Tick(new ActionIntent(false, true), 1f);
             machine.Tick(Press, 1.1f);
+            machine.Tick(Release, 1.2f);
             machine.Tick(None, 1.6f);
             Assert.IsFalse(machine.IsHolding);
             Assert.AreEqual(ActionStateId.Ready, machine.Current);
