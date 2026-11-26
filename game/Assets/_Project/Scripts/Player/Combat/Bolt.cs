@@ -48,20 +48,23 @@ namespace HexFall.Player
             }, damage, null);
         }
 
-        // Launches with the spell's ballistics, size and colour. A null spell keeps the prefab look.
-        public void Launch(GameObject owner, Vector3 direction, SpellDefinition.ProjectileSettings projectile, int damage, SpellDefinition spell)
+        // Launches with the spell's ballistics, size and colour. A null spell keeps the prefab look. A charged
+        // spell's charge (0..1) scales the bolt, shifts its colour and speeds it up per the spell's feedback settings.
+        public void Launch(GameObject owner, Vector3 direction, SpellDefinition.ProjectileSettings projectile, int damage,
+            SpellDefinition spell, float charge = 0f)
         {
             Cache();
             _owner = owner;
             _damage = damage;
             _spell = spell;
-            var scale = projectile.sizeScale > 0f ? projectile.sizeScale : 1f;
+            var look = spell != null ? spell.LookAtCharge(charge) : new ChargeLook(1f, default, 1f);
+            var scale = (projectile.sizeScale > 0f ? projectile.sizeScale : 1f) * look.Scale;
             _sweepRadius = radius * scale;
-            var velocity = direction.normalized * Usable(projectile.speed, FallbackSpeed);
+            var velocity = direction.normalized * (Usable(projectile.speed, FallbackSpeed) * look.SpeedScale);
             _flight = new ProjectileFlight(transform.position, velocity, projectile.gravity,
                 projectile.curveDegreesPerSecond, Usable(projectile.lifetimeSeconds, lifetimeSeconds));
             if (velocity.sqrMagnitude > 0f) transform.rotation = Quaternion.LookRotation(velocity);
-            ApplyLook(scale, spell);
+            ApplyLook(scale, spell, new Color(look.Color.R, look.Color.G, look.Color.B, spell != null ? spell.Color.a : 1f));
         }
 
         // A positive finite value, else the fallback: a spell with no speed or lifetime must not fire nothing or hover.
@@ -86,21 +89,21 @@ namespace HexFall.Player
         }
 
         // Size, tint and a clean trail, so a reused bolt carries nothing over from its last flight.
-        private void ApplyLook(float scale, SpellDefinition spell)
+        private void ApplyLook(float scale, SpellDefinition spell, Color color)
         {
             transform.localScale = _baseScale * scale;
-            foreach (var r in _renderers) Tint(r, spell);
+            foreach (var r in _renderers) Tint(r, spell, color);
 
             for (var i = 0; i < _trails.Length; i++)
             {
                 _trails[i].widthMultiplier = _trailWidths[i] * scale;
-                _trails[i].colorGradient = spell != null ? Tinted(_trailGradients[i], spell.Color) : _trailGradients[i];
+                _trails[i].colorGradient = spell != null ? Tinted(_trailGradients[i], color) : _trailGradients[i];
                 _trails[i].Clear();
             }
         }
 
         // Colour from the spell via a property block, so no material is created or modified.
-        private void Tint(Renderer target, SpellDefinition spell)
+        private void Tint(Renderer target, SpellDefinition spell, Color color)
         {
             if (spell == null)
             {
@@ -108,8 +111,8 @@ namespace HexFall.Player
                 return;
             }
             _block.Clear();
-            _block.SetColor(BaseColorId, spell.Color);
-            _block.SetColor(ColorId, spell.Color);
+            _block.SetColor(BaseColorId, color);
+            _block.SetColor(ColorId, color);
             target.SetPropertyBlock(_block);
         }
 

@@ -32,6 +32,9 @@ namespace HexFall.Player
         [Header("Beam")]
         [Tooltip("The channelled-spell beam (Water); optional. Shown while a channel runs.")]
         [SerializeField] private SpellBeam beam;
+        [Header("Charge")]
+        [Tooltip("The orb shown at the muzzle while a charged spell is held; optional.")]
+        [SerializeField] private ChargeOrb chargeOrb;
 
         // Counts cast starts (Attack, Charging, Channelling), so Attack() also reports an attack chained on the tick the last one ended.
         private int _attackStarts;
@@ -174,6 +177,18 @@ namespace HexFall.Player
             var lost = !attackHeld && Machine.IsHolding && _inputCast;
             if (lost) _inputCast = false;
             Machine.Tick(new ActionIntent(false, false, false, lost), now);
+            UpdateChargeOrb(now);
+        }
+
+        // The orb follows the machine: shown while a charge is held, hidden in every other state, so release,
+        // parry, a spell swap and a lost release all hide it without each having to know about it.
+        private void UpdateChargeOrb(float now)
+        {
+            if (chargeOrb == null) return;
+            if (Machine.Current == ActionStateId.Charging && activeSpell != null)
+                chargeOrb.Show(activeSpell, Machine.ChargeLevel(now), now, MuzzlePosition());
+            else
+                chargeOrb.Hide();
         }
 
         // False only when the Attack action exists and is not pressed; without PlayerInput nothing can
@@ -210,7 +225,7 @@ namespace HexFall.Player
             var direction = ShotAim.Offset(AimPoint() - origin, shot.SpreadDegrees);
             try
             {
-                bolt.Launch(gameObject, direction, projectile, shot.Damage, activeSpell);
+                bolt.Launch(gameObject, direction, projectile, shot.Damage, activeSpell, shot.Charge);
             }
             catch
             {

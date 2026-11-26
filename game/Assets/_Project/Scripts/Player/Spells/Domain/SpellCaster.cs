@@ -23,6 +23,9 @@ namespace HexFall.Player.Spells
 
         public bool IsBusy => _pattern.IsBusy;
 
+        // 0..1 progress of the charge in progress; 0 when nothing is charging or the time is not valid.
+        public float ChargeLevel(float now) => Valid(now) ? _pattern.ChargeLevel(now) : 0f;
+
         // When the cooldown of the last cast ends (-Infinity before the first cast).
         public float ReadyAt => _readyAt;
 
