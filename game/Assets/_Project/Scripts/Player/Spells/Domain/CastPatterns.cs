@@ -124,18 +124,41 @@ namespace HexFall.Player.Spells
     internal sealed class ChannelPattern : ICastPattern
     {
         private readonly CastConfig _c;
+        private bool _windingUp;
+        private float _pressedAt;
         private bool _active;
         private float _start;
         private int _ticks;
 
         public ChannelPattern(CastConfig c) => _c = c;
 
-        public bool IsBusy => _active;
+        public bool IsBusy => _active || _windingUp;
+
+        public bool IsWindingUp => _windingUp;
 
         public float ChargeLevel(float now) => 0f;
 
+        // With a wind-up the press only starts the pose: nothing is cast and no cooldown runs until the pose
+        // is reached (or the fallback timeout passes), so an early release or cancel costs nothing.
         public void Press(float now, ICastSink sink)
         {
+            if (_c.ChannelWindUpTimeoutSeconds > 0f)
+            {
+                _windingUp = true;
+                _pressedAt = now;
+                return;
+            }
+            Begin(now, sink);
+        }
+
+        public void PoseReached(float now, ICastSink sink)
+        {
+            if (_windingUp) Begin(now, sink);
+        }
+
+        private void Begin(float now, ICastSink sink)
+        {
+            _windingUp = false;
             _active = true;
             _start = now;
             _ticks = 0;
@@ -144,6 +167,11 @@ namespace HexFall.Player.Spells
 
         public void Tick(float now, ICastSink sink)
         {
+            if (_windingUp)
+            {
+                if (now - _pressedAt >= _c.ChannelWindUpTimeoutSeconds - CastTime.Eps) Begin(now, sink);
+                return;
+            }
             if (!_active) return;
             var elapsed = now - _start;
             EmitTicks(elapsed, sink);
@@ -153,6 +181,11 @@ namespace HexFall.Player.Spells
 
         public void Release(float now, ICastSink sink)
         {
+            if (_windingUp)
+            {
+                _windingUp = false; // released before the pose: nothing was cast, nothing to cool down
+                return;
+            }
             if (!_active) return;
             Tick(now, sink);
             if (_active) End(now, now - _start, sink);
@@ -161,6 +194,11 @@ namespace HexFall.Player.Spells
         // Interrupted channels drop their pending ticks.
         public void Cancel(float now, ICastSink sink)
         {
+            if (_windingUp)
+            {
+                _windingUp = false;
+                return;
+            }
             if (_active) End(now, now - _start, sink);
         }
 

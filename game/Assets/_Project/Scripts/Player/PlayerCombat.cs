@@ -45,15 +45,21 @@ namespace HexFall.Player
         // True while the running cast was started from the Attack input; only those casts can have a lost release.
         private bool _inputCast;
 
+        private CastAnchors _anchors;
+
         // Test seams: where the crosshair points and whether Attack is held. Null in production.
         internal System.Func<Vector3> AimOverride { get; set; }
         internal System.Func<bool> AttackHeldSource { get; set; }
+        // Test seam: the clock every machine tick uses (Time.time when null).
+        internal System.Func<float> ClockOverride { get; set; }
+
+        private float Now => ClockOverride != null ? ClockOverride() : Time.time;
 
         // The action state machine; the IK, animator and audio adapters read it. Null before Awake.
         public ActionMachine Machine { get; private set; }
 
         public int MaxShieldCharges => shieldCharges;
-        public int ShieldCharges => Machine?.ShieldCharges(Time.time) ?? shieldCharges;
+        public int ShieldCharges => Machine?.ShieldCharges(Now) ?? shieldCharges;
 
         // True from the attack until the wizard stops facing the crosshair, and while the shield guard
         // is up. Used by the IK to aim the head and chest harder.
@@ -126,10 +132,16 @@ namespace HexFall.Player
             return started;
         }
 
+        // The cast animation reached its wind-up pose (ActionAnimatorBridge): a channel waiting for it starts now.
+        public void ReportPoseReached()
+        {
+            if (Machine != null) Machine.PoseReached(Now);
+        }
+
         public void ReleaseAttack()
         {
             _inputCast = false;
-            Machine.Tick(new ActionIntent(false, false, true), Time.time);
+            Machine.Tick(new ActionIntent(false, false, true), Now);
         }
 
         // The spell the attack casts. Null means the Base default of the action machine.
@@ -139,7 +151,7 @@ namespace HexFall.Player
         public void SetSpell(SpellDefinition spell)
         {
             activeSpell = spell;
-            if (Machine != null) Machine.SetCaster(CasterFor(spell) ?? new SpellCaster(BaseConfig), Time.time);
+            if (Machine != null) Machine.SetCaster(CasterFor(spell) ?? new SpellCaster(BaseConfig), Now);
         }
 
         private static readonly CastConfig BaseConfig = new CastConfig
@@ -158,14 +170,14 @@ namespace HexFall.Player
         public bool Attack()
         {
             var before = _attackStarts;
-            Machine.Tick(new ActionIntent(true, false), Time.time);
+            Machine.Tick(new ActionIntent(true, false), Now);
             return _attackStarts != before;
         }
 
         private void Update()
         {
-            Step(Time.time, AttackHeld());
-            if (beam != null && beam.IsActive) beam.Refresh(MuzzlePosition(), AimPoint());
+            Step(Now, AttackHeld());
+            if (beam != null && beam.IsActive) beam.Refresh(CastOrigin(), AimPoint());
         }
 
         // One frame of the machine. A hold (charge, channel) whose attack input is no longer held lost its
@@ -186,7 +198,7 @@ namespace HexFall.Player
         {
             if (chargeOrb == null) return;
             if (Machine.Current == ActionStateId.Charging && activeSpell != null)
-                chargeOrb.Show(activeSpell, Machine.ChargeLevel(now), now, MuzzlePosition());
+                chargeOrb.Show(activeSpell, Machine.ChargeLevel(now), now, CastOrigin());
             else
                 chargeOrb.Hide();
         }
@@ -219,7 +231,7 @@ namespace HexFall.Player
         private void FireShot(ProjectileShot shot)
         {
             if (boltPrefab == null) return;
-            var origin = MuzzlePosition();
+            var origin = CastOrigin();
             var bolt = BoltPool.Get(boltPrefab, origin, Quaternion.identity);
             var projectile = activeSpell != null ? activeSpell.Projectile : BaseProjectile;
             var direction = ShotAim.Offset(AimPoint() - origin, shot.SpreadDegrees);
@@ -238,9 +250,18 @@ namespace HexFall.Player
 
         private Vector3 MuzzlePosition() => muzzle != null ? muzzle.position : transform.position + Vector3.up * 1.3f;
 
+        // Where the active spell starts from: its cast anchor on the wizard (the muzzle, the staff orb, ...), or
+        // the muzzle when the wizard has no anchors.
+        private Vector3 CastOrigin()
+        {
+            if (_anchors == null) _anchors = GetComponent<CastAnchors>();
+            var fallback = MuzzlePosition();
+            return _anchors != null ? _anchors.PositionFor(activeSpell != null ? activeSpell.CastAnchor : CastAnchors.Muzzle, fallback) : fallback;
+        }
+
         private void OnChannelStarted() { if (beam != null) beam.Begin(gameObject, activeSpell); }
 
-        private void OnChannelTicked(int damage) { if (beam != null) beam.Pulse(MuzzlePosition(), AimPoint(), damage); }
+        private void OnChannelTicked(int damage) { if (beam != null) beam.Pulse(CastOrigin(), AimPoint(), damage); }
 
         private void OnChannelEnded(float seconds) { if (beam != null) beam.End(); }
 
@@ -275,12 +296,12 @@ namespace HexFall.Player
 
         public void Parry()
         {
-            Machine.Tick(new ActionIntent(false, true), Time.time);
+            Machine.Tick(new ActionIntent(false, true), Now);
         }
 
         // Restores every shield charge. False when the shield was already full.
-        public bool RefillShield() => Machine.RefillShield(Time.time);
+        public bool RefillShield() => Machine.RefillShield(Now);
 
-        public HitResult ResolveHit(int damage) => Machine.ResolveHit(damage, Time.time);
+        public HitResult ResolveHit(int damage) => Machine.ResolveHit(damage, Now);
     }
 }

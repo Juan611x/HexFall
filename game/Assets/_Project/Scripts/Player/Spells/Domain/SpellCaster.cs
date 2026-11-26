@@ -23,6 +23,15 @@ namespace HexFall.Player.Spells
 
         public bool IsBusy => _pattern.IsBusy;
 
+        // A held cast that waits for its pose (a channel with a wind-up): nothing has been cast yet.
+        public bool IsWindingUp => _pattern.IsWindingUp;
+
+        // The adapter reports the cast pose reached: a channel that is winding up starts now.
+        public void PoseReached(float now)
+        {
+            if (Valid(now)) _pattern.PoseReached(now, this);
+        }
+
         // 0..1 progress of the charge in progress; 0 when nothing is charging or the time is not valid.
         public float ChargeLevel(float now) => Valid(now) ? _pattern.ChargeLevel(now) : 0f;
 

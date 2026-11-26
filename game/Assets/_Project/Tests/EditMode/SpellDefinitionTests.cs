@@ -225,5 +225,123 @@ namespace HexFall.UI.Tests
             Assert.AreEqual(1.5f, _spell.Projectile.weight, 1e-5f);
             Assert.AreEqual(0.3f, _spell.Projectile.drag, 1e-5f);
         }
+
+        // ---- cast anchor and wind-up pose ----
+
+        [Test]
+        public void ACastAnchorDefaultsToTheMuzzle()
+        {
+            Assert.AreEqual(CastAnchors.Muzzle, _spell.CastAnchor);
+        }
+
+        [Test]
+        public void TheCastAnchorIsConfigurablePerSpell()
+        {
+            Set("castAnchor", p => p.stringValue = CastAnchors.StaffOrb);
+            Assert.AreEqual(CastAnchors.StaffOrb, _spell.CastAnchor);
+        }
+
+        [Test]
+        public void ABlankCastAnchorReadsAsTheMuzzle()
+        {
+            Set("castAnchor", p => p.stringValue = "  ");
+            Assert.AreEqual(CastAnchors.Muzzle, _spell.CastAnchor);
+        }
+
+        [Test]
+        public void AChargedSpellsPoseComesFromItsChargeSettings()
+        {
+            Set("pattern", p => p.enumValueIndex = (int)CastPattern.Charged);
+            Set("charge.windUpState", p => p.stringValue = "Charge");
+            Set("charge.windUpHoldNormalized", p => p.floatValue = 0.4f);
+
+            Assert.IsTrue(_spell.WindUp.Enabled);
+            Assert.AreEqual("Charge", _spell.WindUp.State);
+            Assert.AreEqual(0.4f, _spell.WindUp.HoldNormalized, 1e-5f);
+        }
+
+        [Test]
+        public void AChannelSpellsPoseComesFromItsChannelSettings()
+        {
+            Set("pattern", p => p.enumValueIndex = (int)CastPattern.Channel);
+            Set("channel.windUpState", p => p.stringValue = "Charge");
+            Set("channel.windUpHoldNormalized", p => p.floatValue = 0.3f);
+            Set("channel.windUpTimeoutSeconds", p => p.floatValue = 0.6f);
+
+            Assert.IsTrue(_spell.WindUp.Enabled);
+            Assert.AreEqual(0.3f, _spell.WindUp.HoldNormalized, 1e-5f);
+            Assert.AreEqual(0.6f, _spell.WindUp.TimeoutSeconds, 1e-5f);
+            Assert.AreEqual(0.6f, _spell.ToCastConfig().ChannelWindUpTimeoutSeconds, 1e-5f);
+        }
+
+        [Test]
+        public void AChannelWithoutATimeoutHasNoWindUp()
+        {
+            Set("pattern", p => p.enumValueIndex = (int)CastPattern.Channel);
+            Set("channel.windUpTimeoutSeconds", p => p.floatValue = 0f);
+            Assert.IsFalse(_spell.WindUp.Enabled);
+        }
+
+        [Test]
+        public void SingleAndBurstSpellsHaveNoPose()
+        {
+            Assert.IsFalse(_spell.WindUp.Enabled);
+            Set("pattern", p => p.enumValueIndex = (int)CastPattern.Burst);
+            Assert.IsFalse(_spell.WindUp.Enabled);
+        }
+
+        [Test]
+        public void SanitizeClampsTheChannelPose()
+        {
+            Set("channel.windUpHoldNormalized", p => p.floatValue = 3f);
+            Set("channel.windUpTimeoutSeconds", p => p.floatValue = -1f);
+
+            _spell.Sanitize();
+
+            Assert.AreEqual(1f, _spell.Channel.windUpHoldNormalized);
+            Assert.AreEqual(0f, _spell.Channel.windUpTimeoutSeconds);
+        }
+
+        // ---- shipped assets ----
+
+        [TestCase("Spell_Base")]
+        [TestCase("Spell_Fire")]
+        [TestCase("Spell_Earth")]
+        [TestCase("Spell_Water")]
+        public void EveryShippedSpellStoresWeightAndDragAndNoLegacyGravityKey(string name)
+        {
+            var text = System.IO.File.ReadAllText(
+                System.IO.Path.GetFullPath("Assets/_Project/Spells/" + name + ".asset"));
+            StringAssert.Contains("    weight:", text);
+            StringAssert.Contains("    drag:", text);
+            StringAssert.DoesNotContain("    gravity:", text);
+        }
+
+        [Test]
+        public void FiresPoseKeepsItsMigratedValues()
+        {
+            var fire = AssetDatabase.LoadAssetAtPath<SpellDefinition>("Assets/_Project/Spells/Spell_Fire.asset");
+            Assert.AreEqual("Charge", fire.WindUp.State);
+            Assert.AreEqual(fire.Charge.windUpHoldNormalized, fire.WindUp.HoldNormalized);
+            Assert.AreEqual(CastAnchors.Muzzle, fire.CastAnchor);
+        }
+
+        [Test]
+        public void WaterStartsItsBeamAtTheStaffOrbAfterAWindUp()
+        {
+            var water = AssetDatabase.LoadAssetAtPath<SpellDefinition>("Assets/_Project/Spells/Spell_Water.asset");
+            Assert.AreEqual(CastAnchors.StaffOrb, water.CastAnchor);
+            Assert.IsTrue(water.WindUp.Enabled);
+            Assert.AreEqual("Charge", water.WindUp.State);
+            Assert.AreEqual(1f, water.WindUp.TimeoutSeconds, 1e-5f);
+        }
+
+        [Test]
+        public void ANewChannelSpellHasNoWindUpUntilItIsConfigured()
+        {
+            Set("pattern", p => p.enumValueIndex = (int)CastPattern.Channel);
+            Assert.IsFalse(_spell.WindUp.Enabled);
+            Assert.AreEqual(0f, _spell.ToCastConfig().ChannelWindUpTimeoutSeconds);
+        }
     }
 }

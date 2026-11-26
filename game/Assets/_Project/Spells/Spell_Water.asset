@@ -19,7 +19,8 @@ MonoBehaviour:
   cooldownSeconds: 0.5
   projectile:
     speed: 30
-    gravity: 0
+    weight: 0
+    drag: 0
     curveDegreesPerSecond: 0
     sizeScale: 1
     lifetimeSeconds: 3
@@ -71,6 +72,9 @@ MonoBehaviour:
     damagePerTick: 4
     rangeMeters: 20
     cooldownPerChannelSecond: 0.6
+    windUpState: Charge
+    windUpHoldNormalized: 0.5
+    windUpTimeoutSeconds: 1
   effects:
     castEffect: {fileID: 0}
     impactEffect: {fileID: 0}
@@ -80,3 +84,4 @@ MonoBehaviour:
     castClip: {fileID: 0}
     impactClip: {fileID: 0}
     chargeOrLoopClip: {fileID: 0}
+  castAnchor: StaffOrb

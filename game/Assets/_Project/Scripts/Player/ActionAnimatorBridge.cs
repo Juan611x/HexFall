@@ -102,14 +102,17 @@ namespace HexFall.Player
             _subscribed = null;
         }
 
-        // While a charge is held: once the wind-up has played to the spell's hold time, freeze the pose
-        // (speed 0) on exactly that time. Leaving Charging resumes the speed, so the throw plays normally.
+        // While a charge or a channel wind-up is held: once the wind-up has played to the spell's hold time,
+        // freeze the pose (speed 0) on exactly that time. A held channel reports the pose to the combat component,
+        // which is what really starts it. Leaving the state resumes the speed, so the throw plays normally.
         private void Update() => HoldWindUp();
 
         internal void HoldWindUp()
         {
             if (_upperBodyLayer < 0 || _windUpHash == 0) return;
-            if (_combat == null || _combat.Machine == null || _combat.Machine.Current != ActionStateId.Charging) return;
+            if (_combat == null || _combat.Machine == null) return;
+            var current = _combat.Machine.Current;
+            if (current != ActionStateId.Charging && current != ActionStateId.Channelling) return;
             if (_holdingWindUp)
             {
                 // Re-pinned every frame so a state without the speed parameter holds too.
@@ -123,13 +126,12 @@ namespace HexFall.Player
             _holdingWindUp = true;
             SetChargeSpeed(0f);
             _animator.Play(_windUpHash, _upperBodyLayer, Mathf.Clamp01(_windUpHold));
+            if (current == ActionStateId.Channelling) _combat.ReportPoseReached();
         }
 
-        // The Charge state of a spell: its own windUpState when the layer has it, else the mapped one.
-        private string ChargeStateFor(SpellDefinition spell)
+        // The wind-up state of a spell: its own windUpState when the layer has it, else the one mapped to the action state.
+        private string WindUpStateFor(string own, string mapped)
         {
-            var mapped = StateNameFor(ActionStateId.Charging);
-            var own = spell != null ? spell.Charge.windUpState : null;
             if (string.IsNullOrEmpty(own) || own == mapped) return mapped;
             return _animator.HasState(_upperBodyLayer, Animator.StringToHash(own)) ? own : mapped;
         }
@@ -153,12 +155,15 @@ namespace HexFall.Player
             _windUpHash = 0;
             SetChargeSpeed(1f);
             var stateName = StateNameFor(to);
-            if (to == ActionStateId.Charging && _combat != null)
+            var spell = _combat != null ? _combat.ActiveSpell : null;
+            // A charge always winds up; a channel only when its spell has a wind-up pose (otherwise it plays the plain mapping).
+            var winds = to == ActionStateId.Charging || (to == ActionStateId.Channelling && spell != null && spell.WindUp.Enabled);
+            if (winds && stateName != null)
             {
-                stateName = ChargeStateFor(_combat.ActiveSpell);
+                var pose = spell != null ? spell.WindUp : default;
+                stateName = WindUpStateFor(pose.State, stateName);
                 _windUpHash = Animator.StringToHash(stateName);
-                var spell = _combat.ActiveSpell;
-                _windUpHold = spell != null ? spell.Charge.windUpHoldNormalized : 0.5f;
+                _windUpHold = spell != null ? pose.HoldNormalized : 0.5f;
             }
             if (stateName == null)
             {
